@@ -110,6 +110,29 @@ Draft:
 
 Output only the polished script."""
 
+_AUDIT = """You are doing a final mechanical check on a YouTube script — NOT a rewrite. The script \
+already went through a humanizing pass, but a couple of banned AI-speak patterns sometimes survive \
+that pass anyway. Your only job: find every remaining instance of these patterns and rewrite ONLY \
+that sentence (preserve everything else word-for-word, including all other phrasing/punctuation \
+choices already made):
+
+- "Not because X, but because Y" / "It's not X, it's Y" / "isn't just about X — it's about Y" / \
+"isn't just X, it's Y" — say what the sentence means directly instead of through this negate-then-\
+correct frame.
+- "Here's the thing" / "The truth is" / "At the end of the day" / "In other words" / "What if I told you"
+- "And that's the beauty of it" / "And that's exactly the point" / abstract closers like "a quiet \
+rebellion" or "a quiet kind of [noun]"
+- Rule-of-three lists, or "You don't just X. You Y. You Z." used more than once total in the script
+- More than one rhetorical question in a row
+
+If the script has NONE of these patterns, output it completely unchanged. Do not "improve" anything \
+else — this is a targeted fix, not another editing pass.
+
+Script:
+{script}
+
+Output the full script, unchanged except for any rewritten sentences."""
+
 
 def _call(model, prompt, max_tokens=8000):
     r = client.messages.create(
@@ -134,7 +157,10 @@ def generate_script(topic_data):
     ))
 
     print("    Polishing (Sonnet)...")
-    final = _call(SONNET_MODEL, _POLISH.format(draft=draft))
+    polished = _call(SONNET_MODEL, _POLISH.format(draft=draft))
+
+    print("    Auditing for leftover AI-speak (Haiku)...")
+    final = _call(HAIKU_MODEL, _AUDIT.format(script=polished), max_tokens=8000)
 
     word_count = len(final.split())
     print(f"    Script: {word_count:,} words (~{word_count // 140:.0f} min audio)")
