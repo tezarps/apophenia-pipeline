@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Narava Pipeline</title>
+<title>Apophenia Pipeline</title>
 <style>
   :root {
     --bg: #0a0a0f;
@@ -61,7 +61,7 @@
 </style>
 </head>
 <body>
-  <h1>🔱 Narava Pipeline</h1>
+  <h1>🧠 Apophenia Pipeline</h1>
   <div class="subtitle">Live status — auto-refresh tiap 30 detik</div>
 
   <div class="card">
@@ -95,29 +95,36 @@
     </div>
     <div id="manage-queue" style="display:none">
       <div class="form-grid">
-        <select id="new-category">
-          <option value="greek">greek</option>
-          <option value="norse">norse</option>
-          <option value="egyptian">egyptian</option>
-          <option value="celtic">celtic</option>
-          <option value="japanese">japanese</option>
-          <option value="aztec">aztec</option>
-          <option value="comparative">comparative</option>
-        </select>
-        <input id="new-topic" placeholder="Nama topik (e.g. Hades)">
-        <input id="new-angle" placeholder="Angle (opsional)">
+        <input id="new-category" list="category-suggestions" placeholder="Kategori (e.g. avoidant-attachment)">
+        <datalist id="category-suggestions">
+          <option value="avoidant-attachment">
+          <option value="fawn-response">
+          <option value="enmeshment">
+          <option value="invisibility">
+          <option value="social-isolation">
+          <option value="perfectionism">
+          <option value="hypervigilance">
+          <option value="self-abandonment">
+          <option value="parentification">
+          <option value="emotional-numbness">
+        </datalist>
+        <input id="new-topic" placeholder="Nama archetype (e.g. The Compulsive Apologizer)">
+        <input id="new-angle" placeholder="Angle/hook (opsional)">
         <button onclick="addTopic()">+ Tambah ke Antrian</button>
       </div>
       <div id="pending-list" class="empty">Memuat...</div>
     </div>
   </div>
 
-  <div class="refresh-note">narava-pipeline · Supabase</div>
+  <div class="refresh-note">apophenia-pipeline · Supabase</div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script>
-  const SUPABASE_URL = "https://ncxmhczlduyjtiabpsod.supabase.co";
-  const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_4sKo1WhYrAYR_5miTIOd9w_aqUGT_QX";
+  // TODO: fill in once the Apophenia Supabase project exists (task #2 — pending
+  // as of 2026-06-21, see project memory project_apophenia.md). These are
+  // PLACEHOLDERS, not Narava's real project — do not point this at Narava's DB.
+  const SUPABASE_URL = "REPLACE_WITH_APOPHENIA_SUPABASE_URL";
+  const SUPABASE_PUBLISHABLE_KEY = "REPLACE_WITH_APOPHENIA_PUBLISHABLE_KEY";
   const db = supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 
   function timeAgo(iso) {
@@ -217,12 +224,12 @@
   }
 
   // ---- PIN-gated queue management ----
-  function getPin() { return localStorage.getItem("narava_dashboard_pin") || ""; }
+  function getPin() { return localStorage.getItem("apophenia_dashboard_pin") || ""; }
 
   function savePin() {
     const pin = document.getElementById("pin-input").value.trim();
     if (!pin) return;
-    localStorage.setItem("narava_dashboard_pin", pin);
+    localStorage.setItem("apophenia_dashboard_pin", pin);
     unlockUi();
     loadPendingList();
   }
@@ -280,7 +287,7 @@
   }
 
   function resetPin() {
-    localStorage.removeItem("narava_dashboard_pin");
+    localStorage.removeItem("apophenia_dashboard_pin");
     document.getElementById("pin-gate").style.display = "flex";
     document.getElementById("manage-queue").style.display = "none";
     document.getElementById("pin-status").textContent = "🔒 Terkunci";
