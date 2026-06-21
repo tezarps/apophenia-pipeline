@@ -9,11 +9,9 @@ background accent color, NOT in the underlying character art — this isolates
 the thing actually being tested (the text hook) rather than confounding it
 with a different illustration.
 
-NOTE: assets/fonts only has Cinzel-Bold.ttf (serif, mythology-era leftover)
-and Lato-Regular.ttf (not bold enough for a thumbnail hook). Before running
-this for real, drop a heavy/black-weight sans font (e.g. Archivo Black,
-Montserrat Black, Inter Black) into assets/fonts/ and point THUMBNAIL_FONT_PATH
-at it — Lato-Regular is a placeholder and will look weak at thumbnail size.
+Font: Archivo Black (assets/fonts/ArchivoBlack-Regular.ttf) — heavy geometric
+sans, matches the Kee thumbnail reference look. Cinzel-Bold (serif) is a
+Narava mythology-era leftover, not used here.
 """
 import json
 import textwrap
@@ -26,7 +24,7 @@ from config import ANTHROPIC_API_KEY, GEMINI_IMAGE_API_KEY, NANO_BANANA_MODEL, H
 client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
 
 THUMBNAILS_DIR = BASE_DIR / "thumbnails"
-THUMBNAIL_FONT_PATH = BASE_DIR / "assets" / "fonts" / "Lato-Regular.ttf"  # placeholder, see module docstring
+THUMBNAIL_FONT_PATH = BASE_DIR / "assets" / "fonts" / "ArchivoBlack-Regular.ttf"
 THUMB_SIZE = (1280, 720)
 HIGHLIGHT_COLOR = (255, 184, 28)  # same yellow/orange used for caption keyword highlights
 
