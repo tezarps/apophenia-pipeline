@@ -4,69 +4,132 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Apophenia Pipeline</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #0a0a0f;
-    --card: #15151f;
-    --border: #262633;
-    --text: #e8e8f0;
-    --muted: #8888a0;
-    --gold: #d4a843;
-    --green: #4ade80;
-    --red: #f87171;
-    --blue: #60a5fa;
+    --bg: #11101c;
+    --bg-grain: radial-gradient(circle at 20% 10%, rgba(232,162,61,0.06), transparent 40%),
+                radial-gradient(circle at 80% 80%, rgba(91,103,196,0.08), transparent 45%);
+    --card: #181729;
+    --card-hi: #1f1e35;
+    --border: #2b2a45;
+    --text: #ece8f5;
+    --muted: #8c89ab;
+    --amber: #e8a23d;
+    --amber-dim: #b97f2c;
+    --indigo: #5b67c4;
+    --green: #5fd896;
+    --red: #f2697a;
+    --blue: #6fa8f5;
   }
   * { box-sizing: border-box; }
   body {
     margin: 0;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    background: var(--bg);
+    font-family: "Inter", -apple-system, sans-serif;
+    background-color: var(--bg);
+    background-image: var(--bg-grain);
     color: var(--text);
-    padding: 16px;
-    max-width: 600px;
+    padding: 20px 16px 40px;
+    max-width: 640px;
     margin: 0 auto;
+    -webkit-font-smoothing: antialiased;
   }
-  h1 { font-size: 20px; color: var(--gold); margin: 8px 0 4px; }
-  .subtitle { color: var(--muted); font-size: 13px; margin-bottom: 20px; }
-  .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 14px; }
-  .card h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin: 0 0 10px; display: flex; justify-content: space-between; align-items: center; }
-  .status-badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
-  .status-running { background: rgba(96,165,250,0.15); color: var(--blue); }
-  .status-published, .status-done { background: rgba(74,222,128,0.15); color: var(--green); }
-  .status-failed { background: rgba(248,113,113,0.15); color: var(--red); }
-  .status-pending { background: rgba(136,136,160,0.15); color: var(--muted); }
-  .row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); gap: 8px; }
+  .display { font-family: "Bebas Neue", "Inter", sans-serif; letter-spacing: 0.02em; }
+  header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+  .brand { display: flex; align-items: baseline; gap: 10px; }
+  h1.display { font-size: 36px; color: var(--amber); margin: 0; line-height: 1; }
+  .live-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 0 rgba(95,216,150,0.6); animation: pulse-dot 2s infinite; }
+  .live-dot.off { background: var(--muted); animation: none; box-shadow: none; }
+  @keyframes pulse-dot { 0% { box-shadow: 0 0 0 0 rgba(95,216,150,0.55); } 70% { box-shadow: 0 0 0 7px rgba(95,216,150,0); } 100% { box-shadow: 0 0 0 0 rgba(95,216,150,0); } }
+  .subtitle { color: var(--muted); font-size: 13px; margin: 6px 0 22px; display: flex; align-items: center; gap: 6px; }
+
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 18px; margin-bottom: 16px; position: relative; overflow: hidden; }
+  .card::before { content: ""; position: absolute; top: 0; left: 0; width: 3px; height: 100%; background: linear-gradient(180deg, var(--amber), transparent); opacity: 0.5; }
+  .card h2 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.09em; color: var(--muted); margin: 0 0 14px; display: flex; justify-content: space-between; align-items: center; font-weight: 700; }
+
+  /* Live pipeline stepper */
+  .stepper { display: flex; flex-direction: column; gap: 0; }
+  .step { display: flex; align-items: flex-start; gap: 12px; position: relative; padding-bottom: 18px; }
+  .step:last-child { padding-bottom: 0; }
+  .step-line { position: absolute; left: 15px; top: 32px; bottom: -2px; width: 2px; background: var(--border); }
+  .step:last-child .step-line { display: none; }
+  .step-dot { width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 15px; background: var(--bg); border: 2px solid var(--border); z-index: 1; transition: all 0.3s; }
+  .step.done .step-dot { border-color: var(--green); background: rgba(95,216,150,0.12); }
+  .step.running .step-dot { border-color: var(--amber); background: rgba(232,162,61,0.15); animation: pulse-ring 1.6s infinite; }
+  .step.error .step-dot { border-color: var(--red); background: rgba(242,105,122,0.15); }
+  @keyframes pulse-ring { 0% { box-shadow: 0 0 0 0 rgba(232,162,61,0.5); } 70% { box-shadow: 0 0 0 8px rgba(232,162,61,0); } 100% { box-shadow: 0 0 0 0 rgba(232,162,61,0); } }
+  .step-body { padding-top: 4px; flex: 1; }
+  .step-name { font-size: 14px; font-weight: 600; color: var(--muted); }
+  .step.done .step-name, .step.running .step-name { color: var(--text); }
+  .step-role { font-size: 12px; color: var(--muted); margin-top: 1px; }
+  .step-detail { font-size: 12px; color: var(--amber); margin-top: 3px; }
+  .idle-banner { text-align: center; padding: 18px 8px; color: var(--muted); font-size: 13px; }
+  .idle-banner .next-run { color: var(--text); font-weight: 600; margin-top: 4px; }
+
+  .status-badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+  .status-running { background: rgba(111,168,245,0.15); color: var(--blue); }
+  .status-published, .status-done { background: rgba(95,216,150,0.15); color: var(--green); }
+  .status-failed { background: rgba(242,105,122,0.15); color: var(--red); }
+  .status-pending { background: rgba(140,137,171,0.15); color: var(--muted); }
+
+  .row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); gap: 8px; }
   .row:last-child { border-bottom: none; }
-  .row-title { font-size: 14px; }
+  .row-title { font-size: 14px; font-weight: 600; }
   .row-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
-  a { color: var(--blue); text-decoration: none; }
-  .empty { color: var(--muted); font-size: 13px; text-align: center; padding: 12px 0; }
-  .cat-pill { display: inline-flex; justify-content: space-between; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; margin: 3px; font-size: 12px; }
+  a { color: var(--amber); text-decoration: none; font-weight: 600; }
+  .empty { color: var(--muted); font-size: 13px; text-align: center; padding: 14px 0; }
+  .cat-pill { display: inline-flex; align-items: center; gap: 6px; background: var(--card-hi); border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; margin: 3px; font-size: 12px; }
+  .cat-pill strong { color: var(--amber); }
   .cat-grid { display: flex; flex-wrap: wrap; gap: 0; }
-  .refresh-note { text-align: center; color: var(--muted); font-size: 11px; margin-top: 8px; margin-bottom: 24px; }
-  button { background: var(--gold); color: #1a1408; border: none; border-radius: 8px; padding: 7px 12px; font-size: 13px; font-weight: 600; cursor: pointer; }
-  button.secondary { background: var(--border); color: var(--text); }
-  button.danger { background: rgba(248,113,113,0.2); color: var(--red); }
-  button:disabled { opacity: 0.5; cursor: default; }
-  input, select { background: var(--bg); border: 1px solid var(--border); color: var(--text); border-radius: 8px; padding: 8px 10px; font-size: 13px; width: 100%; }
+  .refresh-note { text-align: center; color: var(--muted); font-size: 11px; margin-top: 8px; margin-bottom: 24px; display: flex; justify-content: center; gap: 14px; }
+  .refresh-note a { color: var(--muted); font-weight: 400; }
+  .refresh-note a:hover { color: var(--amber); }
+
+  button { background: var(--amber); color: #1a1306; border: none; border-radius: 8px; padding: 8px 14px; font-size: 13px; font-weight: 700; cursor: pointer; transition: transform 0.1s; }
+  button:active { transform: scale(0.97); }
+  button.secondary { background: var(--card-hi); color: var(--text); border: 1px solid var(--border); }
+  button.danger { background: rgba(242,105,122,0.15); color: var(--red); }
+  button:disabled { opacity: 0.4; cursor: default; }
+  input, select { background: var(--bg); border: 1px solid var(--border); color: var(--text); border-radius: 8px; padding: 9px 10px; font-size: 13px; width: 100%; font-family: inherit; }
   .form-grid { display: grid; gap: 8px; margin-bottom: 10px; }
   .btn-row { display: flex; gap: 6px; flex-shrink: 0; }
-  .analytics-panel { background: var(--bg); border-radius: 8px; padding: 10px; margin-top: 8px; font-size: 12px; display: none; }
+  .analytics-panel { background: var(--bg); border-radius: 8px; padding: 12px; margin-top: 8px; font-size: 12px; display: none; }
   .analytics-panel.show { display: block; }
-  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
   .stat { color: var(--muted); }
-  .stat strong { color: var(--text); display: block; font-size: 15px; }
+  .stat strong { color: var(--text); display: block; font-size: 16px; font-weight: 700; }
   #pin-gate { display: flex; gap: 6px; margin-bottom: 10px; }
-  .locked-note { color: var(--muted); font-size: 12px; }
+  .locked-note { color: var(--muted); font-size: 11px; font-weight: 600; }
+
+  .ab-card { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 12px; margin-bottom: 8px; }
+  .ab-variant { display: inline-flex; align-items: center; gap: 4px; padding: 2px 9px; border-radius: 6px; font-size: 11px; font-weight: 700; background: var(--amber); color: #1a1306; }
+  .ab-bar-wrap { display: flex; gap: 8px; align-items: center; margin-top: 8px; }
+  .ab-bar { flex: 1; height: 6px; border-radius: 3px; background: var(--border); overflow: hidden; }
+  .ab-bar-fill { height: 100%; background: var(--amber); }
+  .ab-ctr { font-size: 11px; color: var(--muted); min-width: 48px; text-align: right; }
 </style>
 </head>
 <body>
-  <h1>🧠 Apophenia Pipeline</h1>
-  <div class="subtitle">Live status — auto-refresh tiap 30 detik</div>
+  <header>
+    <div class="brand">
+      <h1 class="display">APOPHENIA</h1>
+      <span id="live-dot" class="live-dot off"></span>
+    </div>
+  </header>
+  <div class="subtitle" id="subtitle-text">Pipeline monitor — realtime</div>
 
   <div class="card">
     <h2>Run Saat Ini</h2>
-    <div id="current-run" class="empty">Memuat...</div>
+    <div id="current-run">
+      <div class="empty">Memuat...</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Thumbnail A/B Test</h2>
+    <div id="ab-tests" class="empty">Memuat...</div>
   </div>
 
   <div class="card">
@@ -116,13 +179,27 @@
     </div>
   </div>
 
-  <div class="refresh-note">apophenia-pipeline · Supabase</div>
+  <div class="refresh-note">
+    <span>apophenia-pipeline · Supabase Realtime</span>
+    <a href="https://github.com/tezarps/apophenia-pipeline/actions" target="_blank">GitHub Actions →</a>
+    <a href="https://www.youtube.com/@heyapophenia" target="_blank">Channel →</a>
+  </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script>
   const SUPABASE_URL = "https://zhqlvvvlwlrmfyxslqpk.supabase.co";
   const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_KarTnpOZqfJGkBTLdacKqg_v6bQW9O9";
   const db = supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+
+  const AGENT_ORDER = ["oracle", "scribe", "voice", "architect", "herald", "messenger"];
+  const AGENTS = {
+    oracle:    { name: "The Oracle",    icon: "🔮", role: "Picks the next archetype" },
+    scribe:    { name: "The Scribe",    icon: "📜", role: "Writes the 5-babak script" },
+    voice:     { name: "The Voice",     icon: "🎙️", role: "Narrates the essay" },
+    architect: { name: "The Architect", icon: "🏛️", role: "Assembles the final video" },
+    herald:    { name: "The Herald",    icon: "📯", role: "Crafts title, metadata & thumbnails" },
+    messenger: { name: "The Messenger", icon: "⚡", role: "Uploads to YouTube" },
+  };
 
   function timeAgo(iso) {
     if (!iso) return "";
@@ -133,23 +210,110 @@
     return Math.floor(diff / 86400) + "h lalu";
   }
 
+  // Dynamic text (error messages, topic/angle text from the queue form) goes
+  // through innerHTML templates below — without escaping, an error string
+  // containing "<" (Python exception reprs like "<HttpError 403 ...>" do
+  // this constantly) gets parsed as a real tag and corrupts the DOM. Confirmed
+  // visually broken 2026-06-21 before this fix.
+  function esc(s) {
+    if (s == null) return "";
+    return String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  }
+
+  // Next scheduled cron slot — mirrors agents/upload_agent.py PUBLISH_WEEKDAYS
+  // (Tue/Fri) at 00:00 UTC, just for the idle-state hint text.
+  function nextCronLabel() {
+    const days = [2, 5]; // Tue, Fri (0=Sun)
+    const now = new Date();
+    for (let i = 0; i < 8; i++) {
+      const d = new Date(now);
+      d.setUTCDate(now.getUTCDate() + i);
+      d.setUTCHours(0, 0, 0, 0);
+      if (days.includes(d.getUTCDay()) && d > now) {
+        const wib = new Date(d.getTime() + 7 * 3600 * 1000);
+        return wib.toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "short" }) + " 07:00 WIB";
+      }
+    }
+    return "";
+  }
+
+  function renderStepper(currentAgent, runStatus) {
+    const currentIdx = AGENT_ORDER.indexOf(currentAgent);
+    return AGENT_ORDER.map((key, i) => {
+      const a = AGENTS[key];
+      let state = "idle", detail = "";
+      if (runStatus === "failed" && i === currentIdx) { state = "error"; detail = "Gagal di sini"; }
+      else if (i < currentIdx || (runStatus === "done")) { state = "done"; }
+      else if (i === currentIdx) { state = "running"; detail = "Sedang berjalan..."; }
+      const icon = state === "done" ? "✓" : state === "error" ? "✗" : a.icon;
+      return `
+        <div class="step ${state}">
+          <div class="step-line"></div>
+          <div class="step-dot">${icon}</div>
+          <div class="step-body">
+            <div class="step-name">${a.name}</div>
+            <div class="step-role">${a.role}</div>
+            ${detail ? `<div class="step-detail">${detail}</div>` : ""}
+          </div>
+        </div>`;
+    }).join("");
+  }
+
   async function loadCurrentRun() {
     const { data } = await db.from("pipeline_runs").select("*").eq("status", "running").order("started_at", { ascending: false }).limit(1);
     const el = document.getElementById("current-run");
+    const liveDot = document.getElementById("live-dot");
+    const subtitle = document.getElementById("subtitle-text");
     if (!data || data.length === 0) {
-      el.innerHTML = '<div class="empty">Tidak ada run yang sedang berjalan</div>';
+      liveDot.classList.add("off");
+      subtitle.textContent = "Pipeline monitor — idle";
+      el.innerHTML = `<div class="idle-banner">Tidak ada run yang sedang berjalan<div class="next-run">Next run: ${nextCronLabel()}</div></div>`;
       return;
     }
+    liveDot.classList.remove("off");
+    subtitle.textContent = "Pipeline monitor — 1 run aktif";
     const r = data[0];
     el.innerHTML = `
-      <div class="row" style="border-bottom:none;">
+      <div class="row" style="border-bottom:none; padding-top:0; margin-bottom:14px;">
         <div>
           <div class="row-title">Topic #${r.topic_id}</div>
-          <div class="row-sub">${r.angle || ""}</div>
-          <div class="row-sub">Stage: ${r.current_agent || "starting"} · ${timeAgo(r.started_at)}</div>
+          <div class="row-sub">${esc(r.angle) || ""} · mulai ${timeAgo(r.started_at)}</div>
         </div>
         <span class="status-badge status-running">RUNNING</span>
+      </div>
+      <div class="stepper">${renderStepper(r.current_agent, r.status)}</div>`;
+  }
+
+  async function loadAbTests() {
+    const { data } = await db.from("thumbnail_tests").select("*").order("started_at", { ascending: false }).limit(5);
+    const el = document.getElementById("ab-tests");
+    if (!data || data.length === 0) { el.innerHTML = '<div class="empty">Belum ada A/B test</div>'; return; }
+    el.innerHTML = data.map(t => {
+      const ctrA = t.ctr_a != null ? (t.ctr_a * 100).toFixed(1) : null;
+      const ctrB = t.ctr_b != null ? (t.ctr_b * 100).toFixed(1) : null;
+      const maxCtr = Math.max(ctrA || 0, ctrB || 0, 0.1);
+      return `
+      <div class="ab-card">
+        <div class="row" style="border-bottom:none; padding:0 0 6px;">
+          <div class="row-title">Topic #${t.topic_id}</div>
+          ${t.resolved
+            ? `<span class="status-badge status-done">WINNER ${t.winner}</span>`
+            : `<span class="ab-variant">AKTIF: ${t.active_variant}</span>`}
+        </div>
+        <div class="row-sub">${t.resolved ? "Selesai" : "Berjalan"} · mulai ${timeAgo(t.started_at)}${t.switched_at ? " · swap " + timeAgo(t.switched_at) : ""}</div>
+        ${ctrA != null || ctrB != null ? `
+        <div class="ab-bar-wrap">
+          <span class="row-sub" style="min-width:14px;">A</span>
+          <div class="ab-bar"><div class="ab-bar-fill" style="width:${ctrA ? (ctrA / maxCtr * 100) : 0}%"></div></div>
+          <span class="ab-ctr">${ctrA != null ? ctrA + "%" : "–"}</span>
+        </div>
+        <div class="ab-bar-wrap">
+          <span class="row-sub" style="min-width:14px;">B</span>
+          <div class="ab-bar"><div class="ab-bar-fill" style="width:${ctrB ? (ctrB / maxCtr * 100) : 0}%"></div></div>
+          <span class="ab-ctr">${ctrB != null ? ctrB + "%" : "–"}</span>
+        </div>` : ""}
       </div>`;
+    }).join("");
   }
 
   async function loadRecentPublished() {
@@ -160,8 +324,8 @@
       <div>
         <div class="row">
           <div>
-            <div class="row-title">${t.topic}</div>
-            <div class="row-sub">${t.category}</div>
+            <div class="row-title">${esc(t.topic)}</div>
+            <div class="row-sub">${esc(t.category)}</div>
           </div>
           <div class="btn-row">
             ${t.video_id ? `<button class="secondary" onclick="toggleAnalytics('${t.video_id}')">📊 Analitik</button>` : ""}
@@ -203,7 +367,7 @@
       <div class="row">
         <div>
           <div class="row-title">Topic #${r.topic_id}</div>
-          <div class="row-sub">${timeAgo(r.started_at)}${r.error ? " · " + r.error.slice(0, 60) : ""}</div>
+          <div class="row-sub">${timeAgo(r.started_at)}${r.status === "failed" && r.current_agent ? " · gagal di " + esc(AGENTS[r.current_agent]?.name || r.current_agent) : ""}${r.error ? " · " + esc(r.error.slice(0, 50)) : ""}</div>
         </div>
         <span class="status-badge status-${r.status}">${r.status.toUpperCase()}</span>
       </div>`).join("");
@@ -216,7 +380,7 @@
     const counts = {};
     data.forEach(t => { counts[t.category] = (counts[t.category] || 0) + 1; });
     el.innerHTML = '<div class="cat-grid">' + Object.entries(counts).map(([cat, n]) =>
-      `<span class="cat-pill">${cat}: <strong style="margin-left:6px">${n}</strong></span>`
+      `<span class="cat-pill">${esc(cat)} <strong>${n}</strong></span>`
     ).join("") + '</div>';
   }
 
@@ -244,8 +408,8 @@
     el.innerHTML = data.map(t => `
       <div class="row">
         <div>
-          <div class="row-title">#${t.id} ${t.topic}</div>
-          <div class="row-sub">${t.category}${t.angle ? " · " + t.angle.slice(0, 50) : ""}</div>
+          <div class="row-title">#${t.id} ${esc(t.topic)}</div>
+          <div class="row-sub">${esc(t.category)}${t.angle ? " · " + esc(t.angle.slice(0, 50)) : ""}</div>
         </div>
         <div class="btn-row">
           <button class="danger" onclick="deleteTopic(${t.id})">Hapus</button>
@@ -291,13 +455,23 @@
   }
 
   async function loadAll() {
-    await Promise.all([loadCurrentRun(), loadRecentPublished(), loadRecentRuns(), loadPendingByCategory()]);
+    await Promise.all([loadCurrentRun(), loadAbTests(), loadRecentPublished(), loadRecentRuns(), loadPendingByCategory()]);
     if (getPin()) loadPendingList();
   }
 
   if (getPin()) unlockUi();
   loadAll();
-  setInterval(loadAll, 30000);
+
+  // Realtime: instant refresh on any change instead of waiting for the poll
+  // interval — this is the actual "monitor agents in realtime" mechanism.
+  // setInterval below stays as a safety-net fallback only (60s, not 30s).
+  db.channel("pipeline-live")
+    .on("postgres_changes", { event: "*", schema: "public", table: "pipeline_runs" }, loadAll)
+    .on("postgres_changes", { event: "*", schema: "public", table: "topics" }, loadAll)
+    .on("postgres_changes", { event: "*", schema: "public", table: "thumbnail_tests" }, loadAll)
+    .subscribe();
+
+  setInterval(loadAll, 60000);
 </script>
 </body>
 </html>
