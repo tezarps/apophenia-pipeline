@@ -1,19 +1,21 @@
 """Generates 2 thumbnail variants per video (Kee-style) for the sequential
 A/B rotation driven by ab_test_check.py.
 
-Layout (corrected AGAIN 2026-06-21 — see project memory project_apophenia.md.
-First attempt: flat color box + separate character cutout, wrong. Second
-attempt: whole-frame rough painterly poster texture, also wrong — user
-clarified "painterly" was about the CHARACTER illustration style/composition,
-not the background, which must stay MINIMAL/FLAT/PLAIN, no grain/texture/
-brushwork on the background itself): one illustrated character (can have a
-hand-drawn/painted quality) sitting directly on a flat, solid, minimal-color
-background — same flat color extends behind/around the character, no hard
-box edge, no separate panel. Text is plain WHITE, no outline, no drop shadow
-(an explicit correction — earlier version had a heavy black stroke).
+Layout, 3rd correction 2026-06-21 (see project memory project_apophenia.md
+for the full back-and-forth — 1st attempt: flat color box + separate
+character cutout, wrong. 2nd: whole-frame rough painterly poster texture,
+also wrong. 3rd: flat zero-texture background, also too far — user shared a
+close-up reference crop showing the background DOES have visible canvas/paper
+grain texture, just not heavy brushwork, and the character IS vintage-comic
+ink-illustrated, not a flat sticker): background is a TEXTURED canvas (subtle
+grain, not flat-fill, not heavy brushstrokes either) using Apophenia's own
+established palette (warm amber/gold + deep indigo — see agents/image_agent.py
+_STYLE_SUFFIX, same brand identity, just at thumbnail/poster scale). Character
+is a vintage-comic ink illustration with halftone-dot texture — a symbolic/
+quirky object or figure (in the reference: a hand with a face drawn on the
+palm), not a literal portrait. Text is off-white/cream, no outline, no shadow.
 
-Font: Bebas Neue (assets/fonts/BebasNeue-Regular.ttf) — tall, narrow,
-minimal, no flourishes; explicitly requested over Anton/Archivo Black.
+Font: Bebas Neue (assets/fonts/BebasNeue-Regular.ttf).
 """
 import io
 import json
@@ -28,37 +30,46 @@ client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
 THUMBNAILS_DIR = BASE_DIR / "thumbnails"
 THUMBNAIL_FONT_PATH = BASE_DIR / "assets" / "fonts" / "BebasNeue-Regular.ttf"
 THUMB_SIZE = (1280, 720)
+TEXT_COLOR = (245, 238, 222)  # off-white/cream, not pure white — matches the vintage-aged palette
 
-# Rotated by topic id — Kee's own thumbnails vary background color per video
-# (blue, black, tan, red/yellow) while keeping a flat, minimal, plain field.
-_BG_PALETTE = ["solid deep red", "solid navy blue", "solid black", "solid mustard yellow", "solid forest green"]
+# Apophenia's own brand palette (see agents/image_agent.py) at thumbnail scale —
+# variations on warm amber/gold vs. deep indigo, rotated by topic id, NOT
+# arbitrary unrelated hues.
+_BG_PALETTE = [
+    "deep indigo-navy canvas with a warm amber undertone",
+    "warm amber-gold canvas with deep indigo shadow undertone",
+    "deep charcoal-indigo canvas",
+    "muted burnt-orange canvas with dark undertone",
+    "deep teal-indigo canvas with a warm accent",
+]
 _TEXT_SIDE = ["right", "left"]
 
 _SCENE_PROMPT_SYSTEM = """You write a single image-generation prompt for a YouTube thumbnail \
-illustration. The background MUST be a flat, solid, completely minimal plain color — NO texture, NO \
-grain, NO gradient, NO additional painted background elements, just one flat clean color filling the \
-frame, the way a simple poster or sticker uses a flat color field. Do not describe any background \
-detail beyond the flat color itself.
+illustration in Apophenia's established visual identity: vintage-comic illustration with visible \
+halftone-dot texture, gouache and ink rendering (see the channel's in-video illustration style).
 
-Against that flat background, describe ONE illustrated character (a hand-drawn / painted illustration \
-style is fine FOR THE CHARACTER ONLY — simple, a little strange or iconic, like a bold character sticker \
-or mascot illustration, NOT photorealistic) positioned toward the {character_side} side of the frame, \
-sitting directly on the flat color with no box, panel, or border around it. Leave the {text_side} side \
-of the frame empty flat color with nothing in it (that's where text goes later).
+Background: a textured canvas with subtle visible grain (like aged paper or canvas texture) — NOT a \
+flat zero-texture fill, but also NOT covered in heavy visible brushstrokes; the grain should be subtle \
+and even across the frame. Dominant background tone: {bg_color}.
 
-Given a psychological archetype, the character should be a composite/generic figure or symbolic object \
-(not a real person) whose emotional core reads through a simple visual idea — an object, a posture, a \
-small symbolic detail — rather than a realistic distorted face (avoid words like grimace, twisted, \
-contorted, anguished — these get flagged by the image model's safety filter). Background flat color: \
-{bg_color}. No text, no logos, no real/identifiable person.
+Against that textured background, describe ONE vintage-comic ink-illustrated character or symbolic \
+object — a little strange or quirky, like a single iconic visual idea (an object personified, a hand, \
+an eye, a small figure), not a literal realistic portrait — positioned toward the {character_side} side \
+of the frame. Leave the {text_side} side of the frame relatively open (just the textured background, no \
+important detail) so text can be overlaid there later.
+
+Given a psychological archetype, the character/object's emotional core should read through a simple, \
+slightly surreal visual idea rather than a realistic distorted face (avoid words like grimace, twisted, \
+contorted, anguished — these get flagged by the image model's safety filter). No text, no logos, no \
+real/identifiable person.
 
 Return ONLY the prompt string, nothing else."""
 
 _SCENE_PROMPT_FALLBACK_TEMPLATE = (
-    "A simple bold character illustration, sticker/mascot style, positioned toward the "
-    "{character_side} side of the frame, sitting on a completely flat solid {bg_color} background "
-    "with no texture or gradient, {text_side} side left empty flat color, no text, no real person, "
-    "not photorealistic"
+    "Vintage-comic ink illustration with halftone-dot texture, a textured canvas background with "
+    "subtle grain, dominant tone {bg_color}, one quirky symbolic illustrated object or small figure "
+    "positioned toward the {character_side} side of the frame, {text_side} side left relatively open "
+    "with just textured background, no text, no real person, not photorealistic"
 )
 
 _HOOK_TEXT_SYSTEM = """You write thumbnail hook text for a psychology-essay YouTube channel (style: \
@@ -146,8 +157,7 @@ def _compose_thumbnail(scene_bytes, hook_text, text_side, out_path):
     y = (THUMB_SIZE[1] - total_h) // 2
     x = margin if text_side == "left" else THUMB_SIZE[0] // 2 + margin // 2
     for i, line in enumerate(lines):
-        # Plain white fill, no outline, no shadow — explicit correction 2026-06-21.
-        draw.text((x, y + i * line_height), line, font=font, fill=(255, 255, 255))
+        draw.text((x, y + i * line_height), line, font=font, fill=TEXT_COLOR)
 
     canvas.save(out_path, quality=95)
 
