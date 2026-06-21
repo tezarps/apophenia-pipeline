@@ -18,35 +18,78 @@
     --text: #ece8f5;
     --muted: #8c89ab;
     --amber: #e8a23d;
-    --amber-dim: #b97f2c;
+    --amber-soft: rgba(232,162,61,0.15);
+    --amber-text: #1a1306;
     --indigo: #5b67c4;
     --green: #5fd896;
     --red: #f2697a;
     --blue: #6fa8f5;
+    --shadow: 0 1px 2px rgba(0,0,0,0.4);
+  }
+  html[data-theme="light"] {
+    --bg: #f6f3ee;
+    --bg-grain: radial-gradient(circle at 15% 0%, rgba(232,162,61,0.08), transparent 40%),
+                radial-gradient(circle at 85% 90%, rgba(91,103,196,0.06), transparent 45%);
+    --card: #ffffff;
+    --card-hi: #fbf8f2;
+    --border: #ece6da;
+    --text: #211f33;
+    --muted: #8c87a0;
+    --amber: #d68a1f;
+    --amber-soft: rgba(214,138,31,0.12);
+    --amber-text: #ffffff;
+    --indigo: #5b67c4;
+    --green: #1fa363;
+    --red: #d8425a;
+    --blue: #2f6fd6;
+    --shadow: 0 1px 3px rgba(40,30,10,0.07), 0 1px 2px rgba(40,30,10,0.04);
   }
   * { box-sizing: border-box; }
+  html, body { margin: 0; }
   body {
-    margin: 0;
     font-family: "Inter", -apple-system, sans-serif;
     background-color: var(--bg);
     background-image: var(--bg-grain);
     color: var(--text);
-    padding: 20px 16px 40px;
-    max-width: 640px;
-    margin: 0 auto;
+    padding: 20px 16px 48px;
     -webkit-font-smoothing: antialiased;
+    transition: background-color 0.25s, color 0.25s;
   }
+  .wrap { max-width: 1080px; margin: 0 auto; }
   .display { font-family: "Bebas Neue", "Inter", sans-serif; letter-spacing: 0.02em; }
-  header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+
+  header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; gap: 12px; flex-wrap: wrap; }
   .brand { display: flex; align-items: baseline; gap: 10px; }
   h1.display { font-size: 36px; color: var(--amber); margin: 0; line-height: 1; }
   .live-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 0 rgba(95,216,150,0.6); animation: pulse-dot 2s infinite; }
   .live-dot.off { background: var(--muted); animation: none; box-shadow: none; }
   @keyframes pulse-dot { 0% { box-shadow: 0 0 0 0 rgba(95,216,150,0.55); } 70% { box-shadow: 0 0 0 7px rgba(95,216,150,0); } 100% { box-shadow: 0 0 0 0 rgba(95,216,150,0); } }
+  .header-right { display: flex; align-items: center; gap: 10px; }
+  .theme-toggle { background: var(--card); border: 1px solid var(--border); color: var(--text); width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 16px; box-shadow: var(--shadow); }
   .subtitle { color: var(--muted); font-size: 13px; margin: 6px 0 22px; display: flex; align-items: center; gap: 6px; }
 
-  .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 18px; margin-bottom: 16px; position: relative; overflow: hidden; }
-  .card::before { content: ""; position: absolute; top: 0; left: 0; width: 3px; height: 100%; background: linear-gradient(180deg, var(--amber), transparent); opacity: 0.5; }
+  /* ---- Stat cards row ---- */
+  .stat-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 18px; }
+  .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 18px; box-shadow: var(--shadow); }
+  .stat-card.hero { background: linear-gradient(135deg, var(--amber), var(--amber-dim, var(--amber))); color: var(--amber-text); border: none; }
+  .stat-card-top { display: flex; justify-content: space-between; align-items: center; font-size: 13px; font-weight: 600; margin-bottom: 14px; opacity: 0.85; }
+  .stat-card.hero .stat-card-top { opacity: 0.92; }
+  .stat-arrow { width: 26px; height: 26px; border-radius: 50%; background: rgba(140,137,171,0.15); display: flex; align-items: center; justify-content: center; font-size: 13px; }
+  .stat-card.hero .stat-arrow { background: rgba(255,255,255,0.25); }
+  .stat-num { font-size: 32px; font-weight: 800; line-height: 1; margin-bottom: 6px; }
+  .stat-hint { font-size: 11px; color: var(--muted); }
+  .stat-card.hero .stat-hint { color: rgba(255,255,255,0.75); }
+
+  /* ---- Main grid ---- */
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
+  .grid .span-2 { grid-column: 1 / -1; }
+  @media (max-width: 860px) {
+    .stat-cards { grid-template-columns: repeat(2, 1fr); }
+    .grid { grid-template-columns: 1fr; }
+  }
+
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 18px; margin-bottom: 0; position: relative; overflow: hidden; box-shadow: var(--shadow); transition: box-shadow 0.2s, transform 0.2s; }
+  .card::before { content: ""; position: absolute; top: 0; left: 0; width: 3px; height: 100%; background: linear-gradient(180deg, var(--amber), transparent); opacity: 0.6; }
   .card h2 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.09em; color: var(--muted); margin: 0 0 14px; display: flex; justify-content: space-between; align-items: center; font-weight: 700; }
 
   /* Live pipeline stepper */
@@ -57,7 +100,7 @@
   .step:last-child .step-line { display: none; }
   .step-dot { width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 15px; background: var(--bg); border: 2px solid var(--border); z-index: 1; transition: all 0.3s; }
   .step.done .step-dot { border-color: var(--green); background: rgba(95,216,150,0.12); }
-  .step.running .step-dot { border-color: var(--amber); background: rgba(232,162,61,0.15); animation: pulse-ring 1.6s infinite; }
+  .step.running .step-dot { border-color: var(--amber); background: var(--amber-soft); animation: pulse-ring 1.6s infinite; }
   .step.error .step-dot { border-color: var(--red); background: rgba(242,105,122,0.15); }
   @keyframes pulse-ring { 0% { box-shadow: 0 0 0 0 rgba(232,162,61,0.5); } 70% { box-shadow: 0 0 0 8px rgba(232,162,61,0); } 100% { box-shadow: 0 0 0 0 rgba(232,162,61,0); } }
   .step-body { padding-top: 4px; flex: 1; }
@@ -83,11 +126,11 @@
   .cat-pill { display: inline-flex; align-items: center; gap: 6px; background: var(--card-hi); border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; margin: 3px; font-size: 12px; }
   .cat-pill strong { color: var(--amber); }
   .cat-grid { display: flex; flex-wrap: wrap; gap: 0; }
-  .refresh-note { text-align: center; color: var(--muted); font-size: 11px; margin-top: 8px; margin-bottom: 24px; display: flex; justify-content: center; gap: 14px; }
+  .refresh-note { text-align: center; color: var(--muted); font-size: 11px; margin-top: 18px; display: flex; justify-content: center; gap: 14px; flex-wrap: wrap; }
   .refresh-note a { color: var(--muted); font-weight: 400; }
   .refresh-note a:hover { color: var(--amber); }
 
-  button { background: var(--amber); color: #1a1306; border: none; border-radius: 8px; padding: 8px 14px; font-size: 13px; font-weight: 700; cursor: pointer; transition: transform 0.1s; }
+  button { background: var(--amber); color: var(--amber-text); border: none; border-radius: 8px; padding: 8px 14px; font-size: 13px; font-weight: 700; cursor: pointer; transition: transform 0.1s; }
   button:active { transform: scale(0.97); }
   button.secondary { background: var(--card-hi); color: var(--text); border: 1px solid var(--border); }
   button.danger { background: rgba(242,105,122,0.15); color: var(--red); }
@@ -104,78 +147,107 @@
   .locked-note { color: var(--muted); font-size: 11px; font-weight: 600; }
 
   .ab-card { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 12px; margin-bottom: 8px; }
-  .ab-variant { display: inline-flex; align-items: center; gap: 4px; padding: 2px 9px; border-radius: 6px; font-size: 11px; font-weight: 700; background: var(--amber); color: #1a1306; }
+  .ab-variant { display: inline-flex; align-items: center; gap: 4px; padding: 2px 9px; border-radius: 6px; font-size: 11px; font-weight: 700; background: var(--amber); color: var(--amber-text); }
   .ab-bar-wrap { display: flex; gap: 8px; align-items: center; margin-top: 8px; }
   .ab-bar { flex: 1; height: 6px; border-radius: 3px; background: var(--border); overflow: hidden; }
-  .ab-bar-fill { height: 100%; background: var(--amber); }
+  .ab-bar-fill { height: 100%; background: var(--amber); transition: width 0.4s; }
   .ab-ctr { font-size: 11px; color: var(--muted); min-width: 48px; text-align: right; }
 </style>
 </head>
 <body>
+<div class="wrap">
   <header>
     <div class="brand">
       <h1 class="display">APOPHENIA</h1>
       <span id="live-dot" class="live-dot off"></span>
     </div>
+    <div class="header-right">
+      <button class="theme-toggle" id="theme-toggle" title="Toggle tema" onclick="toggleTheme()">🌙</button>
+    </div>
   </header>
   <div class="subtitle" id="subtitle-text">Pipeline monitor — realtime</div>
 
-  <div class="card">
-    <h2>Run Saat Ini</h2>
-    <div id="current-run">
-      <div class="empty">Memuat...</div>
+  <div class="stat-cards">
+    <div class="stat-card hero">
+      <div class="stat-card-top">Total Topik <span class="stat-arrow">↗</span></div>
+      <div class="stat-num" id="stat-total">–</div>
+      <div class="stat-hint">Semua arketipe di antrian</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-card-top">Published <span class="stat-arrow">↗</span></div>
+      <div class="stat-num" id="stat-published">–</div>
+      <div class="stat-hint">Episode live di YouTube</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-card-top">Pending <span class="stat-arrow">↗</span></div>
+      <div class="stat-num" id="stat-pending">–</div>
+      <div class="stat-hint">Nunggu giliran produksi</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-card-top">Failed <span class="stat-arrow">↗</span></div>
+      <div class="stat-num" id="stat-failed">–</div>
+      <div class="stat-hint">Perlu di-retry manual</div>
     </div>
   </div>
 
-  <div class="card">
-    <h2>Thumbnail A/B Test</h2>
-    <div id="ab-tests" class="empty">Memuat...</div>
-  </div>
-
-  <div class="card">
-    <h2>Episode Terbaru</h2>
-    <div id="recent-published" class="empty">Memuat...</div>
-  </div>
-
-  <div class="card">
-    <h2>Run Terakhir</h2>
-    <div id="recent-runs" class="empty">Memuat...</div>
-  </div>
-
-  <div class="card">
-    <h2>Topik Pending per Kategori</h2>
-    <div id="pending-by-category" class="empty">Memuat...</div>
-  </div>
-
-  <div class="card">
-    <h2>
-      Kelola Antrian
-      <span id="pin-status" class="locked-note">🔒 Terkunci</span>
-    </h2>
-    <div id="pin-gate">
-      <input id="pin-input" type="password" placeholder="PIN" inputmode="numeric">
-      <button onclick="savePin()">Buka</button>
-    </div>
-    <div id="manage-queue" style="display:none">
-      <div class="form-grid">
-        <input id="new-category" list="category-suggestions" placeholder="Kategori (e.g. avoidant-attachment)">
-        <datalist id="category-suggestions">
-          <option value="avoidant-attachment">
-          <option value="fawn-response">
-          <option value="enmeshment">
-          <option value="invisibility">
-          <option value="social-isolation">
-          <option value="perfectionism">
-          <option value="hypervigilance">
-          <option value="self-abandonment">
-          <option value="parentification">
-          <option value="emotional-numbness">
-        </datalist>
-        <input id="new-topic" placeholder="Nama archetype (e.g. The Compulsive Apologizer)">
-        <input id="new-angle" placeholder="Angle/hook (opsional)">
-        <button onclick="addTopic()">+ Tambah ke Antrian</button>
+  <div class="grid">
+    <div class="card span-2">
+      <h2>Run Saat Ini</h2>
+      <div id="current-run">
+        <div class="empty">Memuat...</div>
       </div>
-      <div id="pending-list" class="empty">Memuat...</div>
+    </div>
+
+    <div class="card">
+      <h2>Thumbnail A/B Test</h2>
+      <div id="ab-tests" class="empty">Memuat...</div>
+    </div>
+
+    <div class="card">
+      <h2>Episode Terbaru</h2>
+      <div id="recent-published" class="empty">Memuat...</div>
+    </div>
+
+    <div class="card">
+      <h2>Run Terakhir</h2>
+      <div id="recent-runs" class="empty">Memuat...</div>
+    </div>
+
+    <div class="card">
+      <h2>Topik Pending per Kategori</h2>
+      <div id="pending-by-category" class="empty">Memuat...</div>
+    </div>
+
+    <div class="card span-2">
+      <h2>
+        Kelola Antrian
+        <span id="pin-status" class="locked-note">🔒 Terkunci</span>
+      </h2>
+      <div id="pin-gate">
+        <input id="pin-input" type="password" placeholder="PIN" inputmode="numeric">
+        <button onclick="savePin()">Buka</button>
+      </div>
+      <div id="manage-queue" style="display:none">
+        <div class="form-grid">
+          <input id="new-category" list="category-suggestions" placeholder="Kategori (e.g. avoidant-attachment)">
+          <datalist id="category-suggestions">
+            <option value="avoidant-attachment">
+            <option value="fawn-response">
+            <option value="enmeshment">
+            <option value="invisibility">
+            <option value="social-isolation">
+            <option value="perfectionism">
+            <option value="hypervigilance">
+            <option value="self-abandonment">
+            <option value="parentification">
+            <option value="emotional-numbness">
+          </datalist>
+          <input id="new-topic" placeholder="Nama archetype (e.g. The Compulsive Apologizer)">
+          <input id="new-angle" placeholder="Angle/hook (opsional)">
+          <button onclick="addTopic()">+ Tambah ke Antrian</button>
+        </div>
+        <div id="pending-list" class="empty">Memuat...</div>
+      </div>
     </div>
   </div>
 
@@ -184,12 +256,29 @@
     <a href="https://github.com/tezarps/apophenia-pipeline/actions" target="_blank">GitHub Actions →</a>
     <a href="https://www.youtube.com/@heyapophenia" target="_blank">Channel →</a>
   </div>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script>
   const SUPABASE_URL = "https://zhqlvvvlwlrmfyxslqpk.supabase.co";
   const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_KarTnpOZqfJGkBTLdacKqg_v6bQW9O9";
   const db = supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+
+  // ---- Theme toggle (persisted, defaults to OS preference) ----
+  function applyTheme(theme) {
+    document.documentElement.setAttribute("data-theme", theme);
+    document.getElementById("theme-toggle").textContent = theme === "light" ? "☀️" : "🌙";
+    localStorage.setItem("apophenia_theme", theme);
+  }
+  function toggleTheme() {
+    const current = document.documentElement.getAttribute("data-theme") || "dark";
+    applyTheme(current === "light" ? "dark" : "light");
+  }
+  (function initTheme() {
+    const saved = localStorage.getItem("apophenia_theme");
+    const prefersLight = window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches;
+    applyTheme(saved || (prefersLight ? "light" : "dark"));
+  })();
 
   const AGENT_ORDER = ["oracle", "scribe", "voice", "architect", "herald", "messenger"];
   const AGENTS = {
@@ -218,6 +307,31 @@
   function esc(s) {
     if (s == null) return "";
     return String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  }
+
+  function animateNum(el, target) {
+    const start = Number(el.textContent) || 0;
+    if (start === target) { el.textContent = target; return; }
+    const duration = 500, t0 = performance.now();
+    function tick(t) {
+      const p = Math.min(1, (t - t0) / duration);
+      el.textContent = Math.round(start + (target - start) * p);
+      if (p < 1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  }
+
+  async function loadStatCards() {
+    const [total, published, pending, failed] = await Promise.all([
+      db.from("topics").select("*", { count: "exact", head: true }),
+      db.from("topics").select("*", { count: "exact", head: true }).eq("status", "published"),
+      db.from("topics").select("*", { count: "exact", head: true }).eq("status", "pending"),
+      db.from("topics").select("*", { count: "exact", head: true }).eq("status", "failed"),
+    ]);
+    animateNum(document.getElementById("stat-total"), total.count || 0);
+    animateNum(document.getElementById("stat-published"), published.count || 0);
+    animateNum(document.getElementById("stat-pending"), pending.count || 0);
+    animateNum(document.getElementById("stat-failed"), failed.count || 0);
   }
 
   // Next scheduled cron slot — mirrors agents/upload_agent.py PUBLISH_WEEKDAYS
@@ -455,7 +569,7 @@
   }
 
   async function loadAll() {
-    await Promise.all([loadCurrentRun(), loadAbTests(), loadRecentPublished(), loadRecentRuns(), loadPendingByCategory()]);
+    await Promise.all([loadStatCards(), loadCurrentRun(), loadAbTests(), loadRecentPublished(), loadRecentRuns(), loadPendingByCategory()]);
     if (getPin()) loadPendingList();
   }
 
