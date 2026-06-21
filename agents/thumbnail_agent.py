@@ -1,21 +1,21 @@
 """Generates 2 thumbnail variants per video (Kee-style) for the sequential
 A/B rotation driven by ab_test_check.py.
 
-Layout, 3rd correction 2026-06-21 (see project memory project_apophenia.md
-for the full back-and-forth — 1st attempt: flat color box + separate
-character cutout, wrong. 2nd: whole-frame rough painterly poster texture,
-also wrong. 3rd: flat zero-texture background, also too far — user shared a
-close-up reference crop showing the background DOES have visible canvas/paper
-grain texture, just not heavy brushwork, and the character IS vintage-comic
-ink-illustrated, not a flat sticker): background is a TEXTURED canvas (subtle
-grain, not flat-fill, not heavy brushstrokes either) using Apophenia's own
-established palette (warm amber/gold + deep indigo — see agents/image_agent.py
-_STYLE_SUFFIX, same brand identity, just at thumbnail/poster scale). Character
-is a vintage-comic ink illustration with halftone-dot texture — a symbolic/
-quirky object or figure (in the reference: a hand with a face drawn on the
-palm), not a literal portrait. Text is off-white/cream, no outline, no shadow.
+STYLE LOCKED 2026-06-21 — confirmed by user against a real Kee reference crop,
+do not redesign again without new explicit direction (3 prior iterations
+already rejected, see project memory project_apophenia.md for the full
+back-and-forth): background is a TEXTURED canvas (subtle grain, NOT a flat
+zero-texture fill, NOT heavy visible brushstrokes either) using Apophenia's
+own established palette (warm amber/gold + deep indigo — see
+agents/image_agent.py _STYLE_SUFFIX, same brand identity, just at thumbnail/
+poster scale). Character is a vintage-comic ink illustration with
+halftone-dot texture — a symbolic/quirky object or figure (e.g. trembling
+clasped hands, a hand with a face drawn on the palm), not a literal portrait.
+Text is off-white/cream Bebas Neue, no outline, no shadow.
 
-Font: Bebas Neue (assets/fonts/BebasNeue-Regular.ttf).
+Always generates exactly 2 variants (thumb_A.jpg, thumb_B.jpg) sharing the
+same generated scene image — only the hook text differs, which is the actual
+thing ab_test_check.py's sequential rotation is testing.
 """
 import io
 import json
