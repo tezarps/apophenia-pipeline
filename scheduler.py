@@ -9,8 +9,8 @@ sys.path.insert(0, str(Path(__file__).parent))
 import supabase_io as sb
 from agents.script_agent import generate_script
 from agents.tts_agent import generate_audio
-from agents.assembly_agent import create_video
-from agents.image_agent import generate_images
+from agents.assembly_agent import create_video, _audio_duration
+from agents.image_agent import generate_images, images_for_duration
 from agents.thumbnail_agent import generate_thumbnails
 from agents.caption_agent import annotate_script, build_ass, blackscreen_spans as compute_blackscreen_spans
 from agents.metadata_agent import generate_metadata
@@ -29,10 +29,16 @@ def _has_local_images(local_dir):
     return local_dir.exists() and any(p.suffix.lower() in (".jpg", ".jpeg", ".png") for p in local_dir.glob("*"))
 
 
-def _ensure_local_images(category, slug, topic=None, angle=None):
+def _ensure_local_images(category, slug, topic=None, angle=None, audio_path=None):
     """Pull images down from Supabase Storage if not already on disk; generate
     via Nano Banana 2 (agents/image_agent.py) if Supabase has none either, then
-    cache up so future re-renders don't pay for generation again."""
+    cache up so future re-renders don't pay for generation again.
+
+    Image count scales with actual audio duration (see images_for_duration) —
+    a fixed count regardless of length meant long videos cycled through the
+    same handful of images many times over, flagged as repetitive/boring by
+    user feedback on the first published video. See project memory
+    project_apophenia.md."""
     local_dir = IMAGES_DIR / category.lower() / slug.lower()
     if _has_local_images(local_dir):
         return
@@ -41,7 +47,8 @@ def _ensure_local_images(category, slug, topic=None, angle=None):
         sb.download_topic_images(category, slug, local_dir)
     except FileNotFoundError:
         print(f"    None in Supabase either — generating via Nano Banana 2...")
-        generate_images(topic, angle, category, slug)
+        count = images_for_duration(_audio_duration(audio_path)) if audio_path else None
+        generate_images(topic, angle, category, slug, **({"count": count} if count else {}))
         sb.upload_topic_images(category, slug, local_dir)
 
 
@@ -163,7 +170,7 @@ def run(audio_only=False):
         print("\n[4/6] The Architect — assembling video...")
         agent_start("architect", "Running FFmpeg...")
         sb.run_update_agent(sb_run_id, "architect")
-        _ensure_local_images(topic["category"], topic_slug, topic=topic["topic"], angle=topic.get("angle", ""))
+        _ensure_local_images(topic["category"], topic_slug, topic=topic["topic"], angle=topic.get("angle", ""), audio_path=audio_path)
         spans = compute_blackscreen_spans(word_timings)
         ass_path = OUTPUT_DIR / "captions" / f"{topic_id}.ass"
         ass_path.parent.mkdir(parents=True, exist_ok=True)

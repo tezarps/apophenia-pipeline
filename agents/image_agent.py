@@ -15,7 +15,23 @@ from config import ANTHROPIC_API_KEY, GEMINI_IMAGE_API_KEY, NANO_BANANA_MODEL, H
 
 client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
 
-IMAGE_COUNT = 12
+IMAGE_COUNT = 12  # fallback only — generate_images() is normally called with an explicit
+                  # duration-derived count, see images_for_duration() below
+
+# Benchmark from analyzing the actual "Kee" reference channel via claude-watch scene-change
+# detection (2026-06-21): 80 detected shot changes over an 18-min/1081s video = ~13.5s average
+# shot duration. That's the right reference for THIS content (active-engagement essay) — NOT
+# "Pendongeng Tidur" (45s avg shot duration), which is sleep/ambient content deliberately paced
+# slower. The old fixed IMAGE_COUNT=12 + assembly_agent capping to 10 candidates meant a 9-min
+# video cycled through only 10 images ~5 times each — visibly repetitive, flagged by user
+# feedback on the first published video. See project memory project_apophenia.md.
+_TARGET_SHOT_SECONDS = 13.5
+_MIN_IMAGES, _MAX_IMAGES = 18, 50
+
+
+def images_for_duration(duration_sec):
+    ideal = round(duration_sec / _TARGET_SHOT_SECONDS)
+    return max(_MIN_IMAGES, min(_MAX_IMAGES, ideal))
 
 # Rendering TREATMENT borrowed from "Pendongeng Tidur" — chiaroscuro composition, painterly
 # illustration, a small figure within its surroundings. The OBJECTS/SETTING are NOT borrowed
@@ -56,7 +72,7 @@ Return ONLY a JSON array of {n} strings, nothing else."""
 def _generate_scene_prompts(topic, angle, n=IMAGE_COUNT):
     msg = client.messages.create(
         model=HAIKU_MODEL,
-        max_tokens=1500,
+        max_tokens=max(1500, n * 130),  # scales for the higher end of images_for_duration()'s range
         system=_PROMPTS_SYSTEM.format(n=n),
         messages=[{"role": "user", "content": f"Archetype: {topic}\nAngle: {angle}"}],
     )
