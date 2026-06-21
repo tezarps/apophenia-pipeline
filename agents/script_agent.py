@@ -62,7 +62,12 @@ any real historical figure, celebrity, or identifiable individual. No likeness, 
 Write the full script in five babak (acts), in order, as one continuous flowing piece — no headers, \
 no labels, no act numbers in the output:
 
-BABAK 1 — HOOK. {hook_instruction}
+BABAK 1 — HOOK. This is a YouTube video — the viewer decides whether to keep watching within the \
+first 5-8 spoken seconds (roughly the first 1-2 sentences), before anything else in the script has a \
+chance to land. Those opening words must make the specific right viewer feel "wait, that's me" \
+immediately — concrete and instantly recognizable, not a warm-up or a general statement about \
+psychology. Open a curiosity gap (something the viewer wants explained) that only gets resolved \
+later in the video, not in the next sentence. {hook_instruction}
 
 BABAK 2 — THE WOUND. Explore where this pattern was likely formed — a believable, generic formative \
 scenario (childhood home dynamic, an early relationship, a repeated small moment), written in second \
@@ -82,7 +87,11 @@ the video.
 BABAK 5 — THE STRATEGY + CLOSE. One or two concrete, practical things the viewer can actually try \
 (specific, not generic "practice self-compassion" platitudes). Then close by looping back to the \
 exact hook/title from babak 1 — land on the same image or question you opened with, now re-seen \
-through everything explained since.
+through everything explained since. After that emotional loop-back lands, add ONE final short \
+sentence that names the channel naturally as a soft invitation to keep watching more — something \
+like "There's more of this every week here on Apophenia" or "If this is you, you'll find more of \
+yourself here on Apophenia" — channel name "Apophenia" must appear, said like a person talking, \
+never like a corporate subscribe-and-like ad read.
 
 Point of view: second person ("you"), present tense, conversational, throughout (except the brief \
 first-person hook moment in the "confession" variant, if used). Tone: warm, a little intimate, calm \
@@ -129,9 +138,14 @@ Other rules:
 defining it the first time it's used — a viewer with zero psych background should follow it.
 3. Make sure the ending explicitly echoes the opening hook's exact image or question — this loop-back \
 is mandatory, check it's actually there and sharpen it if it's vague.
-4. Keep delivery conversational, not academic. No citations, no "research shows" hedging.
-5. Do not introduce any named historical or real individual anywhere in the script.
-6. Do NOT add chapter headers, babak labels, or section markers.
+4. Make sure the very first 1-2 sentences are an instantly-recognizable "wait, that's me" moment, \
+specific and concrete — not a general statement about psychology or this archetype. Sharpen it if \
+it reads slow or warmed-up instead of immediately gripping.
+5. Make sure the final sentence is a natural, non-corporate-sounding mention of "Apophenia" inviting \
+the viewer to keep watching more — add one if it's missing, sharpen it if it sounds like an ad read.
+6. Keep delivery conversational, not academic. No citations, no "research shows" hedging.
+7. Do not introduce any named historical or real individual anywhere in the script.
+8. Do NOT add chapter headers, babak labels, or section markers.
 
 Draft:
 {draft}

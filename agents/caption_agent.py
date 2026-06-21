@@ -134,21 +134,18 @@ def _fmt_ts(t):
     return f"{h:01d}:{m:02d}:{s:05.2f}"
 
 
-def build_ass(word_timings, out_path, words_on_screen=4):
-    """Writes an .ass file: a short rolling window of `words_on_screen` words
-    is shown at a time (Kee-style word-by-word reveal), current/recent
-    highlighted words rendered in the WordHi style."""
+def build_ass(word_timings, out_path):
+    """Writes an .ass file: exactly ONE word on screen at a time, shown only
+    for the exact span the narrator is actually speaking it (no trailing
+    window of previous words — an earlier version showed a 4-word rolling
+    window, which reads as the same words flickering/repeating on screen;
+    confirmed bad in the first real published video, 2026-06-21). Highlighted
+    words render in the WordHi style (yellow/orange)."""
     lines = [_ass_header()]
-    n = len(word_timings)
-    for i, w in enumerate(word_timings):
-        window = word_timings[max(0, i - words_on_screen + 1): i + 1]
-        text = " ".join(
-            (f"{{\\c{HIGHLIGHT_COLOR_ASS}}}" + wd["text"] + "{\\c&H00FFFFFF&}") if wd["highlight"] else wd["text"]
-            for wd in window
-        )
-        style = "Word"
+    for w in word_timings:
+        style = "WordHi" if w["highlight"] else "Word"
         lines.append(
-            f"Dialogue: 0,{_fmt_ts(w['start'])},{_fmt_ts(w['end'])},{style},,0,0,0,,{text}"
+            f"Dialogue: 0,{_fmt_ts(w['start'])},{_fmt_ts(w['end'])},{style},,0,0,0,,{w['text']}"
         )
     out_path.write_text("\n".join(lines), encoding="utf-8")
     return out_path
