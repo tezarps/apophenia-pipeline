@@ -1,20 +1,22 @@
-"""Generates 2 thumbnail variants per video (Kee-style layout) for the
-sequential A/B rotation driven by ab_test_check.py.
+"""Generates 2 thumbnail variants per video (Kee-style) for the sequential
+A/B rotation driven by ab_test_check.py.
 
-Layout: flat saturated color background, a painterly character portrait
-filling roughly half the frame (chiaroscuro treatment, same rendering style
-as the in-video scene images — see agents/image_agent.py), bold hook text on
-the empty half. Variant A and B differ in hook phrasing/emphasis and/or
-background accent color, NOT in the underlying character art — this isolates
-the thing actually being tested (the text hook) rather than confounding it
-with a different illustration.
+Layout (corrected 2026-06-21 after direct comparison against real Kee
+thumbnails — see project memory project_apophenia.md): ONE full-bleed
+painterly/folk-art illustration covering the entire 1280x720 frame, character
+painted directly into the same textured canvas (NOT a flat color block on one
+side + a separate character cutout composited on top — that was the original,
+wrong reading of the reference). Bold poster text is overlaid straight on top
+of the painterly background, white fill with a black outline, no per-word
+color highlight (the real references don't have one). Variant A and B differ
+in hook phrasing only, sharing the same generated scene — isolates the thing
+actually being tested.
 
-Font: Archivo Black (assets/fonts/ArchivoBlack-Regular.ttf) — heavy geometric
-sans, matches the Kee thumbnail reference look. Cinzel-Bold (serif) is a
-Narava mythology-era leftover, not used here.
+Font: Anton (assets/fonts/Anton-Regular.ttf) — tall poster-bold condensed
+sans, much closer to the reference than Archivo Black's squarer geometric look.
 """
+import io
 import json
-import textwrap
 
 import anthropic
 from PIL import Image, ImageDraw, ImageFont
@@ -24,33 +26,37 @@ from config import ANTHROPIC_API_KEY, GEMINI_IMAGE_API_KEY, NANO_BANANA_MODEL, H
 client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
 
 THUMBNAILS_DIR = BASE_DIR / "thumbnails"
-THUMBNAIL_FONT_PATH = BASE_DIR / "assets" / "fonts" / "ArchivoBlack-Regular.ttf"
+THUMBNAIL_FONT_PATH = BASE_DIR / "assets" / "fonts" / "Anton-Regular.ttf"
 THUMB_SIZE = (1280, 720)
-HIGHLIGHT_COLOR = (255, 184, 28)  # same yellow/orange used for caption keyword highlights
 
-# Rotated by topic id so the channel isn't always red, always blue — Kee's own
-# thumbnails vary background color per video while keeping the same layout DNA.
-_BG_PALETTE = [(20, 20, 20), (214, 40, 40), (245, 196, 0), (30, 70, 150)]
+# Rotated by topic id, alternating which side stays open for text — Kee's own
+# thumbnails put the character left, right, or center depending on the piece.
+_TONE_PALETTE = ["deep blood red", "dark navy blue", "matte black", "warm mustard yellow", "forest green"]
+_TEXT_SIDE = ["right", "left"]
 
-_CHARACTER_PROMPT_SYSTEM = """You write a single image-generation prompt for a thumbnail character \
-portrait, in the visual style of vintage-comic painterly illustration with halftone-dot texture \
-(warm amber-gold light against deep indigo shadow, colorful, slightly surreal — NOT photorealistic, \
-NOT a literal portrait of any real person). Given a psychological archetype, describe ONE character \
-portrait, cropped at chest height, facing slightly off-camera, that hints at the archetype's \
-emotional core through SUBTLE cues only — tired eyes, a smile that doesn't quite reach the eyes, a \
-slightly far-off gaze, tension in the shoulders. Describe the face as calm/neutral at rest with one \
-small subtle subtext detail, never a dramatic or distorted expression (avoid words like grimace, \
-twisted, contorted, anguished — these get the request flagged/rejected by the image model's safety \
-filter; the psychological subtext should read in the EYES and posture, not a contorted face). No \
-background detail (it will be composited onto a flat color). No text. No real/identifiable person.
+_SCENE_PROMPT_SYSTEM = """You write a single image-generation prompt for a YouTube thumbnail \
+illustration, in the style of bold folk-art / outsider-art poster painting (think a hand-painted \
+horror-movie or true-crime-podcast poster, NOT a clean digital portrait, NOT photorealistic) — \
+visible rough brush texture and grain covering the ENTIRE frame as one continuous painted surface, \
+slightly naive/iconic character drawing rather than realistic anatomy, a bit unsettling or strange \
+the way a striking poster illustration is.
+
+Given a psychological archetype, describe ONE full-frame scene: a single iconic character or symbolic \
+figure (composite/generic, not a real person) integrated directly into the painted background — same \
+surface, same texture, no separate background — positioned toward the {character_side} side of the \
+frame, leaving the {text_side} side comparatively open/uncluttered (just textured background, no \
+important detail there) so text can be overlaid on it later. Dominant tone: {tone}. The character's \
+emotional core should read through a strange or iconic visual (an object, a posture, a symbolic prop) \
+rather than a realistic distorted face — avoid words like grimace, twisted, contorted, anguished (these \
+get flagged by the image model's safety filter). No text, no logos, no real/identifiable person.
 
 Return ONLY the prompt string, nothing else."""
 
-_CHARACTER_PROMPT_FALLBACK = (
-    "Vintage-comic painterly illustration with halftone-dot texture, warm amber-gold light "
-    "against deep indigo shadow, a person's portrait cropped at chest height, facing slightly "
-    "off-camera, calm neutral expression with a slightly distant gaze, colorful and slightly "
-    "surreal, not photorealistic, no background detail, no text"
+_SCENE_PROMPT_FALLBACK_TEMPLATE = (
+    "Bold folk-art poster painting style, rough brush texture and grain covering the entire frame, "
+    "dominant tone {tone}, a single strange iconic generic figure positioned toward the {character_side} "
+    "side of the frame, {text_side} side left open and uncluttered with just textured background, "
+    "no text, no real person, not photorealistic"
 )
 
 _HOOK_TEXT_SYSTEM = """You write thumbnail hook text for a psychology-essay YouTube channel (style: \
@@ -72,8 +78,11 @@ def _call_claude(system, user, max_tokens=300):
     return msg.content[0].text.strip()
 
 
-def _generate_character_prompt(topic, angle):
-    return _call_claude(_CHARACTER_PROMPT_SYSTEM, f"Archetype: {topic}\nAngle: {angle}")
+def _generate_scene_prompt(topic, angle, tone, character_side, text_side):
+    return _call_claude(
+        _SCENE_PROMPT_SYSTEM.format(character_side=character_side, text_side=text_side, tone=tone),
+        f"Archetype: {topic}\nAngle: {angle}",
+    )
 
 
 def _generate_hook_variants(topic, angle):
@@ -101,36 +110,24 @@ def _call_nano_banana(prompt):
     raise RuntimeError(f"No image in Nano Banana response: {data}")
 
 
-def _compose_thumbnail(bg_color, character_bytes, hook_text, out_path):
-    import io
+def _fit_cover(img, size):
+    """Resize+crop to fill `size` exactly, like CSS background-size: cover."""
+    w0, h0 = img.size
+    scale = max(size[0] / w0, size[1] / h0)
+    img = img.resize((int(w0 * scale) + 1, int(h0 * scale) + 1))
+    x0 = (img.width - size[0]) // 2
+    y0 = (img.height - size[1]) // 2
+    return img.crop((x0, y0, x0 + size[0], y0 + size[1]))
 
-    canvas = Image.new("RGB", THUMB_SIZE, bg_color)
-    char_img = Image.open(io.BytesIO(character_bytes)).convert("RGBA")
 
-    # Character fills the right half, vertically centered, cropped to frame height.
-    char_w = THUMB_SIZE[0] // 2
-    char_h = THUMB_SIZE[1]
-    char_ratio = char_img.width / char_img.height
-    target_ratio = char_w / char_h
-    if char_ratio > target_ratio:
-        new_h = char_h
-        new_w = int(new_h * char_ratio)
-    else:
-        new_w = char_w
-        new_h = int(new_w / char_ratio)
-    char_img = char_img.resize((new_w, new_h))
-    left = (new_w - char_w) // 2
-    top = (new_h - char_h) // 2
-    char_img = char_img.crop((left, top, left + char_w, top + char_h))
-    canvas.paste(char_img, (THUMB_SIZE[0] - char_w, 0), char_img)
-
+def _compose_thumbnail(scene_bytes, hook_text, text_side, out_path):
+    canvas = _fit_cover(Image.open(io.BytesIO(scene_bytes)).convert("RGB"), THUMB_SIZE)
     draw = ImageDraw.Draw(canvas)
-    font = ImageFont.truetype(str(THUMBNAIL_FONT_PATH), 92)
-    text_color = (255, 255, 255) if sum(bg_color) < 400 else (10, 10, 10)
+    font = ImageFont.truetype(str(THUMBNAIL_FONT_PATH), 88)
 
-    margin_x = 60
-    max_width = THUMB_SIZE[0] // 2 - margin_x
-    words = hook_text.split()
+    margin = 56
+    max_width = THUMB_SIZE[0] // 2 - margin
+    words = hook_text.upper().split()
     lines, current = [], ""
     for w in words:
         trial = f"{current} {w}".strip()
@@ -142,14 +139,13 @@ def _compose_thumbnail(bg_color, character_bytes, hook_text, out_path):
     if current:
         lines.append(current)
 
-    line_height = 100
+    line_height = 96
     total_h = line_height * len(lines)
     y = (THUMB_SIZE[1] - total_h) // 2
+    x = margin if text_side == "left" else THUMB_SIZE[0] // 2 + margin // 2
     for i, line in enumerate(lines):
-        # Highlight the last line's last word in yellow/orange, matching caption style.
-        color = HIGHLIGHT_COLOR if i == len(lines) - 1 else text_color
-        draw.text((margin_x, y + i * line_height), line, font=font, fill=color, stroke_width=4,
-                   stroke_fill=(0, 0, 0) if sum(bg_color) < 400 else (255, 255, 255))
+        draw.text((x, y + i * line_height), line, font=font, fill=(255, 255, 255),
+                   stroke_width=10, stroke_fill=(0, 0, 0))
 
     canvas.save(out_path, quality=95)
 
@@ -161,24 +157,25 @@ def generate_thumbnails(topic_data):
     out_dir = THUMBNAILS_DIR / category.lower() / slug
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    bg_color = _BG_PALETTE[int(topic_id) % len(_BG_PALETTE)]
-    char_prompt = _generate_character_prompt(topic, angle)
-    print(f"    Character prompt: {char_prompt[:70]}...")
+    tone = _TONE_PALETTE[int(topic_id) % len(_TONE_PALETTE)]
+    text_side = _TEXT_SIDE[int(topic_id) % len(_TEXT_SIDE)]
+    character_side = "left" if text_side == "right" else "right"
+
+    scene_prompt = _generate_scene_prompt(topic, angle, tone, character_side, text_side)
+    print(f"    Scene prompt: {scene_prompt[:70]}...")
     try:
-        character_bytes = _call_nano_banana(char_prompt)
+        scene_bytes = _call_nano_banana(scene_prompt)
     except RuntimeError as e:
-        # Nano Banana's safety filter occasionally refuses a specific emotional
-        # descriptor outright (confirmed 2026-06-21: refused "twisted in an
-        # apologetic grimace") — a content-policy hiccup must never crash the
-        # whole pipeline run when a neutral fallback portrait works just fine.
-        print(f"    Character prompt refused ({e}) — retrying with safe fallback prompt...")
-        character_bytes = _call_nano_banana(_CHARACTER_PROMPT_FALLBACK)
+        print(f"    Scene prompt refused ({e}) — retrying with safe fallback prompt...")
+        scene_bytes = _call_nano_banana(_SCENE_PROMPT_FALLBACK_TEMPLATE.format(
+            tone=tone, character_side=character_side, text_side=text_side,
+        ))
 
     hooks = _generate_hook_variants(topic, angle)
     print(f"    Hook A: {hooks['a']} | Hook B: {hooks['b']}")
 
     path_a = out_dir / "thumb_A.jpg"
     path_b = out_dir / "thumb_B.jpg"
-    _compose_thumbnail(bg_color, character_bytes, hooks["a"], path_a)
-    _compose_thumbnail(bg_color, character_bytes, hooks["b"], path_b)
+    _compose_thumbnail(scene_bytes, hooks["a"], text_side, path_a)
+    _compose_thumbnail(scene_bytes, hooks["b"], text_side, path_b)
     return path_a, path_b
