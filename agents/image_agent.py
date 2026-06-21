@@ -17,20 +17,29 @@ client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
 
 IMAGE_COUNT = 12
 
-# Rendering TREATMENT borrowed from "Pendongeng Tidur" — sharp chiaroscuro, painterly/
-# woodcut texture, one dramatic light source, a small figure dwarfed by its surroundings.
-# The OBJECTS/SETTING are NOT borrowed — those come fresh from each archetype's emotional
-# content below. See project memory project_apophenia.md.
+# Rendering TREATMENT borrowed from "Pendongeng Tidur" — chiaroscuro composition, painterly
+# illustration, a small figure within its surroundings. The OBJECTS/SETTING are NOT borrowed
+# (those come fresh from each archetype's emotional content below), and as of 2026-06-21 the
+# COLOR PALETTE is deliberately its OWN branding, not copied from Pendongeng Tidur's literal
+# look: vintage-comic warm amber/gold against deep indigo, colorful and slightly surreal,
+# explicitly NOT somber/desaturated and NOT mythology/period-costume coded (early versions
+# of this prompt still read as "mythology character" — user feedback, see project memory
+# project_apophenia.md). See also agents/thumbnail_agent.py for the separate Kee-style
+# thumbnail layout, which is its own decision and not tied to this palette.
 _STYLE_SUFFIX = (
-    ", dramatic chiaroscuro lighting, sharp contrast between deep dark areas and one "
-    "saturated accent of light, painterly digital illustration with visible woodcut-like "
-    "texture, single dramatic light source, small human figure dwarfed by its surroundings, "
-    "cinematic wide shot, no text, no watermark, moody and atmospheric, not flat or evenly lit"
+    ", vintage comic illustration style with visible halftone-dot grain texture, gouache and "
+    "ink rendering, bold colorful palette — warm amber and golden-orange light against deep "
+    "indigo-navy shadow, vivid and saturated rather than desaturated or muted, slightly surreal "
+    "dreamlike quality, sharp compositional contrast between warm light and cool dark areas but "
+    "rendered in vivid color rather than near-black emptiness, small human figure within its "
+    "surroundings in modern or timeless everyday clothing, cinematic wide shot, no text, no "
+    "watermark, NOT mythological, NOT period-costume, NOT epic-fantasy styled"
 )
 
 _PROMPTS_SYSTEM = """You write short visual scene descriptions for a psychology-essay YouTube \
-channel (visual treatment: sharp dark/light contrast, painterly, a small figure dwarfed by its \
-surroundings — think the mood of a moody illustrated parable, not a literal therapy-office scene).
+channel (visual treatment: vintage-comic painterly illustration, warm amber-gold light against deep \
+indigo shadow, colorful and slightly surreal — think a dreamlike storybook panel, not a literal \
+therapy-office scene, and not a dark/desaturated mythology illustration).
 
 Given a psychological archetype and its angle, output exactly {n} distinct visual scenes that work \
 as SYMBOLIC/METAPHORICAL imagery for the emotional content of this pattern — not literal depictions \
