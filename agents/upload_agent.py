@@ -141,11 +141,19 @@ def upload_video(video_path, thumbnail_path, metadata, category=None):
     _save_schedule(video_id, metadata, publish_at_utc, publish_at_label)
 
     if thumbnail_path and Path(thumbnail_path).exists():
-        yt.thumbnails().set(
-            videoId=video_id,
-            media_body=MediaFileUpload(str(thumbnail_path)),
-        ).execute()
-        print("    Thumbnail set (variant A)")
+        try:
+            yt.thumbnails().set(
+                videoId=video_id,
+                media_body=MediaFileUpload(str(thumbnail_path)),
+            ).execute()
+            print("    Thumbnail set (variant A)")
+        except Exception as e:
+            # Non-fatal — confirmed 2026-06-21: custom thumbnails need the
+            # channel to be phone-verified at youtube.com/verify, a manual
+            # one-time step. The video itself already uploaded successfully
+            # above; losing the custom thumbnail must never fail the whole
+            # run or risk a duplicate re-upload on retry.
+            print(f"    Warning: thumbnail set failed (video still uploaded fine): {e}")
 
     return video_id
 

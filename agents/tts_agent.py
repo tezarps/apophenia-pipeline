@@ -263,7 +263,23 @@ def _compute_word_timings(chunk_dir, chunks, highlight_words):
 def generate_audio(script_text, topic_id, category=None, with_captions=False, highlight_words=None):
     """If with_captions=True, returns (audio_path, word_timings) — requires
     highlight_words from agents.caption_agent.annotate_script(), in the exact
-    same word order as script_text. Otherwise returns just audio_path."""
+    same word order as script_text. Otherwise returns just audio_path.
+
+    The merged output (and word-timings JSON, if with_captions) persist across
+    runs — a retry after a later pipeline stage fails (e.g. the YouTube upload
+    step) must NOT re-pay for the full TTS render. Confirmed costly in
+    practice 2026-06-21: a thumbnail-permission failure after a successful
+    upload caused a full TTS re-render on retry before this cache existed."""
+    out_path = OUTPUT_DIR / "audio" / f"{topic_id}.{_AUDIO_EXT}"
+    timings_path = OUTPUT_DIR / "audio" / f"{topic_id}_timings.json"
+    if out_path.exists() and out_path.stat().st_size > 0:
+        if with_captions and timings_path.exists():
+            print(f"    TTS: using cached audio + timings (no API call) → {out_path.name}")
+            return out_path, json.loads(timings_path.read_text())
+        if not with_captions:
+            print(f"    TTS: using cached audio (no API call) → {out_path.name}")
+            return out_path
+
     voice_id, voice_settings = ELEVENLABS_VOICE_ID, ELEVENLABS_VOICE_SETTINGS
 
     chunks = _chunk_text(script_text)
@@ -298,9 +314,11 @@ def generate_audio(script_text, topic_id, category=None, with_captions=False, hi
         word_timings = _compute_word_timings(chunk_dir, chunks, highlight_words)
 
     print("    Merging audio...")
-    out_path = OUTPUT_DIR / "audio" / f"{topic_id}.{_AUDIO_EXT}"
     _merge_with_ffmpeg(chunk_dir, out_path)
     shutil.rmtree(chunk_dir)
+
+    if with_captions:
+        timings_path.write_text(json.dumps(word_timings))
 
     mins = _audio_duration(out_path) / 60
     print(f"    Audio: {mins:.0f} min → {out_path.name}")

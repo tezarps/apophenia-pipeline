@@ -6,7 +6,7 @@
       "role": "Picks the next archetype",
       "status": "done",
       "detail": "Topic #1: The Emotionally Avoidant Adult",
-      "updated_at": "2026-06-21T13:28:18.158258",
+      "updated_at": "2026-06-21T13:40:59.707339",
       "payload": {
         "id": 1,
         "category": "avoidant-attachment",
@@ -20,7 +20,7 @@
       "role": "Writes the 5-babak script",
       "status": "done",
       "detail": "1,458 words (cached)",
-      "updated_at": "2026-06-21T13:28:18.302507"
+      "updated_at": "2026-06-21T13:40:59.915590"
     },
     "voice": {
       "name": "The Voice",
@@ -28,34 +28,44 @@
       "role": "Narrates the essay",
       "status": "done",
       "detail": "Audio ready: 1.mp3",
-      "updated_at": "2026-06-21T13:31:38.770379"
+      "updated_at": "2026-06-21T13:44:34.257305"
     },
     "architect": {
       "name": "The Architect",
       "icon": "🏛️",
       "role": "Assembles the final video",
-      "status": "error",
-      "detail": "Caption burn-in failed: Handler\n[AVFilterGraph @ 0x140611ee0] No option name near '/Users/admin/Documents/apophenia-pipe",
-      "updated_at": "2026-06-21T13:35:04.253469"
+      "status": "done",
+      "detail": "Video ready: 109MB (5 reflective beat(s))",
+      "updated_at": "2026-06-21T13:52:00.639282"
     },
     "herald": {
       "name": "The Herald",
       "icon": "📯",
       "role": "Crafts title, metadata & thumbnails",
-      "status": "idle",
-      "detail": "",
-      "updated_at": "2026-06-21T13:28:16.917810"
+      "status": "done",
+      "detail": "The Psychology of People Who Disappear When Things Get Close",
+      "updated_at": "2026-06-21T13:52:06.529539"
     },
     "messenger": {
       "name": "The Messenger",
       "icon": "⚡",
       "role": "Uploads to YouTube",
-      "status": "idle",
-      "detail": "",
-      "updated_at": "2026-06-21T13:28:16.917812"
+      "status": "error",
+      "detail": "<HttpError 403 when requesting https://youtube.googleapis.com/upload/youtube/v3/thumbnails/set?videoId=_XZkvUwaI-I&alt=j",
+      "updated_at": "2026-06-21T13:52:56.346776"
     }
   },
   "runs": [
+    {
+      "id": 1,
+      "topic": "Why You Disappear From People Who Get Too Close",
+      "status": "failed",
+      "video_id": "",
+      "started_at": "2026-06-21T13:40:58.364973",
+      "finished_at": "2026-06-21T13:52:56.801499",
+      "duration_min": 11,
+      "error": "<HttpError 403 when requesting https://youtube.googleapis.com/upload/youtube/v3/thumbnails/set?videoId=_XZkvUwaI-I&alt=json&uploadType=media returned \"The authenticated user doesn't have permissions t"
+    },
     {
       "id": 1,
       "topic": "Why You Disappear From People Who Get Too Close",
