@@ -33,14 +33,25 @@ HIGHLIGHT_COLOR = (255, 184, 28)  # same yellow/orange used for caption keyword 
 _BG_PALETTE = [(20, 20, 20), (214, 40, 40), (245, 196, 0), (30, 70, 150)]
 
 _CHARACTER_PROMPT_SYSTEM = """You write a single image-generation prompt for a thumbnail character \
-portrait, in the visual style of dramatic chiaroscuro painterly illustration (sharp dark/light \
-contrast, expressive/unsettling features, slightly exaggerated — NOT photorealistic, NOT a literal \
-portrait of any real person). Given a psychological archetype, describe ONE character portrait, \
-cropped at chest height, facing slightly off-camera, with an expression that hints at the archetype's \
-emotional core (exhausted, masking, hypervigilant, etc. — whatever fits). No background detail \
-(it will be composited onto a flat color). No text. No real/identifiable person.
+portrait, in the visual style of vintage-comic painterly illustration with halftone-dot texture \
+(warm amber-gold light against deep indigo shadow, colorful, slightly surreal — NOT photorealistic, \
+NOT a literal portrait of any real person). Given a psychological archetype, describe ONE character \
+portrait, cropped at chest height, facing slightly off-camera, that hints at the archetype's \
+emotional core through SUBTLE cues only — tired eyes, a smile that doesn't quite reach the eyes, a \
+slightly far-off gaze, tension in the shoulders. Describe the face as calm/neutral at rest with one \
+small subtle subtext detail, never a dramatic or distorted expression (avoid words like grimace, \
+twisted, contorted, anguished — these get the request flagged/rejected by the image model's safety \
+filter; the psychological subtext should read in the EYES and posture, not a contorted face). No \
+background detail (it will be composited onto a flat color). No text. No real/identifiable person.
 
 Return ONLY the prompt string, nothing else."""
+
+_CHARACTER_PROMPT_FALLBACK = (
+    "Vintage-comic painterly illustration with halftone-dot texture, warm amber-gold light "
+    "against deep indigo shadow, a person's portrait cropped at chest height, facing slightly "
+    "off-camera, calm neutral expression with a slightly distant gaze, colorful and slightly "
+    "surreal, not photorealistic, no background detail, no text"
+)
 
 _HOOK_TEXT_SYSTEM = """You write thumbnail hook text for a psychology-essay YouTube channel (style: \
 "The Psychology of People Who..."). Given an archetype and its title/angle, return a JSON object with \
@@ -153,7 +164,15 @@ def generate_thumbnails(topic_data):
     bg_color = _BG_PALETTE[int(topic_id) % len(_BG_PALETTE)]
     char_prompt = _generate_character_prompt(topic, angle)
     print(f"    Character prompt: {char_prompt[:70]}...")
-    character_bytes = _call_nano_banana(char_prompt)
+    try:
+        character_bytes = _call_nano_banana(char_prompt)
+    except RuntimeError as e:
+        # Nano Banana's safety filter occasionally refuses a specific emotional
+        # descriptor outright (confirmed 2026-06-21: refused "twisted in an
+        # apologetic grimace") — a content-policy hiccup must never crash the
+        # whole pipeline run when a neutral fallback portrait works just fine.
+        print(f"    Character prompt refused ({e}) — retrying with safe fallback prompt...")
+        character_bytes = _call_nano_banana(_CHARACTER_PROMPT_FALLBACK)
 
     hooks = _generate_hook_variants(topic, angle)
     print(f"    Hook A: {hooks['a']} | Hook B: {hooks['b']}")

@@ -155,6 +155,14 @@ def download_script(topic_id, local_path):
     return _download(SCRIPTS_BUCKET, f"{topic_id}.txt", local_path)
 
 
+def upload_timings(topic_id, local_path):
+    _upload(AUDIO_BUCKET, f"{topic_id}_timings.json", local_path)
+
+
+def download_timings(topic_id, local_path):
+    return _download(AUDIO_BUCKET, f"{topic_id}_timings.json", local_path)
+
+
 def upload_thumbnail(category, slug, variant, local_path):
     """Keyed by category/slug (matches get_manual_thumbnails() in assembly_agent.py,
     which looks up thumbnails/{category}/{slug}/A.ext — NOT by topic_id, so this

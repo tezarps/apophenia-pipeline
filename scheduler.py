@@ -160,10 +160,29 @@ def run(audio_only=False):
             return audio_path
 
         clean_text, highlight_words = annotate_script(script)
+
+        # Pull cached audio+timings down from Supabase before calling
+        # generate_audio() — its own cache check only looks at the LOCAL
+        # output/audio/ dir, which is empty on a fresh GitHub Actions runner
+        # even when this exact topic's TTS already succeeded and uploaded in
+        # an earlier (later-failing) run. Confirmed costly 2026-06-21: a
+        # cloud run that failed at the thumbnail stage would otherwise re-pay
+        # for the full ElevenLabs render on every retry.
+        local_audio_path = OUTPUT_DIR / "audio" / f"{topic_id}.mp3"
+        local_timings_path = OUTPUT_DIR / "audio" / f"{topic_id}_timings.json"
+        if not local_audio_path.exists():
+            try:
+                sb.download_audio(topic_id, local_audio_path)
+                sb.download_timings(topic_id, local_timings_path)
+                print("    Voice: using audio+timings cached in Supabase (no API call)")
+            except Exception:
+                pass
+
         audio_path, word_timings = generate_audio(
             clean_text, topic_id, category=topic["category"], with_captions=True, highlight_words=highlight_words,
         )
         sb.upload_audio(topic_id, audio_path)
+        sb.upload_timings(topic_id, OUTPUT_DIR / "audio" / f"{topic_id}_timings.json")
         agent_done("voice", f"Audio ready: {audio_path.name}")
 
         current_agent = "architect"
@@ -228,6 +247,10 @@ def run(audio_only=False):
         sb.run_failed(sb_run_id, e)
         notify(f"❌ Apophenia — failed at [{current_agent}]\nTopic #{topic_id}: {topic['topic']}\n{str(e)[:300]}")
         _cleanup(topic_id, current_agent)
+        # Without this, the process exits 0 even after an internal failure —
+        # confirmed 2026-06-21: a GitHub Actions run showed all-green while
+        # the actual pipeline failed at herald, hiding the failure from CI.
+        sys.exit(1)
 
 
 if __name__ == "__main__":
