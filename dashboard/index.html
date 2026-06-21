@@ -9,17 +9,17 @@
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #11101c;
-    --bg-grain: radial-gradient(circle at 20% 10%, rgba(232,162,61,0.06), transparent 40%),
-                radial-gradient(circle at 80% 80%, rgba(91,103,196,0.08), transparent 45%);
-    --card: #181729;
-    --card-hi: #1f1e35;
-    --border: #2b2a45;
-    --text: #ece8f5;
-    --muted: #8c89ab;
-    --amber: #e8a23d;
-    --amber-soft: rgba(232,162,61,0.15);
-    --amber-text: #1a1306;
+    --bg: #0f1813;
+    --bg-grain: radial-gradient(circle at 20% 10%, rgba(31,166,99,0.08), transparent 40%),
+                radial-gradient(circle at 80% 80%, rgba(91,103,196,0.06), transparent 45%);
+    --card: #16201a;
+    --card-hi: #1c2920;
+    --border: #283830;
+    --text: #e9f3ec;
+    --muted: #8a9b92;
+    --accent: #1fa663;
+    --accent-soft: rgba(31,166,99,0.15);
+    --accent-text: #ffffff;
     --indigo: #5b67c4;
     --green: #5fd896;
     --red: #f2697a;
@@ -27,22 +27,22 @@
     --shadow: 0 1px 2px rgba(0,0,0,0.4);
   }
   html[data-theme="light"] {
-    --bg: #f6f3ee;
-    --bg-grain: radial-gradient(circle at 15% 0%, rgba(232,162,61,0.08), transparent 40%),
-                radial-gradient(circle at 85% 90%, rgba(91,103,196,0.06), transparent 45%);
+    --bg: #f3f6f4;
+    --bg-grain: radial-gradient(circle at 15% 0%, rgba(31,166,99,0.07), transparent 40%),
+                radial-gradient(circle at 85% 90%, rgba(91,103,196,0.05), transparent 45%);
     --card: #ffffff;
-    --card-hi: #fbf8f2;
-    --border: #ece6da;
-    --text: #211f33;
-    --muted: #8c87a0;
-    --amber: #d68a1f;
-    --amber-soft: rgba(214,138,31,0.12);
-    --amber-text: #ffffff;
+    --card-hi: #f6faf8;
+    --border: #e4ece7;
+    --text: #16211b;
+    --muted: #7c8b83;
+    --accent: #1a8f56;
+    --accent-soft: rgba(26,143,86,0.10);
+    --accent-text: #ffffff;
     --indigo: #5b67c4;
     --green: #1fa363;
     --red: #d8425a;
     --blue: #2f6fd6;
-    --shadow: 0 1px 3px rgba(40,30,10,0.07), 0 1px 2px rgba(40,30,10,0.04);
+    --shadow: 0 1px 3px rgba(20,40,30,0.06), 0 1px 2px rgba(20,40,30,0.04);
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; }
@@ -60,7 +60,7 @@
 
   header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; gap: 12px; flex-wrap: wrap; }
   .brand { display: flex; align-items: baseline; gap: 10px; }
-  h1.display { font-size: 36px; color: var(--amber); margin: 0; line-height: 1; }
+  h1.display { font-size: 36px; color: var(--accent); margin: 0; line-height: 1; }
   .live-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 0 rgba(95,216,150,0.6); animation: pulse-dot 2s infinite; }
   .live-dot.off { background: var(--muted); animation: none; box-shadow: none; }
   @keyframes pulse-dot { 0% { box-shadow: 0 0 0 0 rgba(95,216,150,0.55); } 70% { box-shadow: 0 0 0 7px rgba(95,216,150,0); } 100% { box-shadow: 0 0 0 0 rgba(95,216,150,0); } }
@@ -71,7 +71,7 @@
   /* ---- Stat cards row ---- */
   .stat-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 18px; }
   .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 18px; box-shadow: var(--shadow); }
-  .stat-card.hero { background: linear-gradient(135deg, var(--amber), var(--amber-dim, var(--amber))); color: var(--amber-text); border: none; }
+  .stat-card.hero { background: linear-gradient(135deg, var(--accent), var(--accent-dim, var(--accent))); color: var(--accent-text); border: none; }
   .stat-card-top { display: flex; justify-content: space-between; align-items: center; font-size: 13px; font-weight: 600; margin-bottom: 14px; opacity: 0.85; }
   .stat-card.hero .stat-card-top { opacity: 0.92; }
   .stat-arrow { width: 26px; height: 26px; border-radius: 50%; background: rgba(140,137,171,0.15); display: flex; align-items: center; justify-content: center; font-size: 13px; }
@@ -89,7 +89,7 @@
   }
 
   .card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 18px; margin-bottom: 0; position: relative; overflow: hidden; box-shadow: var(--shadow); transition: box-shadow 0.2s, transform 0.2s; }
-  .card::before { content: ""; position: absolute; top: 0; left: 0; width: 3px; height: 100%; background: linear-gradient(180deg, var(--amber), transparent); opacity: 0.6; }
+  .card::before { content: ""; position: absolute; top: 0; left: 0; width: 3px; height: 100%; background: linear-gradient(180deg, var(--accent), transparent); opacity: 0.6; }
   .card h2 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.09em; color: var(--muted); margin: 0 0 14px; display: flex; justify-content: space-between; align-items: center; font-weight: 700; }
 
   /* Live pipeline stepper */
@@ -100,14 +100,14 @@
   .step:last-child .step-line { display: none; }
   .step-dot { width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 15px; background: var(--bg); border: 2px solid var(--border); z-index: 1; transition: all 0.3s; }
   .step.done .step-dot { border-color: var(--green); background: rgba(95,216,150,0.12); }
-  .step.running .step-dot { border-color: var(--amber); background: var(--amber-soft); animation: pulse-ring 1.6s infinite; }
+  .step.running .step-dot { border-color: var(--accent); background: var(--accent-soft); animation: pulse-ring 1.6s infinite; }
   .step.error .step-dot { border-color: var(--red); background: rgba(242,105,122,0.15); }
-  @keyframes pulse-ring { 0% { box-shadow: 0 0 0 0 rgba(232,162,61,0.5); } 70% { box-shadow: 0 0 0 8px rgba(232,162,61,0); } 100% { box-shadow: 0 0 0 0 rgba(232,162,61,0); } }
+  @keyframes pulse-ring { 0% { box-shadow: 0 0 0 0 rgba(31,166,99,0.5); } 70% { box-shadow: 0 0 0 8px rgba(31,166,99,0); } 100% { box-shadow: 0 0 0 0 rgba(31,166,99,0); } }
   .step-body { padding-top: 4px; flex: 1; }
   .step-name { font-size: 14px; font-weight: 600; color: var(--muted); }
   .step.done .step-name, .step.running .step-name { color: var(--text); }
   .step-role { font-size: 12px; color: var(--muted); margin-top: 1px; }
-  .step-detail { font-size: 12px; color: var(--amber); margin-top: 3px; }
+  .step-detail { font-size: 12px; color: var(--accent); margin-top: 3px; }
   .idle-banner { text-align: center; padding: 18px 8px; color: var(--muted); font-size: 13px; }
   .idle-banner .next-run { color: var(--text); font-weight: 600; margin-top: 4px; }
 
@@ -121,16 +121,16 @@
   .row:last-child { border-bottom: none; }
   .row-title { font-size: 14px; font-weight: 600; }
   .row-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
-  a { color: var(--amber); text-decoration: none; font-weight: 600; }
+  a { color: var(--accent); text-decoration: none; font-weight: 600; }
   .empty { color: var(--muted); font-size: 13px; text-align: center; padding: 14px 0; }
   .cat-pill { display: inline-flex; align-items: center; gap: 6px; background: var(--card-hi); border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; margin: 3px; font-size: 12px; }
-  .cat-pill strong { color: var(--amber); }
+  .cat-pill strong { color: var(--accent); }
   .cat-grid { display: flex; flex-wrap: wrap; gap: 0; }
   .refresh-note { text-align: center; color: var(--muted); font-size: 11px; margin-top: 18px; display: flex; justify-content: center; gap: 14px; flex-wrap: wrap; }
   .refresh-note a { color: var(--muted); font-weight: 400; }
-  .refresh-note a:hover { color: var(--amber); }
+  .refresh-note a:hover { color: var(--accent); }
 
-  button { background: var(--amber); color: var(--amber-text); border: none; border-radius: 8px; padding: 8px 14px; font-size: 13px; font-weight: 700; cursor: pointer; transition: transform 0.1s; }
+  button { background: var(--accent); color: var(--accent-text); border: none; border-radius: 8px; padding: 8px 14px; font-size: 13px; font-weight: 700; cursor: pointer; transition: transform 0.1s; }
   button:active { transform: scale(0.97); }
   button.secondary { background: var(--card-hi); color: var(--text); border: 1px solid var(--border); }
   button.danger { background: rgba(242,105,122,0.15); color: var(--red); }
@@ -147,10 +147,10 @@
   .locked-note { color: var(--muted); font-size: 11px; font-weight: 600; }
 
   .ab-card { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 12px; margin-bottom: 8px; }
-  .ab-variant { display: inline-flex; align-items: center; gap: 4px; padding: 2px 9px; border-radius: 6px; font-size: 11px; font-weight: 700; background: var(--amber); color: var(--amber-text); }
+  .ab-variant { display: inline-flex; align-items: center; gap: 4px; padding: 2px 9px; border-radius: 6px; font-size: 11px; font-weight: 700; background: var(--accent); color: var(--accent-text); }
   .ab-bar-wrap { display: flex; gap: 8px; align-items: center; margin-top: 8px; }
   .ab-bar { flex: 1; height: 6px; border-radius: 3px; background: var(--border); overflow: hidden; }
-  .ab-bar-fill { height: 100%; background: var(--amber); transition: width 0.4s; }
+  .ab-bar-fill { height: 100%; background: var(--accent); transition: width 0.4s; }
   .ab-ctr { font-size: 11px; color: var(--muted); min-width: 48px; text-align: right; }
 </style>
 </head>
@@ -162,29 +162,29 @@
       <span id="live-dot" class="live-dot off"></span>
     </div>
     <div class="header-right">
-      <button class="theme-toggle" id="theme-toggle" title="Toggle tema" onclick="toggleTheme()">🌙</button>
+      <button class="theme-toggle" id="theme-toggle" title="Toggle tema" onclick="toggleTheme()"></button>
     </div>
   </header>
   <div class="subtitle" id="subtitle-text">Pipeline monitor — realtime</div>
 
   <div class="stat-cards">
     <div class="stat-card hero">
-      <div class="stat-card-top">Total Topik <span class="stat-arrow">↗</span></div>
+      <div class="stat-card-top">Total Topik <span class="stat-arrow"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg></span></div>
       <div class="stat-num" id="stat-total">–</div>
       <div class="stat-hint">Semua arketipe di antrian</div>
     </div>
     <div class="stat-card">
-      <div class="stat-card-top">Published <span class="stat-arrow">↗</span></div>
+      <div class="stat-card-top">Published <span class="stat-arrow"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg></span></div>
       <div class="stat-num" id="stat-published">–</div>
       <div class="stat-hint">Episode live di YouTube</div>
     </div>
     <div class="stat-card">
-      <div class="stat-card-top">Pending <span class="stat-arrow">↗</span></div>
+      <div class="stat-card-top">Pending <span class="stat-arrow"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg></span></div>
       <div class="stat-num" id="stat-pending">–</div>
       <div class="stat-hint">Nunggu giliran produksi</div>
     </div>
     <div class="stat-card">
-      <div class="stat-card-top">Failed <span class="stat-arrow">↗</span></div>
+      <div class="stat-card-top">Failed <span class="stat-arrow"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg></span></div>
       <div class="stat-num" id="stat-failed">–</div>
       <div class="stat-hint">Perlu di-retry manual</div>
     </div>
@@ -267,7 +267,7 @@
   // ---- Theme toggle (persisted, defaults to OS preference) ----
   function applyTheme(theme) {
     document.documentElement.setAttribute("data-theme", theme);
-    document.getElementById("theme-toggle").textContent = theme === "light" ? "☀️" : "🌙";
+    document.getElementById("theme-toggle").innerHTML = icon(theme === "light" ? "sun" : "moon", 17);
     localStorage.setItem("apophenia_theme", theme);
   }
   function toggleTheme() {
@@ -280,14 +280,37 @@
     applyTheme(saved || (prefersLight ? "light" : "dark"));
   })();
 
+  // Outline SVG icon set (Lucide-style: 24x24 viewBox, stroke=currentColor) —
+  // replaces emoji everywhere. Emoji read as generic/inconsistent across
+  // platforms; these inherit text color and match the flat-line style of
+  // the Donezo-style reference the user pointed at.
+  function icon(name, size) {
+    size = size || 18;
+    var paths = {
+      sparkles: '<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3z"/><path d="M19 3v3M20.5 4.5h-3"/>',
+      fileText: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/>',
+      mic: '<path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/>',
+      film: '<rect x="2" y="2" width="20" height="20" rx="2"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="17" x2="22" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/>',
+      megaphone: '<path d="M3 9v4a1 1 0 0 0 1 1h3l5 4V4L7 8H4a1 1 0 0 0-1 1z"/><path d="M16 8a3 3 0 0 1 0 6"/>',
+      send: '<line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>',
+      arrowUpRight: '<line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/>',
+      sun: '<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>',
+      moon: '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>',
+      barChart: '<line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/>',
+      check: '<polyline points="20 6 9 17 4 12"/>',
+      x: '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>'
+    };
+    return '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + (paths[name] || "") + '</svg>';
+  }
+
   const AGENT_ORDER = ["oracle", "scribe", "voice", "architect", "herald", "messenger"];
   const AGENTS = {
-    oracle:    { name: "The Oracle",    icon: "🔮", role: "Picks the next archetype" },
-    scribe:    { name: "The Scribe",    icon: "📜", role: "Writes the 5-babak script" },
-    voice:     { name: "The Voice",     icon: "🎙️", role: "Narrates the essay" },
-    architect: { name: "The Architect", icon: "🏛️", role: "Assembles the final video" },
-    herald:    { name: "The Herald",    icon: "📯", role: "Crafts title, metadata & thumbnails" },
-    messenger: { name: "The Messenger", icon: "⚡", role: "Uploads to YouTube" },
+    oracle:    { name: "Maya",   icon: "sparkles",  role: "Picks the next archetype" },
+    scribe:    { name: "Jordan", icon: "fileText",  role: "Writes the 5-babak script" },
+    voice:     { name: "Aria",   icon: "mic",       role: "Narrates the essay" },
+    architect: { name: "Theo",   icon: "film",      role: "Assembles the final video" },
+    herald:    { name: "Priya",  icon: "megaphone", role: "Crafts title, metadata & thumbnails" },
+    messenger: { name: "Kai",    icon: "send",      role: "Uploads to YouTube" },
   };
 
   function timeAgo(iso) {
@@ -311,7 +334,12 @@
 
   function animateNum(el, target) {
     const start = Number(el.textContent) || 0;
-    if (start === target) { el.textContent = target; return; }
+    // Correctness first: land on the right number immediately. requestAnimationFrame
+    // doesn't reliably fire on a backgrounded/inactive tab — a dashboard meant for
+    // realtime monitoring must never get stuck showing a stale/placeholder value
+    // just because the rAF-driven count-up animation below never got a tick.
+    el.textContent = target;
+    if (start === target) return;
     const duration = 500, t0 = performance.now();
     function tick(t) {
       const p = Math.min(1, (t - t0) / duration);
@@ -359,11 +387,11 @@
       if (runStatus === "failed" && i === currentIdx) { state = "error"; detail = "Gagal di sini"; }
       else if (i < currentIdx || (runStatus === "done")) { state = "done"; }
       else if (i === currentIdx) { state = "running"; detail = "Sedang berjalan..."; }
-      const icon = state === "done" ? "✓" : state === "error" ? "✗" : a.icon;
+      const iconName = state === "done" ? "check" : state === "error" ? "x" : a.icon;
       return `
         <div class="step ${state}">
           <div class="step-line"></div>
-          <div class="step-dot">${icon}</div>
+          <div class="step-dot">${icon(iconName, 16)}</div>
           <div class="step-body">
             <div class="step-name">${a.name}</div>
             <div class="step-role">${a.role}</div>
@@ -442,7 +470,7 @@
             <div class="row-sub">${esc(t.category)}</div>
           </div>
           <div class="btn-row">
-            ${t.video_id ? `<button class="secondary" onclick="toggleAnalytics('${t.video_id}')">📊 Analitik</button>` : ""}
+            ${t.video_id ? `<button class="secondary" onclick="toggleAnalytics('${t.video_id}')" style="display:inline-flex;align-items:center;gap:6px;">${icon("barChart", 14)} Analitik</button>` : ""}
             ${t.video_id ? `<a href="https://youtube.com/watch?v=${t.video_id}" target="_blank">Tonton →</a>` : ""}
           </div>
         </div>
@@ -481,7 +509,7 @@
       <div class="row">
         <div>
           <div class="row-title">Topic #${r.topic_id}</div>
-          <div class="row-sub">${timeAgo(r.started_at)}${r.status === "failed" && r.current_agent ? " · gagal di " + esc(AGENTS[r.current_agent]?.name || r.current_agent) : ""}${r.error ? " · " + esc(r.error.slice(0, 50)) : ""}</div>
+          <div class="row-sub">${timeAgo(r.started_at)}${r.status === "failed" && r.current_agent ? " · gagal di " + esc((AGENTS[r.current_agent] && AGENTS[r.current_agent].name) || r.current_agent) : ""}${r.error ? " · " + esc(r.error.slice(0, 50)) : ""}</div>
         </div>
         <span class="status-badge status-${r.status}">${r.status.toUpperCase()}</span>
       </div>`).join("");
@@ -569,7 +597,12 @@
   }
 
   async function loadAll() {
-    await Promise.all([loadStatCards(), loadCurrentRun(), loadAbTests(), loadRecentPublished(), loadRecentRuns(), loadPendingByCategory()]);
+    await loadStatCards();
+    await loadCurrentRun();
+    await loadAbTests();
+    await loadRecentPublished();
+    await loadRecentRuns();
+    await loadPendingByCategory();
     if (getPin()) loadPendingList();
   }
 

@@ -114,7 +114,7 @@ def run(audio_only=False):
 
     current_agent = "oracle"
     try:
-        print("[1/6] The Oracle — selecting topic...")
+        print("[1/6] Maya — selecting topic...")
         agent_done("oracle", f"Topic #{topic_id}: {topic['topic']}", payload={
             "id": topic_id,
             "category": topic["category"],
@@ -127,17 +127,17 @@ def run(audio_only=False):
         script_path = OUTPUT_DIR / "scripts" / f"{topic_id}.txt"
         script_path.parent.mkdir(parents=True, exist_ok=True)
         if script_path.exists():
-            print("[2/6] The Scribe — using cached local script (no API call)...")
+            print("[2/6] Jordan — using cached local script (no API call)...")
             script = script_path.read_text(encoding="utf-8")
             agent_done("scribe", f"{len(script.split()):,} words (cached)")
         else:
             try:
                 sb.download_script(topic_id, script_path)
                 script = script_path.read_text(encoding="utf-8")
-                print("[2/6] The Scribe — using script cached in Supabase (no API call)...")
+                print("[2/6] Jordan — using script cached in Supabase (no API call)...")
                 agent_done("scribe", f"{len(script.split()):,} words (cached in Supabase)")
             except Exception:
-                print("[2/6] The Scribe — writing script...")
+                print("[2/6] Jordan — writing script...")
                 agent_start("scribe", "Drafting with Haiku...")
                 sb.run_update_agent(sb_run_id, "scribe")
                 script = generate_script(topic)
@@ -146,7 +146,7 @@ def run(audio_only=False):
                 agent_done("scribe", f"{len(script.split()):,} words written")
 
         current_agent = "voice"
-        print("\n[3/6] The Voice — narrating...")
+        print("\n[3/6] Aria — narrating...")
         agent_start("voice", "Converting to audio...")
         sb.run_update_agent(sb_run_id, "voice")
 
@@ -186,7 +186,7 @@ def run(audio_only=False):
         agent_done("voice", f"Audio ready: {audio_path.name}")
 
         current_agent = "architect"
-        print("\n[4/6] The Architect — assembling video...")
+        print("\n[4/6] Theo — assembling video...")
         agent_start("architect", "Running FFmpeg...")
         sb.run_update_agent(sb_run_id, "architect")
         _ensure_local_images(topic["category"], topic_slug, topic=topic["topic"], angle=topic.get("angle", ""), audio_path=audio_path)
@@ -202,7 +202,7 @@ def run(audio_only=False):
         agent_done("architect", f"Video ready: {size_mb:.0f}MB ({len(spans)} reflective beat(s))")
 
         current_agent = "herald"
-        print("\n[5/6] The Herald — crafting metadata + thumbnails...")
+        print("\n[5/6] Priya — crafting metadata + thumbnails...")
         agent_start("herald", "Writing SEO title & description...")
         sb.run_update_agent(sb_run_id, "herald")
         duration_min = int(duration_sec / 60)
@@ -218,7 +218,7 @@ def run(audio_only=False):
         print(f"    Thumbnail A: {thumb_a.name} | Thumbnail B: {thumb_b.name}")
 
         current_agent = "messenger"
-        print("\n[6/6] The Messenger — uploading to YouTube...")
+        print("\n[6/6] Kai — uploading to YouTube...")
         agent_start("messenger", "Uploading...")
         sb.run_update_agent(sb_run_id, "messenger")
         video_id = upload_video(video_path, thumb_a, metadata, category=topic["category"])

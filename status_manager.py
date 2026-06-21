@@ -5,12 +5,12 @@ from pathlib import Path
 STATUS_FILE = Path(__file__).parent / "pipeline_status.json"
 
 AGENTS = {
-    "oracle":    {"name": "The Oracle",    "icon": "🔮", "role": "Picks the next archetype"},
-    "scribe":    {"name": "The Scribe",    "icon": "📜", "role": "Writes the 5-babak script"},
-    "voice":     {"name": "The Voice",     "icon": "🎙️", "role": "Narrates the essay"},
-    "architect": {"name": "The Architect", "icon": "🏛️", "role": "Assembles the final video"},
-    "herald":    {"name": "The Herald",    "icon": "📯", "role": "Crafts title, metadata & thumbnails"},
-    "messenger": {"name": "The Messenger", "icon": "⚡", "role": "Uploads to YouTube"},
+    "oracle":    {"name": "Maya",   "icon": "🔮", "role": "Picks the next archetype"},
+    "scribe":    {"name": "Jordan", "icon": "📜", "role": "Writes the 5-babak script"},
+    "voice":     {"name": "Aria",   "icon": "🎙️", "role": "Narrates the essay"},
+    "architect": {"name": "Theo",   "icon": "🏛️", "role": "Assembles the final video"},
+    "herald":    {"name": "Priya",  "icon": "📯", "role": "Crafts title, metadata & thumbnails"},
+    "messenger": {"name": "Kai",    "icon": "⚡", "role": "Uploads to YouTube"},
 }
 
 
