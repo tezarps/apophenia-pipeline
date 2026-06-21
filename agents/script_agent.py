@@ -1,7 +1,35 @@
+import re
+
 import anthropic
 from config import ANTHROPIC_API_KEY, HAIKU_MODEL, SONNET_MODEL
 
 client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+
+# Deterministic backstop — the _AUDIT LLM pass catches most banned AI-speak but
+# isn't 100% reliable (confirmed empirically: "not because X, but because Y"
+# slipped through the audit pass itself on 2026-06-21). These regexes find any
+# survivor so generate_script can do one more *sentence-scoped* rewrite instead
+# of trusting a single LLM pass to self-police.
+_BANNED_REGEX = [
+    re.compile(r"\bnot\b[^.!?]{0,60}\bbecause\b[^.!?]*\bbut\b[^.!?]{0,15}\bbecause\b", re.I),
+    re.compile(r"\bit'?s not\b[^.!?,]{0,40},?\s*it'?s\b", re.I),
+    re.compile(r"\bisn'?t just\b[^.!?]{0,60}[—-]\s*it'?s\b", re.I),
+    re.compile(r"\bhere'?s the thing\b", re.I),
+    re.compile(r"\bthe truth is\b", re.I),
+    re.compile(r"\bat the end of the day\b", re.I),
+    re.compile(r"\bin other words\b", re.I),
+    re.compile(r"\bwhat if I told you\b", re.I),
+    re.compile(r"\band that'?s the beauty of it\b", re.I),
+]
+
+
+def _find_banned_sentence(text):
+    """Returns the first whole sentence containing a banned pattern, or None."""
+    sentences = re.split(r"(?<=[.!?])\s+", text)
+    for s in sentences:
+        if any(rx.search(s) for rx in _BANNED_REGEX):
+            return s
+    return None
 
 # Four hook devices, rotated by topic id, so every video doesn't open with the
 # exact same rhetorical move (templated-content risk, same reasoning as Narava's
@@ -133,6 +161,17 @@ Script:
 
 Output the full script, unchanged except for any rewritten sentences."""
 
+_REWRITE_SENTENCE = """Rewrite this one sentence from a YouTube psychology-essay script. It uses a \
+generic AI-speak construction (negate-then-correct framing like "not because X, but because Y", or \
+a stock phrase like "here's the thing"/"the truth is"/"at the end of the day"). Say the same thing \
+directly and conversationally instead — like a specific person explaining it to a friend, not an \
+essay structure. Keep it roughly the same length and keep any specific content/claims intact.
+
+Sentence:
+{sentence}
+
+Output ONLY the rewritten sentence, nothing else."""
+
 
 def _call(model, prompt, max_tokens=8000):
     r = client.messages.create(
@@ -161,6 +200,17 @@ def generate_script(topic_data):
 
     print("    Auditing for leftover AI-speak (Haiku)...")
     final = _call(HAIKU_MODEL, _AUDIT.format(script=polished), max_tokens=8000)
+
+    # Deterministic backstop: the audit pass above is itself an LLM call and
+    # isn't 100% reliable, so re-check with regex and do up to 2 rounds of
+    # sentence-scoped rewrites for anything that still slipped through.
+    for round_num in range(2):
+        bad_sentence = _find_banned_sentence(final)
+        if not bad_sentence:
+            break
+        print(f"    Banned pattern survived audit pass — rewriting one sentence (round {round_num + 1})...")
+        rewritten = _call(HAIKU_MODEL, _REWRITE_SENTENCE.format(sentence=bad_sentence), max_tokens=300).strip()
+        final = final.replace(bad_sentence, rewritten, 1)
 
     word_count = len(final.split())
     print(f"    Script: {word_count:,} words (~{word_count // 140:.0f} min audio)")
