@@ -26,9 +26,11 @@ TOKEN_FILE = BASE_DIR / "youtube_token.pickle"
 ELEVENLABS_MODEL = "eleven_multilingual_v2"
 ELEVENLABS_VOICE_ID = "sIivXWc5MTlPIP3kJXhg"  # picked from ElevenLabs voice library, 2026-06-21 — untested, audition before first real render
 ELEVENLABS_VOICE_SETTINGS = {
-    "stability": 0.3,
+    "stability": 0.22,    # lower = more emotional range/intonation variation following sentence content,
+                          # at some cost to take-to-take consistency — worth it for essay delivery
     "similarity_boost": 0.8,
-    "style": 0.5,        # more expressive than Narava's sleep-narrator setting — essay tone, not flat reader
+    "style": 0.65,        # lean further into the voice's natural expressive style (raised from 0.5,
+                          # 2026-06-21 — first audition sounded too flat/even for context-driven delivery)
     "speed": 0.95,        # near-normal pace, this is a talking-head essay not sleep narration
     "use_speaker_boost": True,
 }

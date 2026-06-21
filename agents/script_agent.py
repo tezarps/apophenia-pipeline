@@ -66,9 +66,36 @@ unevenly across babak as the content needs (babak 2 and 5 are usually longest).
 Output only the script text. No headers, no babak labels, no markdown."""
 
 _POLISH = """You are an editor for a psychology-essay YouTube script (channel tone: calm, intimate, \
-conversational — think "Kee").
+conversational — think "Kee"). Your main job this pass is HUMANIZING — this draft was written by an \
+LLM and reads like one. Hunt down and rewrite every generic AI-speak pattern, even if it means \
+rephrasing a sentence completely.
 
-Rules:
+BANNED PATTERNS — find every instance and rewrite it into something a specific, real human would \
+actually say. Do not just swap a synonym, change the sentence's actual structure:
+- "Not because X, but because Y" (and reverse: "It's not X, it's Y") — way overused, find what the \
+sentence is actually trying to say and say it directly instead.
+- "It's not just about X — it's about Y" / "It's not just X, it's Y"
+- "Here's the thing" / "The truth is" / "At the end of the day" / "In other words" / "What if I told you"
+- "And that's the beauty of it" / "And that's exactly the point" / abstract poetic closers like \
+"it's a quiet rebellion" / "a quiet kind of [noun]"
+- Rule-of-three lists ("you speak up, you set a boundary, you say no") — vary the count, don't default to 3
+- Parallel hammering ("You don't just X. You Y. You Z.") used more than once in the whole script
+- Rhetorical question chains (more than one rhetorical question back to back)
+- Overusing em-dashes for dramatic pause — if more than ~3 in the whole script, cut most of them and \
+restructure the sentence instead
+- "Subtle, but powerful" / "small, but real" / any "[adjective], but [adjective]" hedge construction
+- Therapy-speak buzzwords used like jargon-dropping rather than genuine explanation: "hold space", \
+"sit with it", "show up for yourself", "do the work" — if used, ground it in a concrete action instead
+
+REWRITE APPROACH for every flagged sentence: picture a specific, slightly imperfect human actually \
+saying this out loud to a friend — contractions, occasional sentence fragments, varied sentence \
+length (some short and blunt, some longer and winding), concrete sensory detail over abstraction. \
+Punctuation should cue how it's actually spoken — a short blunt sentence for a hard truth, a longer \
+trailing one (with "..." where a real pause would land) for something more uncertain or vulnerable, \
+a question mark where the voice would genuinely lift. This script gets read aloud by TTS, so the \
+punctuation IS the performance direction — use it deliberately, not decoratively.
+
+Other rules:
 1. Tighten pacing — cut any sentence that restates something already said.
 2. Make sure the psychological term introduced in babak 3 has one clear, plain-language sentence \
 defining it the first time it's used — a viewer with zero psych background should follow it.

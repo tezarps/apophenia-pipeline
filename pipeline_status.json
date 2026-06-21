@@ -5,30 +5,30 @@
       "icon": "🔮",
       "role": "Picks the next archetype",
       "status": "done",
-      "detail": "Topic #1: The Emotionally Avoidant Adult",
-      "updated_at": "2026-06-21T12:41:19.620543",
+      "detail": "Topic #2: The Compulsive Apologizer",
+      "updated_at": "2026-06-21T12:43:43.311717",
       "payload": {
-        "id": 1,
-        "category": "avoidant-attachment",
-        "topic": "The Emotionally Avoidant Adult",
-        "angle": "Why You Disappear From People Who Get Too Close"
+        "id": 2,
+        "category": "fawn-response",
+        "topic": "The Compulsive Apologizer",
+        "angle": "Why You Say Sorry For Things That Aren't Your Fault"
       }
     },
     "scribe": {
       "name": "The Scribe",
       "icon": "📜",
       "role": "Writes the 5-babak script",
-      "status": "error",
-      "detail": "{'statusCode': 404, 'error': Bucket not found, 'message': Bucket not found}",
-      "updated_at": "2026-06-21T12:42:23.112316"
+      "status": "done",
+      "detail": "1,882 words written",
+      "updated_at": "2026-06-21T12:45:09.001982"
     },
     "voice": {
       "name": "The Voice",
       "icon": "🎙️",
       "role": "Narrates the essay",
-      "status": "idle",
-      "detail": "",
-      "updated_at": "2026-06-21T12:41:18.496985"
+      "status": "done",
+      "detail": "Audio ready: 2.mp3",
+      "updated_at": "2026-06-21T12:46:39.225300"
     },
     "architect": {
       "name": "The Architect",
@@ -36,7 +36,7 @@
       "role": "Assembles the final video",
       "status": "idle",
       "detail": "",
-      "updated_at": "2026-06-21T12:41:18.496989"
+      "updated_at": "2026-06-21T12:43:42.223514"
     },
     "herald": {
       "name": "The Herald",
@@ -44,7 +44,7 @@
       "role": "Crafts title, metadata & thumbnails",
       "status": "idle",
       "detail": "",
-      "updated_at": "2026-06-21T12:41:18.496992"
+      "updated_at": "2026-06-21T12:43:42.223519"
     },
     "messenger": {
       "name": "The Messenger",
@@ -52,7 +52,7 @@
       "role": "Uploads to YouTube",
       "status": "idle",
       "detail": "",
-      "updated_at": "2026-06-21T12:41:18.496996"
+      "updated_at": "2026-06-21T12:43:42.223523"
     }
   },
   "runs": [
@@ -67,5 +67,10 @@
       "error": "{'statusCode': 404, 'error': Bucket not found, 'message': Bucket not found}"
     }
   ],
-  "current_run": null
+  "current_run": {
+    "topic_id": 2,
+    "topic": "Why You Say Sorry For Things That Aren't Your Fault",
+    "started_at": "2026-06-21T12:43:42.223464",
+    "status": "running"
+  }
 }
