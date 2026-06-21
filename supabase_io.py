@@ -18,10 +18,10 @@ from supabase import create_client, Client
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "")
 SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_KEY", "")
 
-AUDIO_BUCKET = "narava-audio"
-SCRIPTS_BUCKET = "narava-scripts"
-THUMBNAILS_BUCKET = "narava-thumbnails"
-IMAGES_BUCKET = "narava-images"
+AUDIO_BUCKET = "apophenia-audio"
+SCRIPTS_BUCKET = "apophenia-scripts"
+THUMBNAILS_BUCKET = "apophenia-thumbnails"
+IMAGES_BUCKET = "apophenia-images"
 
 _client = None
 
