@@ -9,7 +9,7 @@ import time
 import requests
 from config import (
     OUTPUT_DIR, ELEVENLABS_API_KEY, ELEVENLABS_MODEL, ELEVENLABS_OUTPUT_FORMAT,
-    ELEVENLABS_VOICE_ID, ELEVENLABS_VOICE_SETTINGS,
+    ELEVENLABS_VOICE_ID, ELEVENLABS_VOICE_SETTINGS, FFMPEG_BIN, FFPROBE_BIN,
 )
 
 SILENCE_MS = 450          # gap between ordinary script chunks
@@ -58,7 +58,7 @@ def _pcm_to_wav(pcm_bytes, sample_rate=44100, channels=1, bits_per_sample=16):
 
 def _audio_duration(path):
     r = subprocess.run(
-        ["ffprobe", "-v", "error", "-show_entries", "format=duration",
+        [FFPROBE_BIN, "-v", "error", "-show_entries", "format=duration",
          "-of", "default=noprint_wrappers=1:nokey=1", str(path)],
         capture_output=True, text=True
     )
@@ -73,7 +73,7 @@ def _segment_mean_volumes(audio_path, n_segments=4):
     volumes = []
     for i in range(n_segments):
         result = subprocess.run(
-            ["ffmpeg", "-ss", str(i * seg_len), "-t", str(seg_len), "-i", str(audio_path),
+            [FFMPEG_BIN, "-ss", str(i * seg_len), "-t", str(seg_len), "-i", str(audio_path),
              "-af", "volumedetect", "-f", "null", "-"],
             capture_output=True, text=True
         )
@@ -171,7 +171,7 @@ def _merge_with_ffmpeg(chunk_dir, out_path):
     def _make_silence(ms, name):
         path = chunk_dir / name
         subprocess.run([
-            "ffmpeg", "-y", "-f", "lavfi",
+            FFMPEG_BIN, "-y", "-f", "lavfi",
             "-i", "anullsrc=r=44100:cl=mono",
             "-t", f"{ms / 1000:.3f}",
             *_CODEC_ARGS, str(path)
@@ -189,7 +189,7 @@ def _merge_with_ffmpeg(chunk_dir, out_path):
 
     raw_merged = chunk_dir / f"merged_raw.{_AUDIO_EXT}"
     subprocess.run([
-        "ffmpeg", "-y",
+        FFMPEG_BIN, "-y",
         "-f", "concat", "-safe", "0",
         "-i", str(concat_file),
         *_CODEC_ARGS,
@@ -199,7 +199,7 @@ def _merge_with_ffmpeg(chunk_dir, out_path):
     # Single loudness normalization pass over the whole program — same reasoning
     # as Narava: far more reliable than many independent per-chunk passes.
     subprocess.run([
-        "ffmpeg", "-y", "-i", str(raw_merged),
+        FFMPEG_BIN, "-y", "-i", str(raw_merged),
         "-af", "loudnorm=I=-16:TP=-3.0:LRA=20",
         *_CODEC_ARGS, str(out_path)
     ], capture_output=True, check=True)

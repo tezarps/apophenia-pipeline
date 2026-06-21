@@ -2,7 +2,7 @@ import math
 import shutil
 import subprocess
 from pathlib import Path
-from config import IMAGES_DIR, OUTPUT_DIR
+from config import IMAGES_DIR, OUTPUT_DIR, FFMPEG_BIN, FFPROBE_BIN
 
 FPS = 25
 SLIDE_DURATION = 10  # seconds per image (Ken Burns)
@@ -70,7 +70,7 @@ def _make_ken_burns_clip(img_path, out_path):
         "setsar=1",
     ]
     cmd = [
-        "ffmpeg", "-y",
+        FFMPEG_BIN, "-y",
         "-loop", "1", "-i", str(img_path),
         "-vf", ",".join(vf_parts),
         "-t", str(SLIDE_DURATION),
@@ -85,7 +85,7 @@ def _make_ken_burns_clip(img_path, out_path):
 
 def _make_black_clip(out_path):
     cmd = [
-        "ffmpeg", "-y", "-f", "lavfi",
+        FFMPEG_BIN, "-y", "-f", "lavfi",
         "-i", f"color=c=black:s=1920x1080:r={FPS}",
         "-t", str(SLIDE_DURATION),
         "-c:v", "libx264", "-preset", "fast", "-pix_fmt", "yuv420p",
@@ -98,7 +98,7 @@ def _make_black_clip(out_path):
 
 def _audio_duration(audio_path):
     r = subprocess.run(
-        ["ffprobe", "-v", "error", "-show_entries", "format=duration",
+        [FFPROBE_BIN, "-v", "error", "-show_entries", "format=duration",
          "-of", "default=noprint_wrappers=1:nokey=1", str(audio_path)],
         capture_output=True, text=True, check=True,
     )
@@ -169,7 +169,7 @@ def create_video(audio_path, category, topic_id, topic_slug=None, blackscreen_sp
             "[narration][music]amix=inputs=2:duration=first:dropout_transition=3[aout]"
         )
         cmd = [
-            "ffmpeg", "-y",
+            FFMPEG_BIN, "-y",
             "-f", "concat", "-safe", "0", "-i", str(concat_file),
             "-i", str(audio_path),
             "-i", str(music_path),
@@ -183,7 +183,7 @@ def create_video(audio_path, category, topic_id, topic_slug=None, blackscreen_sp
         print(f"    Assembling video + music ({category})...")
     else:
         cmd = [
-            "ffmpeg", "-y",
+            FFMPEG_BIN, "-y",
             "-f", "concat", "-safe", "0", "-i", str(concat_file),
             "-i", str(audio_path),
             "-c:v", "copy",
@@ -202,7 +202,7 @@ def create_video(audio_path, category, topic_id, topic_slug=None, blackscreen_sp
         ass_escaped = str(subtitles_path).replace("\\", "/").replace(":", "\\:")
         fonts_escaped = str(FONTS_DIR).replace("\\", "/").replace(":", "\\:")
         cmd_sub = [
-            "ffmpeg", "-y", "-i", str(pre_subtitle_path),
+            FFMPEG_BIN, "-y", "-i", str(pre_subtitle_path),
             "-vf", f"subtitles={ass_escaped}:fontsdir={fonts_escaped}",
             "-c:a", "copy",
             "-c:v", "libx264", "-preset", "fast", "-pix_fmt", "yuv420p",

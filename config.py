@@ -39,6 +39,15 @@ ELEVENLABS_VOICE_SETTINGS = {
 # tier ($99/mo), Creator tier only supports lossy. See project memory project_apophenia.md.
 ELEVENLABS_OUTPUT_FORMAT = "mp3_44100_192"
 
+# Homebrew's default `ffmpeg` formula bottle isn't built with libass, so the
+# `subtitles` filter (caption burn-in) fails with "Unknown filter" on a stock
+# local install — confirmed 2026-06-21. `brew install ffmpeg-full` provides it
+# but is keg-only, so it's opted into per-project via .env (FFMPEG_BIN) instead
+# of touching the global shell PATH. GitHub Actions' `apt-get install ffmpeg`
+# already includes libass, so the plain "ffmpeg"/"ffprobe" default is correct there.
+FFMPEG_BIN = os.environ.get("FFMPEG_BIN", "ffmpeg")
+FFPROBE_BIN = os.environ.get("FFPROBE_BIN", "ffprobe")
+
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 (OUTPUT_DIR / "audio").mkdir(exist_ok=True)
 (OUTPUT_DIR / "video").mkdir(exist_ok=True)
