@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Narava AI</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            gold: { DEFAULT: '#d4a843', light: '#e8c96e', dim: '#8a6e2a' },
+            surface: { DEFAULT: '#12121c', raised: '#1a1a2e', high: '#222238' },
+            ink: { DEFAULT: '#e8e8f4', muted: '#9090b0', faint: '#4a4a6a' },
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
+    body { background: #0a0a14; color: #e8e8f4; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif; overscroll-behavior: none; }
+    .pb-safe { padding-bottom: max(5.5rem, calc(4.5rem + env(safe-area-inset-bottom))); }
+    .bottom-nav { padding-bottom: max(0.75rem, env(safe-area-inset-bottom)); }
+    .pt-safe { padding-top: max(1rem, env(safe-area-inset-top)); }
+    ::-webkit-scrollbar { display: none; }
+
+    .tab-btn { transition: color .15s, border-color .15s; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    .agent-card { transition: transform .1s; }
+    .agent-card:active { transform: scale(.97); }
+
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+    .dot-running { background: #f59e0b; box-shadow: 0 0 6px #f59e0b; animation: pulse-dot 1.2s infinite; }
+    .dot-done    { background: #22c55e; }
+    .dot-error   { background: #ef4444; }
+    .dot-idle    { background: #4a4a6a; }
+    @keyframes pulse-dot { 0%,100%{ opacity:1; } 50%{ opacity:.4; } }
+
+    .badge { display: inline-flex; align-items: center; padding: 2px 10px; border-radius: 999px; font-size: 11px; font-weight: 600; letter-spacing: .3px; }
+    .badge-pending   { background: rgba(212,168,67,.15); color: #d4a843; }
+    .badge-published { background: rgba(34,197,94,.12); color: #22c55e; }
+    .badge-failed    { background: rgba(239,68,68,.12); color: #ef4444; }
+    .badge-running   { background: rgba(245,158,11,.12); color: #f59e0b; }
+
+    .run-bar { height: 2px; background: rgba(212,168,67,.15); border-radius: 1px; overflow: hidden; }
+    .run-bar-fill { height: 100%; background: linear-gradient(90deg, #d4a843, #e8c96e); border-radius: 1px; transition: width 1s ease; }
+
+    input, textarea, select {
+      background: #1a1a2e; border: 1px solid #2a2a4a; color: #e8e8f4;
+      border-radius: 10px; padding: 10px 14px; width: 100%;
+      font-size: 15px; outline: none;
+    }
+    input:focus, textarea:focus, select:focus { border-color: #d4a843; }
+    textarea { resize: vertical; min-height: 80px; }
+
+    .log-line { font-family: 'SF Mono', 'Menlo', monospace; font-size: 11px; line-height: 1.6; color: #9090b0; border-bottom: 1px solid rgba(255,255,255,.03); padding: 2px 0; }
+    .log-line.highlight { color: #e8c96e; }
+    .log-line.error { color: #ef4444; }
+
+    .topic-row:active { background: rgba(255,255,255,.03); }
+    .swipe-actions { display: none; }
+
+    #toast { transition: opacity .3s, transform .3s; }
+    .gold-glow { text-shadow: 0 0 20px rgba(212,168,67,.5); }
+    .agent-card { cursor: pointer; }
+    .drawer-sheet { transition: transform .32s cubic-bezier(.32,1,.23,1); }
+    pre.script-text { white-space: pre-wrap; word-break: break-word; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif; font-size: 13px; line-height: 1.75; color: #c8c8e0; }
+  </style>
+</head>
+
+<body class="min-h-screen">
+
+<!-- HEADER -->
+<div class="fixed top-0 left-0 right-0 z-30 pt-safe" style="background: rgba(10,10,20,.92); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-bottom: 1px solid rgba(212,168,67,.1);">
+  <div class="flex items-center justify-between px-4 pb-3">
+    <div>
+      <div class="text-xs text-ink-muted tracking-widest uppercase mb-0.5">Pipeline Control</div>
+      <div class="text-lg font-semibold gold-glow" style="color:#d4a843;">✦ Narava AI</div>
+    </div>
+    <div id="header-status" class="flex items-center gap-2 text-xs text-ink-muted">
+      <span class="status-dot dot-idle" id="main-dot"></span>
+      <span id="main-status-text">Idle</span>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN CONTENT -->
+<div class="pb-safe" style="padding-top: 88px;">
+
+  <!-- ═══ TAB: DASHBOARD ═══════════════════════════════════════════ -->
+  <div class="tab-content active" id="tab-dashboard">
+
+    <!-- Current Run Banner -->
+    <div id="run-banner" class="hidden mx-4 mt-4 rounded-2xl p-4" style="background: rgba(212,168,67,.08); border: 1px solid rgba(212,168,67,.2);">
+      <div class="flex items-center gap-2 mb-1">
+        <span class="status-dot dot-running"></span>
+        <span class="text-xs font-semibold tracking-wide uppercase" style="color:#d4a843;">Running Now</span>
+      </div>
+      <div id="run-banner-topic" class="text-sm text-ink-muted leading-snug mt-1 truncate"></div>
+      <div class="run-bar mt-3"><div class="run-bar-fill" id="run-bar-fill" style="width:0%"></div></div>
+    </div>
+
+    <!-- Stats Row -->
+    <div class="grid grid-cols-3 gap-3 px-4 mt-4">
+      <div class="rounded-2xl p-3 text-center" style="background:#12121c; border:1px solid #1e1e36;">
+        <div class="text-2xl font-bold" style="color:#d4a843;" id="stat-published">—</div>
+        <div class="text-xs text-ink-muted mt-0.5">Published</div>
+      </div>
+      <div class="rounded-2xl p-3 text-center" style="background:#12121c; border:1px solid #1e1e36;">
+        <div class="text-2xl font-bold text-ink" id="stat-pending">—</div>
+        <div class="text-xs text-ink-muted mt-0.5">In Queue</div>
+      </div>
+      <div class="rounded-2xl p-3 text-center" style="background:#12121c; border:1px solid #1e1e36;">
+        <div class="text-2xl font-bold text-ink" id="stat-today">—</div>
+        <div class="text-xs text-ink-muted mt-0.5">Today</div>
+      </div>
+    </div>
+
+    <!-- Agents Grid -->
+    <div class="px-4 mt-5">
+      <div class="text-xs text-ink-faint tracking-widest uppercase mb-3">Agents</div>
+      <div class="grid grid-cols-2 gap-3" id="agents-grid">
+        <!-- filled by JS -->
+      </div>
+    </div>
+
+    <!-- Last Run -->
+    <div class="px-4 mt-5 mb-2">
+      <div class="text-xs text-ink-faint tracking-widest uppercase mb-3">Last Run</div>
+      <div id="last-run-card" class="rounded-2xl p-4" style="background:#12121c; border:1px solid #1e1e36;">
+        <div class="text-sm text-ink-muted">No runs yet.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ TAB: TOPICS ══════════════════════════════════════════════ -->
+  <div class="tab-content" id="tab-topics">
+
+    <!-- Filter + Add -->
+    <div class="px-4 mt-4 flex gap-2">
+      <select id="topic-filter" class="flex-1" style="border-radius:10px; padding:9px 12px; font-size:14px;">
+        <option value="all">All Topics</option>
+        <option value="pending">Pending</option>
+        <option value="published">Published</option>
+        <option value="failed">Failed</option>
+      </select>
+      <button onclick="showAddTopic()" class="px-4 rounded-2xl text-sm font-semibold flex items-center gap-1" style="background: rgba(212,168,67,.15); color:#d4a843; border:1px solid rgba(212,168,67,.3); white-space:nowrap;">
+        + Add
+      </button>
+    </div>
+
+    <!-- Topic List -->
+    <div id="topics-list" class="px-4 mt-3 space-y-2">
+      <!-- filled by JS -->
+    </div>
+
+    <!-- Add Form (hidden) -->
+    <div id="add-topic-sheet" class="hidden fixed inset-0 z-50 flex items-end" style="background: rgba(0,0,0,.7);">
+      <div class="w-full rounded-t-3xl p-6 space-y-4" style="background:#1a1a2e; border-top:1px solid #2a2a4a;">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-base font-semibold">Add New Topic</span>
+          <button onclick="hideAddTopic()" class="text-ink-muted text-2xl leading-none">×</button>
+        </div>
+        <div>
+          <label class="text-xs text-ink-muted mb-1 block">Category</label>
+          <select id="new-category" style="border-radius:10px; padding:10px 14px;">
+            <option value="greek">Greek</option>
+            <option value="norse">Norse</option>
+            <option value="egyptian">Egyptian</option>
+            <option value="celtic">Celtic</option>
+            <option value="japanese">Japanese</option>
+            <option value="aztec">Aztec</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-xs text-ink-muted mb-1 block">Topic (God/Subject)</label>
+          <input type="text" id="new-topic" placeholder="e.g. Athena">
+        </div>
+        <div>
+          <label class="text-xs text-ink-muted mb-1 block">Angle (Full Video Title Idea)</label>
+          <textarea id="new-angle" placeholder="e.g. Life as Athena's Weaver in the Temple of Athens for Sleep"></textarea>
+        </div>
+        <button onclick="submitAddTopic()" class="w-full py-3.5 rounded-2xl font-semibold text-sm" style="background: linear-gradient(135deg,#c49a38,#e8c96e); color:#0a0a14;">
+          Add to Queue
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ TAB: SCHEDULE ════════════════════════════════════════════ -->
+  <div class="tab-content" id="tab-schedule">
+    <div class="px-4 mt-4">
+
+      <!-- Upcoming -->
+      <div class="flex items-center justify-between mb-3">
+        <div class="text-xs text-ink-faint tracking-widest uppercase">Jadwal Tayang</div>
+        <div class="text-xs text-ink-faint">WIB +7</div>
+      </div>
+      <div id="schedule-upcoming" class="space-y-2 mb-6">
+        <div class="text-sm text-ink-muted py-4 text-center">Loading...</div>
+      </div>
+
+      <!-- History -->
+      <div class="text-xs text-ink-faint tracking-widest uppercase mb-3 mt-2" style="border-top:1px solid #1e1e36; padding-top:16px;">Riwayat Upload</div>
+      <div id="schedule-history" class="space-y-2">
+        <div class="text-sm text-ink-muted py-4 text-center">Loading...</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══ TAB: LOGS ════════════════════════════════════════════════ -->
+  <div class="tab-content" id="tab-logs">
+    <div class="px-4 mt-4">
+      <div class="flex items-center justify-between mb-3">
+        <div class="text-xs text-ink-faint tracking-widest uppercase">Live Log</div>
+        <button onclick="clearLogView()" class="text-xs text-ink-muted">Clear view</button>
+      </div>
+      <div id="log-box" class="rounded-2xl p-4 overflow-y-auto" style="background:#0d0d1a; border:1px solid #1a1a2e; max-height: calc(100vh - 200px); min-height: 300px;">
+        <div class="log-line text-ink-faint">Waiting for logs...</div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<!-- BOTTOM NAV -->
+<div class="fixed bottom-0 left-0 right-0 z-30 bottom-nav" style="background: rgba(10,10,20,.95); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-top: 1px solid rgba(255,255,255,.06);">
+  <div class="grid grid-cols-4">
+    <button class="tab-btn py-3 flex flex-col items-center gap-1" onclick="switchTab('dashboard', this)" id="nav-dashboard">
+      <span class="text-xl">⚡</span>
+      <span class="text-xs">Dashboard</span>
+    </button>
+    <button class="tab-btn py-3 flex flex-col items-center gap-1" onclick="switchTab('topics', this)" id="nav-topics">
+      <span class="text-xl">📋</span>
+      <span class="text-xs">Topics</span>
+    </button>
+    <button class="tab-btn py-3 flex flex-col items-center gap-1" onclick="switchTab('schedule', this)" id="nav-schedule">
+      <span class="text-xl">📅</span>
+      <span class="text-xs">Schedule</span>
+    </button>
+    <button class="tab-btn py-3 flex flex-col items-center gap-1" onclick="switchTab('logs', this)" id="nav-logs">
+      <span class="text-xl">📄</span>
+      <span class="text-xs">Logs</span>
+    </button>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast" class="fixed top-20 left-1/2 -translate-x-1/2 z-50 opacity-0 pointer-events-none px-5 py-2.5 rounded-2xl text-sm font-medium" style="background:#1a1a2e; border:1px solid #2a2a4a; transform: translateX(-50%) translateY(-8px);">
+  <span id="toast-msg"></span>
+</div>
+
+<!-- AGENT DRAWER -->
+<div id="agent-drawer" class="fixed inset-0 z-50 pointer-events-none">
+  <div id="drawer-backdrop" class="absolute inset-0 opacity-0 transition-opacity duration-300" onclick="closeDrawer()" style="background:rgba(0,0,0,.78);"></div>
+  <div id="drawer-sheet" class="drawer-sheet absolute bottom-0 left-0 right-0 rounded-t-3xl" style="background:#12121c; border-top:1px solid #2a2a4a; max-height:86vh; display:flex; flex-direction:column; transform:translateY(100%);">
+    <div class="flex items-start justify-between p-5 pb-4 flex-shrink-0" style="border-bottom:1px solid #1e1e36;">
+      <div>
+        <div id="drawer-icon" class="text-3xl mb-1"></div>
+        <div id="drawer-title" class="text-base font-semibold text-ink"></div>
+        <div id="drawer-role" class="text-xs text-ink-muted mt-0.5"></div>
+      </div>
+      <button onclick="closeDrawer()" class="text-xl text-ink-muted w-8 h-8 flex items-center justify-center rounded-full flex-shrink-0" style="background:#1e1e36;">×</button>
+    </div>
+    <div id="drawer-body" class="overflow-y-auto p-5 pb-10 flex-1"></div>
+  </div>
+</div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────
+let currentTab = 'dashboard';
+let logsEventSource = null;
+const activeNavStyle = { color: '#d4a843' };
+const inactiveNavStyle = { color: '#4a4a6a' };
+let runProgress = 0;
+let runProgressInterval = null;
+
+// ── Tab Navigation ─────────────────────────────────────────────────
+function switchTab(tab, btn) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(el => {
+    el.style.color = '#4a4a6a';
+  });
+  document.getElementById('tab-' + tab).classList.add('active');
+  if (btn) btn.style.color = '#d4a843';
+  currentTab = tab;
+
+  if (tab === 'logs') startLogStream();
+  else stopLogStream();
+  if (tab === 'topics') loadTopics();
+  if (tab === 'schedule') loadSchedule();
+}
+
+// Init nav color
+document.getElementById('nav-dashboard').style.color = '#d4a843';
+['nav-topics','nav-schedule','nav-logs'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) el.style.color = '#4a4a6a';
+});
+
+// ── Agent Rendering ────────────────────────────────────────────────
+const AGENT_ORDER = ['oracle','scribe','voice','architect','herald','messenger'];
+
+function renderAgents(agents) {
+  const grid = document.getElementById('agents-grid');
+  grid.innerHTML = '';
+  AGENT_ORDER.forEach(key => {
+    const a = agents[key] || { name: key, icon: '●', status: 'idle', detail: '' };
+    const dotClass = {
+      running: 'dot-running', done: 'dot-done', error: 'dot-error', idle: 'dot-idle'
+    }[a.status] || 'dot-idle';
+    const statusLabel = { running: 'Running', done: 'Done', error: 'Error', idle: 'Idle' }[a.status] || 'Idle';
+    const timeAgo = a.updated_at ? relativeTime(a.updated_at) : '';
+    grid.innerHTML += `
+      <div class="agent-card rounded-2xl p-4" onclick="openDrawer('${key}')" style="background:#12121c; border:1px solid ${a.status==='running'?'rgba(245,158,11,.3)':a.status==='error'?'rgba(239,68,68,.2)':'#1e1e36'};">
+        <div class="flex items-start justify-between mb-2">
+          <span class="text-2xl">${a.icon}</span>
+          <div class="flex items-center gap-1.5 mt-1">
+            <span class="status-dot ${dotClass}"></span>
+            <span class="text-ink-faint" style="font-size:10px;">›</span>
+          </div>
+        </div>
+        <div class="text-sm font-semibold text-ink">${a.name}</div>
+        <div class="text-xs mt-0.5" style="color:${a.status==='running'?'#f59e0b':a.status==='done'?'#22c55e':a.status==='error'?'#ef4444':'#4a4a6a'}">${statusLabel}</div>
+        ${a.detail ? `<div class="text-xs text-ink-muted mt-2 leading-snug truncate">${a.detail}</div>` : ''}
+        ${timeAgo ? `<div class="text-xs text-ink-faint mt-1">${timeAgo}</div>` : ''}
+      </div>`;
+  });
+}
+
+// ── Run Banner ─────────────────────────────────────────────────────
+function updateRunBanner(current_run) {
+  const banner = document.getElementById('run-banner');
+  const dot = document.getElementById('main-dot');
+  const statusText = document.getElementById('main-status-text');
+
+  if (current_run) {
+    banner.classList.remove('hidden');
+    document.getElementById('run-banner-topic').textContent = current_run.topic;
+    dot.className = 'status-dot dot-running';
+    statusText.textContent = 'Running';
+    if (!runProgressInterval) {
+      runProgress = 0;
+      runProgressInterval = setInterval(() => {
+        runProgress = Math.min(runProgress + 1.2, 92);
+        document.getElementById('run-bar-fill').style.width = runProgress + '%';
+      }, 3000);
+    }
+  } else {
+    banner.classList.add('hidden');
+    dot.className = 'status-dot dot-idle';
+    statusText.textContent = 'Idle';
+    if (runProgressInterval) {
+      clearInterval(runProgressInterval);
+      runProgressInterval = null;
+      document.getElementById('run-bar-fill').style.width = '0%';
+    }
+  }
+}
+
+// ── Last Run Card ──────────────────────────────────────────────────
+function renderLastRun(runs) {
+  const card = document.getElementById('last-run-card');
+  if (!runs || !runs.length) { card.innerHTML = '<div class="text-sm text-ink-muted">No runs yet.</div>'; return; }
+  const r = runs[0];
+  const icon = r.status === 'published' ? '✅' : '❌';
+  const videoLink = r.video_id ? `<a href="https://youtube.com/watch?v=${r.video_id}" class="text-xs underline mt-1 block" style="color:#d4a843;" target="_blank">youtube.com/watch?v=${r.video_id}</a>` : '';
+  card.innerHTML = `
+    <div class="flex items-start gap-3">
+      <span class="text-xl mt-0.5">${icon}</span>
+      <div class="flex-1 min-w-0">
+        <div class="text-sm text-ink leading-snug">${r.topic}</div>
+        <div class="text-xs text-ink-muted mt-1">${relativeTime(r.started_at)} · ${r.duration_min || '—'} min</div>
+        ${videoLink}
+        ${r.error ? `<div class="text-xs mt-1" style="color:#ef4444;">${r.error}</div>` : ''}
+      </div>
+    </div>`;
+}
+
+// ── Stats ──────────────────────────────────────────────────────────
+function updateStats(stats) {
+  document.getElementById('stat-published').textContent = stats.published ?? '—';
+  document.getElementById('stat-pending').textContent = stats.pending ?? '—';
+  document.getElementById('stat-today').textContent = stats.published_today ?? '—';
+}
+
+// ── Topics ─────────────────────────────────────────────────────────
+async function loadTopics() {
+  const filter = document.getElementById('topic-filter').value;
+  const res = await fetch(`/api/topics?status=${filter}`);
+  const topics = await res.json();
+  const list = document.getElementById('topics-list');
+  if (!topics.length) { list.innerHTML = '<div class="text-sm text-ink-muted py-4 text-center">No topics found.</div>'; return; }
+
+  list.innerHTML = topics.map(t => {
+    const catEmoji = { greek:'🏺', norse:'⚔️', egyptian:'𓂀', celtic:'🍀', japanese:'⛩️', aztec:'🌞' }[t.category] || '🌍';
+    return `
+    <div class="topic-row rounded-2xl p-4 flex items-start gap-3" style="background:#12121c; border:1px solid #1e1e36;">
+      <span class="text-xl mt-0.5 flex-shrink-0">${catEmoji}</span>
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center gap-2 flex-wrap mb-1">
+          <span class="text-xs font-medium text-ink-muted capitalize">${t.category}</span>
+          <span class="badge badge-${t.status}">${t.status}</span>
+        </div>
+        <div class="text-sm text-ink leading-snug">${t.angle || t.topic}</div>
+        ${t.video_id ? `<div class="text-xs mt-1" style="color:#d4a843;">▶ ${t.video_id}</div>` : ''}
+        ${t.notes ? `<div class="text-xs mt-1" style="color:#ef4444; opacity:.7;">${t.notes}</div>` : ''}
+      </div>
+      <div class="flex flex-col gap-2 flex-shrink-0">
+        ${t.status === 'failed' ? `<button onclick="resetTopic(${t.id})" class="text-xs px-3 py-1.5 rounded-xl" style="background:rgba(212,168,67,.1);color:#d4a843;">Retry</button>` : ''}
+        ${t.status === 'pending' ? `<button onclick="deleteTopic(${t.id})" class="text-xs px-3 py-1.5 rounded-xl" style="background:rgba(239,68,68,.1);color:#ef4444;">Del</button>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+document.getElementById('topic-filter').addEventListener('change', loadTopics);
+
+function showAddTopic() { document.getElementById('add-topic-sheet').classList.remove('hidden'); }
+function hideAddTopic() { document.getElementById('add-topic-sheet').classList.add('hidden'); }
+
+async function submitAddTopic() {
+  const body = {
+    category: document.getElementById('new-category').value,
+    topic: document.getElementById('new-topic').value.trim(),
+    angle: document.getElementById('new-angle').value.trim(),
+  };
+  if (!body.topic || !body.angle) { showToast('Fill all fields'); return; }
+  await fetch('/api/topics', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+  hideAddTopic();
+  document.getElementById('new-topic').value = '';
+  document.getElementById('new-angle').value = '';
+  showToast('Topic added ✓');
+  loadTopics();
+}
+
+async function resetTopic(id) {
+  await fetch(`/api/topics/${id}/reset`, { method:'PUT' });
+  showToast('Reset to pending ✓');
+  loadTopics();
+}
+
+async function deleteTopic(id) {
+  if (!confirm('Delete this topic?')) return;
+  await fetch(`/api/topics/${id}`, { method:'DELETE' });
+  showToast('Deleted');
+  loadTopics();
+}
+
+// ── Schedule ───────────────────────────────────────────────────────
+async function loadSchedule() {
+  const [schedRes, statusRes] = await Promise.all([
+    fetch('/api/schedule'),
+    fetch('/api/status'),
+  ]);
+  const sched = await schedRes.json();
+  const status = await statusRes.json();
+
+  // --- Upcoming ---
+  const upcomingEl = document.getElementById('schedule-upcoming');
+  const upcoming = sched.upcoming || [];
+  if (!upcoming.length) {
+    upcomingEl.innerHTML = '<div class="rounded-2xl p-4 text-sm text-ink-muted text-center" style="background:#12121c;border:1px solid #1e1e36;">Tidak ada video terjadwal.</div>';
+  } else {
+    upcomingEl.innerHTML = upcoming.map(e => {
+      const pubWIB = formatWIB(e.publish_at_utc);
+      const countdown = countdownTo(e.publish_at_utc);
+      return `
+      <div class="rounded-2xl p-4" style="background:rgba(212,168,67,.06); border:1px solid rgba(212,168,67,.2);">
+        <div class="flex items-start gap-3">
+          <span class="text-xl mt-0.5">🕐</span>
+          <div class="flex-1 min-w-0">
+            <div class="text-sm text-ink font-medium leading-snug">${e.title || '—'}</div>
+            <div class="flex items-center gap-2 mt-2 flex-wrap">
+              <span class="text-xs font-semibold" style="color:#d4a843;">📅 ${pubWIB} WIB</span>
+              <span class="text-xs text-ink-muted">${countdown}</span>
+            </div>
+            <div class="flex items-center gap-3 mt-2">
+              <a href="https://youtube.com/watch?v=${e.video_id}" target="_blank" class="text-xs underline" style="color:#d4a843;">Preview ↗</a>
+              <a href="https://studio.youtube.com/video/${e.video_id}/edit" target="_blank" class="text-xs underline" style="color:#9090b0;">Edit di Studio ↗</a>
+            </div>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // --- History: from schedule.json past + pipeline runs ---
+  const historyEl = document.getElementById('schedule-history');
+  const past = sched.past || [];
+  const runs = status.runs || [];
+
+  // Merge: past scheduled + runs not in scheduled
+  const scheduledIds = new Set(past.map(e => e.video_id));
+  const runItems = runs.filter(r => !scheduledIds.has(r.video_id)).map(r => ({
+    video_id: r.video_id || '',
+    title: r.topic,
+    publish_at_utc: r.finished_at || r.started_at,
+    uploaded_at: r.started_at,
+    status: r.status,
+    duration_min: r.duration_min,
+    error: r.error,
+    _from_run: true,
+  }));
+  const allHistory = [...past, ...runItems].sort((a,b) =>
+    (b.uploaded_at||'').localeCompare(a.uploaded_at||''));
+
+  if (!allHistory.length) {
+    historyEl.innerHTML = '<div class="text-sm text-ink-muted py-4 text-center">Belum ada riwayat upload.</div>';
+  } else {
+    historyEl.innerHTML = allHistory.map(e => {
+      const isOk = e.status === 'scheduled' || e.status === 'published';
+      const icon = isOk ? '✅' : '❌';
+      const label = e.status === 'scheduled' ? 'Uploaded' : e.status;
+      const pubWIB = e.publish_at_utc ? formatWIB(e.publish_at_utc) : '—';
+      const uploadedAgo = e.uploaded_at ? relativeTime(e.uploaded_at) : '';
+      return `
+      <div class="rounded-2xl p-4" style="background:#12121c; border:1px solid #1e1e36;">
+        <div class="flex items-start gap-3">
+          <span class="text-lg mt-0.5 flex-shrink-0">${icon}</span>
+          <div class="flex-1 min-w-0">
+            <div class="text-sm text-ink leading-snug">${e.title || '—'}</div>
+            <div class="flex items-center gap-2 mt-1.5 flex-wrap">
+              <span class="badge badge-${isOk?'published':'failed'}">${label}</span>
+              ${e.publish_at_utc ? `<span class="text-xs text-ink-muted">Tayang ${pubWIB} WIB</span>` : ''}
+              ${uploadedAgo ? `<span class="text-xs text-ink-faint">${uploadedAgo}</span>` : ''}
+            </div>
+            ${e.duration_min ? `<div class="text-xs text-ink-faint mt-1">⏱ ${e.duration_min} menit</div>` : ''}
+            ${e.video_id ? `<div class="flex gap-3 mt-2">
+              <a href="https://youtube.com/watch?v=${e.video_id}" target="_blank" class="text-xs underline" style="color:#d4a843;">Watch ↗</a>
+              <a href="https://studio.youtube.com/video/${e.video_id}/edit" target="_blank" class="text-xs underline" style="color:#9090b0;">Studio ↗</a>
+            </div>` : ''}
+            ${e.error ? `<div class="text-xs mt-1.5 px-2 py-1 rounded-lg" style="background:rgba(239,68,68,.08);color:#ef4444;">${e.error}</div>` : ''}
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+}
+
+function formatWIB(utcStr) {
+  if (!utcStr) return '—';
+  const d = new Date(utcStr);
+  const wib = new Date(d.getTime() + 7 * 3600 * 1000);
+  const days = ['Min','Sen','Sel','Rab','Kam','Jum','Sab'];
+  const day = days[wib.getUTCDay()];
+  const date = wib.getUTCDate();
+  const months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+  const month = months[wib.getUTCMonth()];
+  const hh = String(wib.getUTCHours()).padStart(2,'0');
+  const mm = String(wib.getUTCMinutes()).padStart(2,'0');
+  return `${day} ${date} ${month}, ${hh}:${mm}`;
+}
+
+function countdownTo(utcStr) {
+  if (!utcStr) return '';
+  const diff = new Date(utcStr).getTime() - Date.now();
+  if (diff <= 0) return 'Sudah tayang';
+  const h = Math.floor(diff / 3600000);
+  const m = Math.floor((diff % 3600000) / 60000);
+  if (h >= 24) return `${Math.floor(h/24)}h ${h%24}j lagi`;
+  if (h > 0) return `${h}j ${m}m lagi`;
+  return `${m} menit lagi`;
+}
+
+// ── Logs ───────────────────────────────────────────────────────────
+async function startLogStream() {
+  const box = document.getElementById('log-box');
+  const res = await fetch('/api/logs?lines=80');
+  const data = await res.json();
+  box.innerHTML = '';
+  data.lines.forEach(l => appendLog(l));
+  scrollLogsBottom();
+
+  if (logsEventSource) { logsEventSource.close(); }
+  logsEventSource = new EventSource('/api/logs/stream');
+  logsEventSource.onmessage = e => {
+    appendLog(e.data);
+    scrollLogsBottom();
+  };
+}
+
+function stopLogStream() {
+  if (logsEventSource) { logsEventSource.close(); logsEventSource = null; }
+}
+
+function appendLog(line) {
+  const box = document.getElementById('log-box');
+  const div = document.createElement('div');
+  div.className = 'log-line' + (line.includes('✓') ? ' highlight' : line.toLowerCase().includes('error') || line.includes('✗') ? ' error' : '');
+  div.textContent = line;
+  box.appendChild(div);
+  if (box.children.length > 200) box.removeChild(box.firstChild);
+}
+
+function scrollLogsBottom() {
+  const box = document.getElementById('log-box');
+  box.scrollTop = box.scrollHeight;
+}
+
+function clearLogView() {
+  document.getElementById('log-box').innerHTML = '';
+}
+
+// ── Drawer ──────────────────────────────────────────────────────────
+let drawerStatusCache = null;
+
+function openDrawer(agentKey) {
+  const drawer = document.getElementById('agent-drawer');
+  const sheet = document.getElementById('drawer-sheet');
+  const backdrop = document.getElementById('drawer-backdrop');
+  const a = (drawerStatusCache?.agents || {})[agentKey] || {};
+
+  document.getElementById('drawer-icon').textContent = a.icon || '●';
+  document.getElementById('drawer-title').textContent = a.name || agentKey;
+  document.getElementById('drawer-role').textContent = a.role || '';
+  document.getElementById('drawer-body').innerHTML = '<div class="text-ink-muted text-sm py-4 text-center">Loading...</div>';
+
+  drawer.style.pointerEvents = 'auto';
+  sheet.style.transform = 'translateY(0)';
+  backdrop.style.opacity = '1';
+  backdrop.style.pointerEvents = 'auto';
+
+  loadDrawerContent(agentKey, a);
+}
+
+function closeDrawer() {
+  const drawer = document.getElementById('agent-drawer');
+  const sheet = document.getElementById('drawer-sheet');
+  const backdrop = document.getElementById('drawer-backdrop');
+  sheet.style.transform = 'translateY(100%)';
+  backdrop.style.opacity = '0';
+  backdrop.style.pointerEvents = 'none';
+  setTimeout(() => { drawer.style.pointerEvents = 'none'; }, 320);
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function statusBadge(s) {
+  const map = { done:'published', error:'failed', running:'running', idle:'pending' };
+  return s ? `<span class="badge badge-${map[s]||'pending'}" style="font-size:10px;">${s}</span>` : '';
+}
+
+function infoRow(label, val) {
+  return `<div class="flex justify-between items-start gap-3 text-sm py-2" style="border-bottom:1px solid #1e1e36;">
+    <span class="text-ink-faint text-xs uppercase tracking-wide flex-shrink-0">${label}</span>
+    <span class="text-ink text-right">${val}</span>
+  </div>`;
+}
+
+async function loadDrawerContent(key, a) {
+  const body = document.getElementById('drawer-body');
+  const topicId = drawerStatusCache?.current_run?.topic_id || drawerStatusCache?.runs?.[0]?.id;
+  const sb = statusBadge(a.status);
+
+  if (key === 'oracle') {
+    const p = a.payload || {};
+    body.innerHTML = `<div class="space-y-3">
+      ${sb ? `<div class="mb-2">${sb}</div>` : ''}
+      ${p.id ? infoRow('Topic ID', '#' + p.id) : ''}
+      ${p.category ? infoRow('Category', `<span class="capitalize">${escHtml(p.category)}</span>`) : ''}
+      ${p.topic ? infoRow('Subject', escHtml(p.topic)) : ''}
+      ${p.angle ? `<div class="rounded-2xl p-4 mt-3" style="background:#1a1a2e; border:1px solid #2a2a4a;">
+        <div class="text-xs text-ink-faint uppercase tracking-wide mb-2">Angle</div>
+        <div class="text-sm text-ink leading-relaxed">${escHtml(p.angle)}</div>
+      </div>` : ''}
+      ${!p.id && a.detail ? `<div class="text-sm text-ink-muted">${escHtml(a.detail)}</div>` : ''}
+    </div>`;
+    return;
+  }
+
+  if (key === 'scribe') {
+    if (!topicId) { body.innerHTML = `<div class="text-ink-muted text-sm">No script available yet.</div>`; return; }
+    try {
+      const res = await fetch(`/api/output/script/${topicId}`);
+      if (!res.ok) { body.innerHTML = `<div class="text-ink-muted text-sm py-4 text-center">Script not saved yet — run the pipeline first.</div>`; return; }
+      const data = await res.json();
+      const words = data.script.trim().split(/\s+/).length;
+      body.innerHTML = `<div class="mb-4 flex items-center gap-3 flex-wrap">
+        ${sb}
+        <span class="text-xs text-ink-muted">${words.toLocaleString()} words</span>
+        <span class="text-xs text-ink-muted">~${Math.round(words/130)} min</span>
+      </div><pre class="script-text">${escHtml(data.script)}</pre>`;
+    } catch(e) { body.innerHTML = `<div class="text-red-400 text-sm">Error: ${escHtml(e.message)}</div>`; }
+    return;
+  }
+
+  if (key === 'voice') {
+    body.innerHTML = `<div class="space-y-1">
+      ${sb ? `<div class="mb-3">${sb}</div>` : ''}
+      ${infoRow('Voice', 'Achird')}
+      ${infoRow('Model', 'gemini-3.1-flash-tts-preview')}
+      ${infoRow('Chunk size', '1800 chars max')}
+      ${infoRow('Silence gap', '700ms between chunks')}
+      ${infoRow('Loudnorm', '-16 LUFS, TP -1.5')}
+      ${a.detail ? infoRow('Status', escHtml(a.detail)) : ''}
+    </div>`;
+    return;
+  }
+
+  if (key === 'architect') {
+    body.innerHTML = `<div class="space-y-1">
+      ${sb ? `<div class="mb-3">${sb}</div>` : ''}
+      ${a.detail ? infoRow('Output', escHtml(a.detail)) : ''}
+      ${infoRow('Resolution', '1920×1080')}
+      ${infoRow('FPS', '25')}
+      ${infoRow('Slide duration', '10s per image')}
+      ${infoRow('Zoom effect', '±3% ease in-out (Ken Burns)')}
+      ${infoRow('Images per cycle', '10 slides')}
+      ${infoRow('Audio codec', 'AAC 192k')}
+      ${infoRow('BGM volume', '20% under narration')}
+    </div>`;
+    return;
+  }
+
+  if (key === 'herald') {
+    if (!topicId) { body.innerHTML = `<div class="text-ink-muted text-sm">No metadata available yet.</div>`; return; }
+    try {
+      const res = await fetch(`/api/output/metadata/${topicId}`);
+      if (!res.ok) { body.innerHTML = `<div class="text-ink-muted text-sm py-4 text-center">Metadata not saved yet — run full pipeline first.</div>`; return; }
+      const m = await res.json();
+      const tags = Array.isArray(m.tags) ? m.tags : [];
+      body.innerHTML = `<div class="space-y-4">
+        ${sb ? `<div class="mb-1">${sb}</div>` : ''}
+        <div class="rounded-2xl p-4" style="background:#1a1a2e; border:1px solid #2a2a4a;">
+          <div class="text-xs text-ink-faint uppercase tracking-wide mb-2">Title</div>
+          <div class="text-sm text-ink font-medium leading-relaxed">${escHtml(m.title || '—')}</div>
+        </div>
+        <div class="rounded-2xl p-4" style="background:#1a1a2e; border:1px solid #2a2a4a;">
+          <div class="text-xs text-ink-faint uppercase tracking-wide mb-2">Description</div>
+          <pre class="script-text" style="font-size:12px;">${escHtml(m.description || '—')}</pre>
+        </div>
+        ${tags.length ? `<div class="rounded-2xl p-4" style="background:#1a1a2e; border:1px solid #2a2a4a;">
+          <div class="text-xs text-ink-faint uppercase tracking-wide mb-3">Tags (${tags.length})</div>
+          <div class="flex flex-wrap gap-1.5">${tags.map(t=>`<span class="text-xs px-2.5 py-1 rounded-full" style="background:rgba(212,168,67,.12);color:#d4a843;">${escHtml(t)}</span>`).join('')}</div>
+        </div>` : ''}
+      </div>`;
+    } catch(e) { body.innerHTML = `<div class="text-red-400 text-sm">Error: ${escHtml(e.message)}</div>`; }
+    return;
+  }
+
+  if (key === 'messenger') {
+    const lastRun = drawerStatusCache?.runs?.[0];
+    const vid = lastRun?.video_id || '';
+    body.innerHTML = `<div class="space-y-3">
+      ${sb ? `<div class="mb-1">${sb}</div>` : ''}
+      ${a.detail ? infoRow('Last upload', escHtml(a.detail)) : ''}
+      ${vid ? `<div class="rounded-2xl p-4 space-y-3" style="background:#1a1a2e; border:1px solid #2a2a4a;">
+        <div class="text-xs text-ink-faint uppercase tracking-wide">Links</div>
+        <a href="https://youtube.com/watch?v=${vid}" target="_blank" class="flex items-center gap-2 text-sm" style="color:#d4a843;">▶ Watch on YouTube ↗</a>
+        <a href="https://studio.youtube.com/video/${vid}/edit" target="_blank" class="flex items-center gap-2 text-sm" style="color:#9090b0;">✏ Edit in Studio ↗</a>
+      </div>` : '<div class="text-ink-muted text-sm">No video uploaded yet.</div>'}
+    </div>`;
+    return;
+  }
+
+  body.innerHTML = `<div class="text-ink-muted text-sm">${a.detail ? escHtml(a.detail) : 'No details available.'}</div>`;
+}
+
+// ── Polling ────────────────────────────────────────────────────────
+async function poll() {
+  try {
+    const [statusRes, statsRes] = await Promise.all([
+      fetch('/api/status'),
+      fetch('/api/stats'),
+    ]);
+    const status = await statusRes.json();
+    const stats = await statsRes.json();
+    drawerStatusCache = status;
+    renderAgents(status.agents || {});
+    updateRunBanner(status.current_run);
+    renderLastRun(status.runs);
+    updateStats(stats);
+  } catch(e) { /* offline */ }
+}
+
+// ── Utils ──────────────────────────────────────────────────────────
+function relativeTime(iso) {
+  if (!iso) return '';
+  const diff = (Date.now() - new Date(iso).getTime()) / 1000;
+  if (diff < 60) return 'just now';
+  if (diff < 3600) return `${Math.floor(diff/60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff/3600)}h ago`;
+  return `${Math.floor(diff/86400)}d ago`;
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  document.getElementById('toast-msg').textContent = msg;
+  t.style.opacity = '1';
+  t.style.transform = 'translateX(-50%) translateY(0)';
+  setTimeout(() => {
+    t.style.opacity = '0';
+    t.style.transform = 'translateX(-50%) translateY(-8px)';
+  }, 2000);
+}
+
+// ── Init ───────────────────────────────────────────────────────────
+poll();
+setInterval(poll, 10000);
+</script>
+</body>
+</html>

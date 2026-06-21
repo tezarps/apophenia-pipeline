@@ -1,0 +1,29 @@
+# Secrets — never commit
+.env
+youtube_token.pickle
+youtube_client_secret.json
+
+# Large/regenerable local output — audio, video, scripts are rebuilt by the
+# pipeline and too large for git; persisted in Supabase Storage instead.
+output/
+*.mp4
+*.mp3
+*.wav
+
+# Local image/thumbnail assets — large binaries, not meant to live in git history.
+images/
+thumbnails/
+assets/music/
+assets/ambience/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# OS
+.DS_Store
+
+# Local schedule/state cache
+schedule.json

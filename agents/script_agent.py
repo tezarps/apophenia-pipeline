@@ -1,0 +1,114 @@
+import anthropic
+from config import ANTHROPIC_API_KEY, HAIKU_MODEL, SONNET_MODEL
+
+client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+
+# Four hook devices, rotated by topic id, so every video doesn't open with the
+# exact same rhetorical move (templated-content risk, same reasoning as Narava's
+# frame variants — see project memory project_apophenia.md). The 5-babak
+# skeleton itself stays fixed across all variants; that skeleton IS the brand.
+_HOOK_VARIANTS = {
+    "question": "Open with a short, direct second-person question the viewer might silently ask themselves about this exact pattern. 2-3 sentences max before moving into babak 2.",
+    "scene": "Open with a tiny, concrete relatable scene (a specific moment, not abstract) where this pattern just played out — something mundane, instantly recognizable. 2-4 sentences before moving into babak 2.",
+    "confession": "Open as if voicing the exact internal thought this archetype has but never says out loud. First-person internal monologue style, 1-3 sentences, then pivot to second person for the rest of the video.",
+    "label": "Open by naming the pattern bluntly and a little unsettlingly, then immediately soften it with 'and if that's you, here's what's actually happening' before moving into babak 2.",
+}
+_VARIANT_ORDER = ["question", "scene", "confession", "label"]
+
+
+def _hook_variant_for(topic_id):
+    return _VARIANT_ORDER[int(topic_id) % len(_VARIANT_ORDER)]
+
+
+_DRAFT = """You are writing a psychology insight essay script for YouTube (think the channel "Kee" — \
+calm, intimate, second-person narration; real psychological substance delivered conversationally, never academic).
+
+Archetype: {topic}
+Title/angle: {angle}
+Category (internal tag, do not say out loud): {category}
+
+CRITICAL CONSTRAINT: this is a GENERIC psychological archetype. Do not name, describe, or allude to \
+any real historical figure, celebrity, or identifiable individual. No likeness, no biography. The \
+"you" in this script is a composite pattern, not a real person.
+
+Write the full script in five babak (acts), in order, as one continuous flowing piece — no headers, \
+no labels, no act numbers in the output:
+
+BABAK 1 — HOOK. {hook_instruction}
+
+BABAK 2 — THE WOUND. Explore where this pattern was likely formed — a believable, generic formative \
+scenario (childhood home dynamic, an early relationship, a repeated small moment), written in second \
+person ("you"). Not a single traumatic event necessarily — often it's something that happened quietly, \
+repeatedly. Show how the pattern made sense as a survival response at the time.
+
+BABAK 3 — THE SCIENCE. Name the real psychological mechanism or term that explains this pattern \
+(e.g. fawn response, hypervigilance, parentification, learned helplessness — use whatever term \
+genuinely fits this specific archetype). Explain it like you're explaining it to a smart friend over \
+coffee, not reading a journal abstract — no citations, no "studies show," just clear plain-language \
+explanation of the mechanism and why it makes psychological sense.
+
+BABAK 4 — THE TURN. A reframe. Not "just stop doing this" — show what the pattern was actually \
+protecting, and what becomes possible once that's seen clearly. This is the emotional pivot point of \
+the video.
+
+BABAK 5 — THE STRATEGY + CLOSE. One or two concrete, practical things the viewer can actually try \
+(specific, not generic "practice self-compassion" platitudes). Then close by looping back to the \
+exact hook/title from babak 1 — land on the same image or question you opened with, now re-seen \
+through everything explained since.
+
+Point of view: second person ("you"), present tense, conversational, throughout (except the brief \
+first-person hook moment in the "confession" variant, if used). Tone: warm, a little intimate, calm \
+delivery — emotionally restrained, never melodramatic, never therapy-speak cliché.
+
+Length: let it breathe naturally with the content — aim for roughly 2,200-3,000 words total, distributed \
+unevenly across babak as the content needs (babak 2 and 5 are usually longest).
+
+Output only the script text. No headers, no babak labels, no markdown."""
+
+_POLISH = """You are an editor for a psychology-essay YouTube script (channel tone: calm, intimate, \
+conversational — think "Kee").
+
+Rules:
+1. Tighten pacing — cut any sentence that restates something already said.
+2. Make sure the psychological term introduced in babak 3 has one clear, plain-language sentence \
+defining it the first time it's used — a viewer with zero psych background should follow it.
+3. Make sure the ending explicitly echoes the opening hook's exact image or question — this loop-back \
+is mandatory, check it's actually there and sharpen it if it's vague.
+4. Keep delivery conversational, not academic. No citations, no "research shows" hedging.
+5. Do not introduce any named historical or real individual anywhere in the script.
+6. Do NOT add chapter headers, babak labels, or section markers.
+
+Draft:
+{draft}
+
+Output only the polished script."""
+
+
+def _call(model, prompt, max_tokens=8000):
+    r = client.messages.create(
+        model=model,
+        max_tokens=max_tokens,
+        messages=[{"role": "user", "content": prompt}],
+    )
+    return r.content[0].text
+
+
+def generate_script(topic_data):
+    category = topic_data["category"]
+    topic = topic_data["topic"]
+    angle = topic_data["angle"]
+    variant_key = _hook_variant_for(topic_data["id"])
+    hook_instruction = _HOOK_VARIANTS[variant_key]
+
+    print(f"    Hook variant: {variant_key}")
+    print("    Drafting (Haiku)...")
+    draft = _call(HAIKU_MODEL, _DRAFT.format(
+        topic=topic, angle=angle, category=category, hook_instruction=hook_instruction,
+    ))
+
+    print("    Polishing (Sonnet)...")
+    final = _call(SONNET_MODEL, _POLISH.format(draft=draft))
+
+    word_count = len(final.split())
+    print(f"    Script: {word_count:,} words (~{word_count // 140:.0f} min audio)")
+    return final.strip()

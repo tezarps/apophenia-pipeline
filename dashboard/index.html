@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Narava Pipeline</title>
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --card: #15151f;
+    --border: #262633;
+    --text: #e8e8f0;
+    --muted: #8888a0;
+    --gold: #d4a843;
+    --green: #4ade80;
+    --red: #f87171;
+    --blue: #60a5fa;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 16px;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+  h1 { font-size: 20px; color: var(--gold); margin: 8px 0 4px; }
+  .subtitle { color: var(--muted); font-size: 13px; margin-bottom: 20px; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 14px; }
+  .card h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin: 0 0 10px; display: flex; justify-content: space-between; align-items: center; }
+  .status-badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+  .status-running { background: rgba(96,165,250,0.15); color: var(--blue); }
+  .status-published, .status-done { background: rgba(74,222,128,0.15); color: var(--green); }
+  .status-failed { background: rgba(248,113,113,0.15); color: var(--red); }
+  .status-pending { background: rgba(136,136,160,0.15); color: var(--muted); }
+  .row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); gap: 8px; }
+  .row:last-child { border-bottom: none; }
+  .row-title { font-size: 14px; }
+  .row-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  a { color: var(--blue); text-decoration: none; }
+  .empty { color: var(--muted); font-size: 13px; text-align: center; padding: 12px 0; }
+  .cat-pill { display: inline-flex; justify-content: space-between; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; margin: 3px; font-size: 12px; }
+  .cat-grid { display: flex; flex-wrap: wrap; gap: 0; }
+  .refresh-note { text-align: center; color: var(--muted); font-size: 11px; margin-top: 8px; margin-bottom: 24px; }
+  button { background: var(--gold); color: #1a1408; border: none; border-radius: 8px; padding: 7px 12px; font-size: 13px; font-weight: 600; cursor: pointer; }
+  button.secondary { background: var(--border); color: var(--text); }
+  button.danger { background: rgba(248,113,113,0.2); color: var(--red); }
+  button:disabled { opacity: 0.5; cursor: default; }
+  input, select { background: var(--bg); border: 1px solid var(--border); color: var(--text); border-radius: 8px; padding: 8px 10px; font-size: 13px; width: 100%; }
+  .form-grid { display: grid; gap: 8px; margin-bottom: 10px; }
+  .btn-row { display: flex; gap: 6px; flex-shrink: 0; }
+  .analytics-panel { background: var(--bg); border-radius: 8px; padding: 10px; margin-top: 8px; font-size: 12px; display: none; }
+  .analytics-panel.show { display: block; }
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .stat { color: var(--muted); }
+  .stat strong { color: var(--text); display: block; font-size: 15px; }
+  #pin-gate { display: flex; gap: 6px; margin-bottom: 10px; }
+  .locked-note { color: var(--muted); font-size: 12px; }
+</style>
+</head>
+<body>
+  <h1>🔱 Narava Pipeline</h1>
+  <div class="subtitle">Live status — auto-refresh tiap 30 detik</div>
+
+  <div class="card">
+    <h2>Run Saat Ini</h2>
+    <div id="current-run" class="empty">Memuat...</div>
+  </div>
+
+  <div class="card">
+    <h2>Episode Terbaru</h2>
+    <div id="recent-published" class="empty">Memuat...</div>
+  </div>
+
+  <div class="card">
+    <h2>Run Terakhir</h2>
+    <div id="recent-runs" class="empty">Memuat...</div>
+  </div>
+
+  <div class="card">
+    <h2>Topik Pending per Kategori</h2>
+    <div id="pending-by-category" class="empty">Memuat...</div>
+  </div>
+
+  <div class="card">
+    <h2>
+      Kelola Antrian
+      <span id="pin-status" class="locked-note">🔒 Terkunci</span>
+    </h2>
+    <div id="pin-gate">
+      <input id="pin-input" type="password" placeholder="PIN" inputmode="numeric">
+      <button onclick="savePin()">Buka</button>
+    </div>
+    <div id="manage-queue" style="display:none">
+      <div class="form-grid">
+        <select id="new-category">
+          <option value="greek">greek</option>
+          <option value="norse">norse</option>
+          <option value="egyptian">egyptian</option>
+          <option value="celtic">celtic</option>
+          <option value="japanese">japanese</option>
+          <option value="aztec">aztec</option>
+          <option value="comparative">comparative</option>
+        </select>
+        <input id="new-topic" placeholder="Nama topik (e.g. Hades)">
+        <input id="new-angle" placeholder="Angle (opsional)">
+        <button onclick="addTopic()">+ Tambah ke Antrian</button>
+      </div>
+      <div id="pending-list" class="empty">Memuat...</div>
+    </div>
+  </div>
+
+  <div class="refresh-note">narava-pipeline · Supabase</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script>
+  const SUPABASE_URL = "https://ncxmhczlduyjtiabpsod.supabase.co";
+  const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_4sKo1WhYrAYR_5miTIOd9w_aqUGT_QX";
+  const db = supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+
+  function timeAgo(iso) {
+    if (!iso) return "";
+    const diff = (Date.now() - new Date(iso).getTime()) / 1000;
+    if (diff < 60) return Math.floor(diff) + "s lalu";
+    if (diff < 3600) return Math.floor(diff / 60) + "m lalu";
+    if (diff < 86400) return Math.floor(diff / 3600) + "j lalu";
+    return Math.floor(diff / 86400) + "h lalu";
+  }
+
+  async function loadCurrentRun() {
+    const { data } = await db.from("pipeline_runs").select("*").eq("status", "running").order("started_at", { ascending: false }).limit(1);
+    const el = document.getElementById("current-run");
+    if (!data || data.length === 0) {
+      el.innerHTML = '<div class="empty">Tidak ada run yang sedang berjalan</div>';
+      return;
+    }
+    const r = data[0];
+    el.innerHTML = `
+      <div class="row" style="border-bottom:none;">
+        <div>
+          <div class="row-title">Topic #${r.topic_id}</div>
+          <div class="row-sub">${r.angle || ""}</div>
+          <div class="row-sub">Stage: ${r.current_agent || "starting"} · ${timeAgo(r.started_at)}</div>
+        </div>
+        <span class="status-badge status-running">RUNNING</span>
+      </div>`;
+  }
+
+  async function loadRecentPublished() {
+    const { data } = await db.from("topics").select("*").eq("status", "published").order("id", { ascending: false }).limit(5);
+    const el = document.getElementById("recent-published");
+    if (!data || data.length === 0) { el.innerHTML = '<div class="empty">Belum ada episode published</div>'; return; }
+    el.innerHTML = data.map(t => `
+      <div>
+        <div class="row">
+          <div>
+            <div class="row-title">${t.topic}</div>
+            <div class="row-sub">${t.category}</div>
+          </div>
+          <div class="btn-row">
+            ${t.video_id ? `<button class="secondary" onclick="toggleAnalytics('${t.video_id}')">📊 Analitik</button>` : ""}
+            ${t.video_id ? `<a href="https://youtube.com/watch?v=${t.video_id}" target="_blank">Tonton →</a>` : ""}
+          </div>
+        </div>
+        ${t.video_id ? `<div id="analytics-${t.video_id}" class="analytics-panel"></div>` : ""}
+      </div>`).join("");
+  }
+
+  async function toggleAnalytics(videoId) {
+    const panel = document.getElementById(`analytics-${videoId}`);
+    const isShown = panel.classList.contains("show");
+    if (isShown) { panel.classList.remove("show"); return; }
+    panel.classList.add("show");
+    panel.innerHTML = "Memuat analitik...";
+    try {
+      const r = await fetch(`/api/analytics?videoId=${videoId}`);
+      const d = await r.json();
+      if (!d.available) { panel.innerHTML = "Belum ada data analitik (video baru / data masih diproses YouTube)."; return; }
+      panel.innerHTML = `
+        <div class="stat-grid">
+          <div class="stat">Views<strong>${d.views ?? "–"}</strong></div>
+          <div class="stat">Watch time<strong>${d.watchTimeHours != null ? d.watchTimeHours + " jam" : "–"}</strong></div>
+          <div class="stat">Avg. durasi tonton<strong>${d.avgViewDurationMin != null ? d.avgViewDurationMin + " min" : "–"}</strong></div>
+          <div class="stat">Impressions<strong>${d.impressions ?? "–"}</strong></div>
+          <div class="stat">CTR thumbnail<strong>${d.impressionsCtrPct != null ? d.impressionsCtrPct + "%" : "–"}</strong></div>
+        </div>`;
+    } catch (e) {
+      panel.innerHTML = "Gagal memuat analitik.";
+    }
+  }
+
+  async function loadRecentRuns() {
+    const { data } = await db.from("pipeline_runs").select("*").order("started_at", { ascending: false }).limit(6);
+    const el = document.getElementById("recent-runs");
+    if (!data || data.length === 0) { el.innerHTML = '<div class="empty">Belum ada riwayat run</div>'; return; }
+    el.innerHTML = data.map(r => `
+      <div class="row">
+        <div>
+          <div class="row-title">Topic #${r.topic_id}</div>
+          <div class="row-sub">${timeAgo(r.started_at)}${r.error ? " · " + r.error.slice(0, 60) : ""}</div>
+        </div>
+        <span class="status-badge status-${r.status}">${r.status.toUpperCase()}</span>
+      </div>`).join("");
+  }
+
+  async function loadPendingByCategory() {
+    const { data } = await db.from("topics").select("category").eq("status", "pending");
+    const el = document.getElementById("pending-by-category");
+    if (!data || data.length === 0) { el.innerHTML = '<div class="empty">Tidak ada topik pending</div>'; return; }
+    const counts = {};
+    data.forEach(t => { counts[t.category] = (counts[t.category] || 0) + 1; });
+    el.innerHTML = '<div class="cat-grid">' + Object.entries(counts).map(([cat, n]) =>
+      `<span class="cat-pill">${cat}: <strong style="margin-left:6px">${n}</strong></span>`
+    ).join("") + '</div>';
+  }
+
+  // ---- PIN-gated queue management ----
+  function getPin() { return localStorage.getItem("narava_dashboard_pin") || ""; }
+
+  function savePin() {
+    const pin = document.getElementById("pin-input").value.trim();
+    if (!pin) return;
+    localStorage.setItem("narava_dashboard_pin", pin);
+    unlockUi();
+    loadPendingList();
+  }
+
+  function unlockUi() {
+    document.getElementById("pin-gate").style.display = "none";
+    document.getElementById("manage-queue").style.display = "block";
+    document.getElementById("pin-status").textContent = "🔓 Terbuka";
+  }
+
+  async function loadPendingList() {
+    const el = document.getElementById("pending-list");
+    const { data } = await db.from("topics").select("*").eq("status", "pending").order("id").limit(20);
+    if (!data || data.length === 0) { el.innerHTML = '<div class="empty">Tidak ada topik pending</div>'; return; }
+    el.innerHTML = data.map(t => `
+      <div class="row">
+        <div>
+          <div class="row-title">#${t.id} ${t.topic}</div>
+          <div class="row-sub">${t.category}${t.angle ? " · " + t.angle.slice(0, 50) : ""}</div>
+        </div>
+        <div class="btn-row">
+          <button class="danger" onclick="deleteTopic(${t.id})">Hapus</button>
+        </div>
+      </div>`).join("");
+  }
+
+  async function addTopic() {
+    const category = document.getElementById("new-category").value;
+    const topic = document.getElementById("new-topic").value.trim();
+    const angle = document.getElementById("new-angle").value.trim();
+    if (!topic) return alert("Nama topik wajib diisi");
+    const r = await fetch("/api/topics", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-dashboard-pin": getPin() },
+      body: JSON.stringify({ category, topic, angle }),
+    });
+    if (r.status === 401) { alert("PIN salah"); resetPin(); return; }
+    if (!r.ok) { alert("Gagal menambah topik"); return; }
+    document.getElementById("new-topic").value = "";
+    document.getElementById("new-angle").value = "";
+    loadPendingList();
+    loadPendingByCategory();
+  }
+
+  async function deleteTopic(id) {
+    if (!confirm(`Hapus topik #${id} dari antrian?`)) return;
+    const r = await fetch("/api/topics", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json", "x-dashboard-pin": getPin() },
+      body: JSON.stringify({ id }),
+    });
+    if (r.status === 401) { alert("PIN salah"); resetPin(); return; }
+    loadPendingList();
+    loadPendingByCategory();
+  }
+
+  function resetPin() {
+    localStorage.removeItem("narava_dashboard_pin");
+    document.getElementById("pin-gate").style.display = "flex";
+    document.getElementById("manage-queue").style.display = "none";
+    document.getElementById("pin-status").textContent = "🔒 Terkunci";
+  }
+
+  async function loadAll() {
+    await Promise.all([loadCurrentRun(), loadRecentPublished(), loadRecentRuns(), loadPendingByCategory()]);
+    if (getPin()) loadPendingList();
+  }
+
+  if (getPin()) unlockUi();
+  loadAll();
+  setInterval(loadAll, 30000);
+</script>
+</body>
+</html>
