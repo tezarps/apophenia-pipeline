@@ -1,11 +1,28 @@
 import math
+import re
 import shutil
 import subprocess
 from pathlib import Path
 from config import IMAGES_DIR, OUTPUT_DIR, FFMPEG_BIN, FFPROBE_BIN
 
 FPS = 25
-SLIDE_DURATION = 10  # seconds per image (Ken Burns)
+SLIDE_DURATION = 10  # seconds per image (Ken Burns) — fallback grid when no word_timings given
+
+# Per-sentence image cadence, requested 2026-06-22 (topic #4 onward): one new
+# image per sentence instead of a fixed 10s grid, so the visual changes track
+# the script's own rhythm instead of an arbitrary clock. Short sentences get
+# merged up to MIN_SENTENCE_SEC (a 1.5s slide reads as a flicker, not a cut);
+# long run-on sentences get split at MAX_SENTENCE_SEC so the image still turns
+# over even mid-sentence.
+MIN_SENTENCE_SEC = 3.5
+MAX_SENTENCE_SEC = 9.0
+
+# The video used to cut hard to silence/black the instant narration ended,
+# right after the CTA line — flagged by user feedback 2026-06-22 as an abrupt,
+# unfinished-feeling ending. Now it holds the last frame for a few seconds
+# while the music bed fades out smoothly instead of being clipped by amix.
+OUTRO_TAIL_SEC = 4
+OUTRO_FADE_SEC = 3
 
 ASSETS_DIR = Path(__file__).parent.parent / "assets"
 MUSIC_DIR = ASSETS_DIR / "music"
@@ -18,10 +35,12 @@ FONTS_DIR = ASSETS_DIR / "fonts"
 # (agents/caption_agent.build_ass).
 
 
-def _get_music(category):
-    """Find music file for category — supports .wav and .mp3."""
+def _get_music(topic_id):
+    """Find the per-topic generated music file — supports .wav and .mp3.
+    One fresh track per topic (agents/music_agent.generate_topic_music), not
+    per category — see that module's docstring for why."""
     for ext in (".wav", ".mp3"):
-        path = MUSIC_DIR / f"{category.lower()}{ext}"
+        path = MUSIC_DIR / f"{topic_id}{ext}"
         if path.exists():
             return path
     return None
@@ -54,7 +73,38 @@ def _get_images(category, topic_slug=None, count=None):
     return [candidates[i % len(candidates)] for i in range(count)]
 
 
-def _make_ken_burns_clip(img_path, out_path):
+def _sentence_slots(word_timings, min_sec=MIN_SENTENCE_SEC, max_sec=MAX_SENTENCE_SEC):
+    """Turns word_timings into (start, end) image slots, one per sentence —
+    a sentence boundary is any word ending in . ! ? (possibly followed by a
+    closing quote). A slot shorter than min_sec is merged into the next one
+    (a 1.5s image change reads as a flicker); a slot longer than max_sec is
+    split so a long sentence still gets at least one mid-sentence image turn.
+    Falls back to a single slot spanning the whole duration if word_timings
+    is empty."""
+    if not word_timings:
+        return []
+    slots = []
+    slot_start = word_timings[0]["start"]
+    for w in word_timings:
+        is_end = bool(re.search(r'[.!?]["\')]?$', w["text"]))
+        dur = w["end"] - slot_start
+        if is_end or dur >= max_sec:
+            slots.append((slot_start, w["end"]))
+            slot_start = w["end"]
+    if slot_start < word_timings[-1]["end"]:
+        slots.append((slot_start, word_timings[-1]["end"]))
+
+    merged = []
+    for s, e in slots:
+        if merged and e - s < min_sec:
+            ps, pe = merged[-1]
+            merged[-1] = (ps, e)
+        else:
+            merged.append((s, e))
+    return merged
+
+
+def _make_ken_burns_clip(img_path, out_path, seconds=SLIDE_DURATION):
     """Generate a slide clip with a subtle, smooth zoom-in (Ken Burns).
 
     zoompan rounds the crop window to whole pixels every frame; with too
@@ -64,7 +114,7 @@ def _make_ken_burns_clip(img_path, out_path):
     zoom range needs gives the rounding enough room to land on a different
     pixel every frame, which is what actually reads as smooth.
     """
-    d = SLIDE_DURATION * FPS
+    d = max(1, round(seconds * FPS))
     t = f"min(on,{d-1})/{d-1}"
     ease = f"(3*pow({t},2)-2*pow({t},3))"
 
@@ -83,7 +133,7 @@ def _make_ken_burns_clip(img_path, out_path):
         FFMPEG_BIN, "-y",
         "-loop", "1", "-i", str(img_path),
         "-vf", ",".join(vf_parts),
-        "-t", str(SLIDE_DURATION),
+        "-t", str(seconds),
         "-r", str(FPS),
         "-c:v", "libx264", "-preset", "fast", "-pix_fmt", "yuv420p",
         str(out_path),
@@ -91,6 +141,23 @@ def _make_ken_burns_clip(img_path, out_path):
     result = subprocess.run(cmd, capture_output=True, text=True)
     if result.returncode != 0:
         raise RuntimeError(f"Ken Burns failed for {img_path.name}: {result.stderr[-300:]}")
+
+
+def _make_freeze_clip(img_path, out_path, seconds):
+    """Static hold (no zoom) on the final image, used as the outro tail while
+    the music fades out — see OUTRO_TAIL_SEC."""
+    cmd = [
+        FFMPEG_BIN, "-y",
+        "-loop", "1", "-i", str(img_path),
+        "-vf", "scale=1920:1080:force_original_aspect_ratio=increase,crop=1920:1080,setsar=1",
+        "-t", str(seconds),
+        "-r", str(FPS),
+        "-c:v", "libx264", "-preset", "fast", "-pix_fmt", "yuv420p",
+        str(out_path),
+    ]
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    if result.returncode != 0:
+        raise RuntimeError(f"Outro freeze clip failed: {result.stderr[-300:]}")
 
 
 def _make_black_clip(out_path):
@@ -125,7 +192,7 @@ def _slot_is_blackscreen(slot_start, slot_end, blackscreen_spans):
     return overlap >= slot_dur * 0.5
 
 
-def create_video(audio_path, category, topic_id, topic_slug=None, blackscreen_spans=None, subtitles_path=None):
+def create_video(audio_path, category, topic_id, topic_slug=None, blackscreen_spans=None, subtitles_path=None, word_timings=None):
     images = _get_images(category, topic_slug)
     out_path = OUTPUT_DIR / "video" / f"{topic_id}.mp4"
     out_path.parent.mkdir(parents=True, exist_ok=True)
@@ -135,47 +202,92 @@ def create_video(audio_path, category, topic_id, topic_slug=None, blackscreen_sp
     clips_dir = out_path.parent / f"{topic_id}_clips"
     clips_dir.mkdir(exist_ok=True)
 
-    def _clip_is_valid(path):
+    def _clip_is_valid(path, min_dur=SLIDE_DURATION):
         if not path.exists() or path.stat().st_size == 0:
             return False
         try:
-            return _audio_duration(path) >= SLIDE_DURATION - 1
+            return _audio_duration(path) >= min_dur - 1
         except subprocess.CalledProcessError:
             return False
 
-    clip_paths = []
-    for i, img in enumerate(images):
-        clip_out = clips_dir / f"clip_{i:02d}.mp4"
-        if not _clip_is_valid(clip_out):
-            print(f"    Ken Burns clip {i+1}/{len(images)}...")
-            _make_ken_burns_clip(img, clip_out)
-        clip_paths.append(clip_out)
+    sentence_slots = _sentence_slots(word_timings) if word_timings else []
 
     black_clip = clips_dir / "black.mp4"
     if blackscreen_spans and not _clip_is_valid(black_clip):
         _make_black_clip(black_clip)
 
-    # Time-driven slot schedule (not a pure repeating cycle) so reflective
-    # beats (agents/caption_agent.blackscreen_spans) land on the right slide
-    # instead of whichever image the cycle happens to be on.
-    num_slots = math.ceil(duration / SLIDE_DURATION)
+    outro_clip = clips_dir / "outro.mp4"
+    if not (outro_clip.exists() and outro_clip.stat().st_size > 0):
+        _make_freeze_clip(images[-1], outro_clip, OUTRO_TAIL_SEC)
+
     concat_lines = []
-    for s in range(num_slots):
-        slot_start, slot_end = s * SLIDE_DURATION, (s + 1) * SLIDE_DURATION
-        if _slot_is_blackscreen(slot_start, slot_end, blackscreen_spans):
-            concat_lines.append(f"file '{black_clip.resolve()}'")
-        else:
-            concat_lines.append(f"file '{clip_paths[s % len(clip_paths)].resolve()}'")
+    if sentence_slots:
+        # One image per sentence (see _sentence_slots) instead of a fixed
+        # time grid — requested 2026-06-22 (topic #4 onward) so the visuals
+        # turn over with the script's own rhythm and don't sit still long
+        # enough to get boring. Each slot gets its own clip since durations
+        # vary slot-to-slot; cycles through every generated image in order.
+        for i, (slot_start, slot_end) in enumerate(sentence_slots):
+            if _slot_is_blackscreen(slot_start, slot_end, blackscreen_spans):
+                concat_lines.append(f"file '{black_clip.resolve()}'")
+                continue
+            slot_dur = slot_end - slot_start
+            clip_out = clips_dir / f"sentence_{i:03d}.mp4"
+            if not _clip_is_valid(clip_out, min_dur=slot_dur):
+                img = images[i % len(images)]
+                _make_ken_burns_clip(img, clip_out, seconds=slot_dur)
+            concat_lines.append(f"file '{clip_out.resolve()}'")
+    else:
+        clip_paths = []
+        for i, img in enumerate(images):
+            clip_out = clips_dir / f"clip_{i:02d}.mp4"
+            if not _clip_is_valid(clip_out):
+                print(f"    Ken Burns clip {i+1}/{len(images)}...")
+                _make_ken_burns_clip(img, clip_out)
+            clip_paths.append(clip_out)
+
+        # Time-driven slot schedule (not a pure repeating cycle) so reflective
+        # beats (agents/caption_agent.blackscreen_spans) land on the right slide
+        # instead of whichever image the cycle happens to be on.
+        num_slots = math.ceil(duration / SLIDE_DURATION)
+        for s in range(num_slots):
+            slot_start, slot_end = s * SLIDE_DURATION, (s + 1) * SLIDE_DURATION
+            if _slot_is_blackscreen(slot_start, slot_end, blackscreen_spans):
+                concat_lines.append(f"file '{black_clip.resolve()}'")
+            else:
+                concat_lines.append(f"file '{clip_paths[s % len(clip_paths)].resolve()}'")
+
+    concat_lines.append(f"file '{outro_clip.resolve()}'")
     concat_file = out_path.parent / f"{topic_id}_concat.txt"
     concat_file.write_text("\n".join(concat_lines))
 
-    music_path = _get_music(category)
+    total_duration = duration + OUTRO_TAIL_SEC
+    music_path = _get_music(topic_id)
     pre_subtitle_path = out_path if not subtitles_path else out_path.parent / f"{topic_id}_nosubs.mp4"
 
     if music_path:
+        # Duck the music bed lower during reflective blackscreen beats (already
+        # time-flagged by caption_agent.blackscreen_spans) for emotional weight,
+        # rather than switching tracks per babak — see project memory
+        # project_apophenia.md for why a single per-category bed was chosen.
+        # apad extends narration silently through the outro tail (so amix
+        # doesn't cut off there), and the music fades out smoothly over the
+        # last OUTRO_FADE_SEC seconds instead of being clipped abruptly —
+        # flagged as an abrupt ending by user feedback 2026-06-22.
+        #
+        # music_agent now builds one continuous crossfaded bed sized to
+        # total_duration (opening through the CTA-ending segment) instead of
+        # a short clip — aloop here is only a safety net in case that track
+        # comes in slightly short, not the primary looping mechanism anymore.
+        duck_filters = "".join(
+            f",volume=enable='between(t,{start:.2f},{end:.2f})':volume=0.4"
+            for start, end in (blackscreen_spans or [])
+        )
+        fade_start = max(0.0, total_duration - OUTRO_FADE_SEC)
         af = (
-            "[1:a]aformat=sample_rates=44100:channel_layouts=stereo,volume=1.0[narration];"
-            f"[2:a]aformat=sample_rates=44100:channel_layouts=stereo,volume=0.30,aloop=loop=-1:size=2e+09[music];"
+            f"[1:a]aformat=sample_rates=44100:channel_layouts=stereo,volume=1.0,apad=pad_dur={OUTRO_TAIL_SEC}[narration];"
+            f"[2:a]aformat=sample_rates=44100:channel_layouts=stereo,volume=0.30,aloop=loop=-1:size=2e+09{duck_filters},"
+            f"afade=t=out:st={fade_start:.2f}:d={OUTRO_FADE_SEC}[music];"
             "[narration][music]amix=inputs=2:duration=first:dropout_transition=3[aout]"
         )
         cmd = [
@@ -187,7 +299,7 @@ def create_video(audio_path, category, topic_id, topic_slug=None, blackscreen_sp
             "-filter_complex", af,
             "-map", "0:v", "-map", "[aout]",
             "-c:a", "aac", "-b:a", "192k",
-            "-shortest",
+            "-t", f"{total_duration:.2f}",
             str(pre_subtitle_path),
         ]
         print(f"    Assembling video + music ({category})...")
@@ -197,8 +309,9 @@ def create_video(audio_path, category, topic_id, topic_slug=None, blackscreen_sp
             "-f", "concat", "-safe", "0", "-i", str(concat_file),
             "-i", str(audio_path),
             "-c:v", "copy",
+            "-af", f"apad=pad_dur={OUTRO_TAIL_SEC}",
             "-c:a", "aac", "-b:a", "192k",
-            "-shortest",
+            "-t", f"{total_duration:.2f}",
             str(pre_subtitle_path),
         ]
         print(f"    Assembling video (no music for {category})...")
@@ -227,5 +340,5 @@ def create_video(audio_path, category, topic_id, topic_slug=None, blackscreen_sp
     shutil.rmtree(clips_dir)
 
     size_mb = out_path.stat().st_size / 1024 / 1024
-    print(f"    Video: {size_mb:.0f}MB, {duration/60:.0f} min → {out_path.name}")
+    print(f"    Video: {size_mb:.0f}MB, {total_duration/60:.0f} min (incl. {OUTRO_TAIL_SEC}s outro) → {out_path.name}")
     return out_path, duration

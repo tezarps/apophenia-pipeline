@@ -25,8 +25,13 @@ IMAGE_COUNT = 12  # fallback only — generate_images() is normally called with 
 # slower. The old fixed IMAGE_COUNT=12 + assembly_agent capping to 10 candidates meant a 9-min
 # video cycled through only 10 images ~5 times each — visibly repetitive, flagged by user
 # feedback on the first published video. See project memory project_apophenia.md.
-_TARGET_SHOT_SECONDS = 13.5
-_MIN_IMAGES, _MAX_IMAGES = 18, 50
+# Tightened 2026-06-22 (topic #4 onward) — images now change roughly every
+# sentence (see assembly_agent._sentence_slots), averaging ~5s/sentence, not
+# the old fixed 13.5s slide grid. A smaller _TARGET_SHOT_SECONDS means more
+# unique generated images per video, so the sentence-cadence cycle repeats
+# the same image less often.
+_TARGET_SHOT_SECONDS = 6.0
+_MIN_IMAGES, _MAX_IMAGES = 24, 60
 
 
 def images_for_duration(duration_sec):
@@ -49,13 +54,20 @@ _STYLE_SUFFIX = (
     "dreamlike quality, sharp compositional contrast between warm light and cool dark areas but "
     "rendered in vivid color rather than near-black emptiness, small human figure within its "
     "surroundings in modern or timeless everyday clothing, cinematic wide shot, no text, no "
-    "watermark, NOT mythological, NOT period-costume, NOT epic-fantasy styled"
+    "watermark, NOT mythological, NOT period-costume, NOT epic-fantasy styled. The illustration "
+    "must completely fill the frame edge-to-edge with no border, no white margin, no comic-panel "
+    "gutter, and no frame line of any kind — full-bleed artwork only, like a single uncropped "
+    "painting, not a panel cut from a comic page. ABSOLUTELY NO white or cream paper-colored "
+    "border strip around any edge of the image, no rounded comic-panel corners, no halftone-dot "
+    "edge fading into blank white — the painted background color must run flush to all four "
+    "edges of the canvas with zero exposed white space anywhere in the frame."
 )
 
 _PROMPTS_SYSTEM = """You write short visual scene descriptions for a psychology-essay YouTube \
 channel (visual treatment: vintage-comic painterly illustration, warm amber-gold light against deep \
-indigo shadow, colorful and slightly surreal — think a dreamlike storybook panel, not a literal \
-therapy-office scene, and not a dark/desaturated mythology illustration).
+indigo shadow, colorful and slightly surreal — think a dreamlike full-bleed storybook illustration, \
+not a literal therapy-office scene, and not a dark/desaturated mythology illustration. The image must \
+fill the entire frame with no border, margin, or comic-panel outline of any kind).
 
 Given a psychological archetype and its angle, output exactly {n} distinct visual scenes that work \
 as SYMBOLIC/METAPHORICAL imagery for the emotional content of this pattern — not literal depictions \

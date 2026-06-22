@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import sys
+import signal
 import traceback
 from pathlib import Path
 from datetime import datetime
@@ -9,12 +10,14 @@ sys.path.insert(0, str(Path(__file__).parent))
 import supabase_io as sb
 from agents.script_agent import generate_script
 from agents.tts_agent import generate_audio
-from agents.assembly_agent import create_video, _audio_duration
+from agents.assembly_agent import create_video, _audio_duration, OUTRO_TAIL_SEC
 from agents.image_agent import generate_images, images_for_duration
 from agents.thumbnail_agent import generate_thumbnails
 from agents.caption_agent import annotate_script, build_ass, blackscreen_spans as compute_blackscreen_spans
 from agents.metadata_agent import generate_metadata
-from agents.upload_agent import upload_video
+from agents.music_agent import generate_topic_music
+from agents.upload_agent import upload_video, upload_short
+from agents.shorts_agent import generate_short
 from status_manager import (
     agent_start, agent_done, agent_error,
     run_start, run_done, run_failed,
@@ -23,6 +26,17 @@ from config import OUTPUT_DIR, IMAGES_DIR, BASE_DIR
 from telegram_notify import notify
 
 THUMBNAILS_DIR = BASE_DIR / "thumbnails"
+
+# Burned-in word-by-word captions paused 2026-06-22 pending a visual-quality
+# pass (full-bleed images, no comic-panel framing) — flip back to True once
+# that's approved. While off, videos rely on YouTube's own auto-captions.
+BURN_IN_SUBTITLES = False
+
+# One-off publish override used 2026-06-22 for same-day urgent publishes —
+# left on accidentally caused two videos (Topic #1 and #3) to both land on
+# the 08:00 WIB slot the same day. Off now; normal Sun/Wed cadence resumes
+# via upload_agent.PUBLISH_WEEKDAYS/_next_publish_time.
+ONE_OFF_WIB_TARGET = False
 
 
 def _has_local_images(local_dir):
@@ -93,6 +107,12 @@ def run(audio_only=False):
         print(f"  [AUDIO TEST MODE — stops after voice]")
     print(f"{'='*52}\n")
 
+    # A killed/crashed run never reaches the except block below, leaving its
+    # pipeline_runs row stuck at status='running' forever on the dashboard —
+    # confirmed 2026-06-22 (Topic #4 force-killed mid-run). Self-heal any such
+    # stale row before starting a new one.
+    sb.sweep_stale_runs()
+
     topic = sb.get_next_topic()
     if not topic:
         print("No pending topics in Supabase `topics` table.")
@@ -111,6 +131,15 @@ def run(audio_only=False):
     run_start(topic_id, angle)
     sb_run_id = sb.run_start(topic_id, angle)
     notify(f"🧠 Apophenia — started\nTopic #{topic_id}: {topic['topic']} ({topic['category']})\n{angle}")
+
+    # SIGKILL can't be caught (and a stale row from one of those is cleaned up
+    # by sweep_stale_runs() on the next run anyway), but a plain `kill` sends
+    # SIGTERM first — catching it here marks the row failed immediately
+    # instead of leaving it "running" until the next scheduled run.
+    def _handle_sigterm(signum, frame):
+        sb.run_failed(sb_run_id, "Terminated (SIGTERM) before completion")
+        sys.exit(1)
+    signal.signal(signal.SIGTERM, _handle_sigterm)
 
     current_agent = "oracle"
     try:
@@ -190,13 +219,18 @@ def run(audio_only=False):
         agent_start("architect", "Running FFmpeg...")
         sb.run_update_agent(sb_run_id, "architect")
         _ensure_local_images(topic["category"], topic_slug, topic=topic["topic"], angle=topic.get("angle", ""), audio_path=audio_path)
+        generate_topic_music(topic_id, topic["category"], target_duration_sec=_audio_duration(audio_path) + OUTRO_TAIL_SEC)
         spans = compute_blackscreen_spans(word_timings)
-        ass_path = OUTPUT_DIR / "captions" / f"{topic_id}.ass"
-        ass_path.parent.mkdir(parents=True, exist_ok=True)
-        build_ass(word_timings, ass_path)
+        subs_path = None
+        if BURN_IN_SUBTITLES:
+            subs_path = OUTPUT_DIR / "captions" / f"{topic_id}.ass"
+            subs_path.parent.mkdir(parents=True, exist_ok=True)
+            build_ass(word_timings, subs_path)
+        else:
+            print("    Subtitles: skipped (BURN_IN_SUBTITLES=False) — relying on YouTube auto-captions")
         video_path, duration_sec = create_video(
             audio_path, topic["category"], topic_id, topic_slug=topic_slug,
-            blackscreen_spans=spans, subtitles_path=ass_path,
+            blackscreen_spans=spans, subtitles_path=subs_path, word_timings=word_timings,
         )
         size_mb = video_path.stat().st_size / 1024 / 1024
         agent_done("architect", f"Video ready: {size_mb:.0f}MB ({len(spans)} reflective beat(s))")
@@ -221,7 +255,7 @@ def run(audio_only=False):
         print("\n[6/6] Kai — uploading to YouTube...")
         agent_start("messenger", "Uploading...")
         sb.run_update_agent(sb_run_id, "messenger")
-        video_id = upload_video(video_path, thumb_a, metadata, category=topic["category"])
+        video_id, publish_at_utc = upload_video(video_path, thumb_a, metadata, category=topic["category"], one_off_wib_target=ONE_OFF_WIB_TARGET)
         agent_done("messenger", f"youtube.com/watch?v={video_id}")
 
         sb.mark_topic_done(topic_id, video_id)
@@ -236,6 +270,31 @@ def run(audio_only=False):
         sb.upload_thumbnail(topic["category"], topic_slug, "B", thumb_b)
         sb.create_thumbnail_test(topic_id, video_id)
         print(f"⚡ A/B test registered — ab_test_check.py will rotate thumbnails A/B automatically")
+
+        # YouTube Short companion — cut from the just-finished main video,
+        # scheduled to drop at the SAME publishAt so Shorts-feed traffic has
+        # somewhere to funnel to the instant it goes live. Treated as a
+        # best-effort extra: a failure here must never undo the main upload.
+        try:
+            current_agent = "messenger"
+            print("\n    Cutting YouTube Short...")
+            short_path = generate_short(video_path, word_timings, topic_id)
+            short_id = upload_short(short_path, metadata, video_id, publish_at_utc)
+            notify(f"🩳 Apophenia Short — youtube.com/shorts/{short_id} (-> {video_id})")
+
+            # Stashed in Supabase Storage so the webapp dashboard can offer a
+            # manual-download button for posting the same cut to TikTok —
+            # the pipeline can run on a GitHub Actions runner where this
+            # local output/shorts/ file never reaches the user's own machine.
+            sb.upload_short(topic_id, short_path, {
+                "title": metadata["title"],
+                "short_youtube_id": short_id,
+                "parent_video_id": video_id,
+                "publish_at_utc": publish_at_utc,
+                "category": topic["category"],
+            })
+        except Exception as e:
+            print(f"    Warning: Short generation/upload failed (main video still published fine): {e}")
         print()
 
     except Exception as e:

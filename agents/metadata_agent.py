@@ -5,6 +5,26 @@ client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
 
 CHANNEL_URL = "https://www.youtube.com/@heyapophenia"
 
+
+def _timestamp_block(duration_min):
+    """Maps the script's fixed 5-babak structure (see script_agent._DRAFT) to
+    rough proportional timestamps — wound (babak 2) and strategy/close (babak 5)
+    run longest per that prompt's own pacing note, so they get the biggest share."""
+    labels = ["The Hook", "The Wound", "The Science", "The Turn", "The Strategy"]
+    weights = [0.08, 0.32, 0.18, 0.14, 0.28]
+    marks, acc = [], 0.0
+    for w in weights:
+        marks.append(acc)
+        acc += w
+
+    def fmt(total_min):
+        total_sec = int(total_min * 60)
+        h, rem = divmod(total_sec, 3600)
+        mn, sec = divmod(rem, 60)
+        return f"{h}:{mn:02d}:{sec:02d}" if h else f"{mn:02d}:{sec:02d}"
+
+    return "\n".join(f"{fmt(duration_min * m)} – {l}" for m, l in zip(marks, labels))
+
 _PROMPT = """You are an expert YouTube SEO strategist for a psychology insight essay channel \
 called "Apophenia" (style reference: the channel "Kee" — generic psychological archetypes, \
 real psychological terms explained conversationally, never academic, never naming real people).
@@ -18,15 +38,23 @@ Duration: ~{duration_min} minutes
 
 SEO RULES — follow strictly:
 
-TITLE rules:
+TITLE rules (changed 2026-06-22 — titles were testing too generic/flat, need real click-pull):
 - 60-100 characters
 - Lead with "The Psychology of" or "The Psychology Of" followed by the archetype description —
-  this exact phrase is the channel's proven high-performing format (reference titles: "The
-  Psychology of the Emotionally Exhausted Adult", "The Psychology Of People Who Cut Off Their
-  Family", "The Psychology of People Who Apologize Too Much")
-- The archetype description after "The Psychology of" should read naturally, drawing on the
-  archetype field and angle field given
-- NO clickbait, NO ALL CAPS, NO emojis, no real person's name ever
+  this exact phrase is the channel's proven high-performing format, but the archetype description
+  itself must now be SPECIFIC and PUNCHY, not a flat clinical restatement — pull from the angle
+  field's sharpest, most personally-recognizable detail (reference good titles: "The Psychology of
+  People Who Go Quiet the Second a Room Fills Up", "The Psychology of People Who Apologize Before
+  Anyone Else Even Speaks" — specific, second-person-recognizable, curiosity-inducing; bad/too
+  generic: "The Psychology of the Emotionally Exhausted Adult")
+- Allowed and encouraged: a sharp behavioral hook, a "why you..." or "the real reason..." framing
+  worked into the archetype description itself, mild tension/curiosity gap — this IS the clickbait
+  lever, just without leaving the "The Psychology of" SEO anchor phrase
+- Still NO ALL CAPS, NO emojis, no real person's name, no false/misleading claims — the hook must
+  be something the video genuinely delivers on, not bait-and-switch
+- Naturally include the core searchable keyword from the category (e.g. "invisible", "people
+  pleasing", "avoidant") inside the title itself — SEO and clickbait both matter, don't sacrifice
+  one for the other
 
 DESCRIPTION rules:
 - First 125 characters are critical — shown in YouTube search snippets, must be a calm, specific
@@ -57,6 +85,8 @@ DESCRIPTION:
 [1-2 sentences: the real psychological mechanism, named and explained simply]
 
 [1 sentence: who this is for]
+
+{timestamp_block}
 
 More psychology breakdowns:
 ▶ Full Channel → {channel_url}
@@ -89,6 +119,7 @@ def generate_metadata(topic_data, duration_min=15):
             category_tag=category_tag,
             channel_url=CHANNEL_URL,
             duration_min=duration_min,
+            timestamp_block=_timestamp_block(duration_min),
         )}],
     )
 

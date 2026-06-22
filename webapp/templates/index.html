@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title>Narava AI</title>
+  <title>Apophenia</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -81,7 +81,7 @@
   <div class="flex items-center justify-between px-4 pb-3">
     <div>
       <div class="text-xs text-ink-muted tracking-widest uppercase mb-0.5">Pipeline Control</div>
-      <div class="text-lg font-semibold gold-glow" style="color:#d4a843;">✦ Narava AI</div>
+      <div class="text-lg font-semibold gold-glow" style="color:#d4a843;">✦ Apophenia</div>
     </div>
     <div id="header-status" class="flex items-center gap-2 text-xs text-ink-muted">
       <span class="status-dot dot-idle" id="main-dot"></span>
@@ -215,6 +215,19 @@
     </div>
   </div>
 
+  <!-- ═══ TAB: SHORTS ══════════════════════════════════════════════ -->
+  <div class="tab-content" id="tab-shorts">
+    <div class="px-4 mt-4">
+      <div class="flex items-center justify-between mb-3">
+        <div class="text-xs text-ink-faint tracking-widest uppercase">Shorts — Download untuk TikTok</div>
+        <button onclick="loadShorts()" class="text-xs text-ink-muted">Refresh</button>
+      </div>
+      <div id="shorts-list" class="space-y-2">
+        <div class="text-sm text-ink-muted py-4 text-center">Loading...</div>
+      </div>
+    </div>
+  </div>
+
   <!-- ═══ TAB: LOGS ════════════════════════════════════════════════ -->
   <div class="tab-content" id="tab-logs">
     <div class="px-4 mt-4">
@@ -232,7 +245,7 @@
 
 <!-- BOTTOM NAV -->
 <div class="fixed bottom-0 left-0 right-0 z-30 bottom-nav" style="background: rgba(10,10,20,.95); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-top: 1px solid rgba(255,255,255,.06);">
-  <div class="grid grid-cols-4">
+  <div class="grid grid-cols-5">
     <button class="tab-btn py-3 flex flex-col items-center gap-1" onclick="switchTab('dashboard', this)" id="nav-dashboard">
       <span class="text-xl">⚡</span>
       <span class="text-xs">Dashboard</span>
@@ -244,6 +257,10 @@
     <button class="tab-btn py-3 flex flex-col items-center gap-1" onclick="switchTab('schedule', this)" id="nav-schedule">
       <span class="text-xl">📅</span>
       <span class="text-xs">Schedule</span>
+    </button>
+    <button class="tab-btn py-3 flex flex-col items-center gap-1" onclick="switchTab('shorts', this)" id="nav-shorts">
+      <span class="text-xl">🩳</span>
+      <span class="text-xs">Shorts</span>
     </button>
     <button class="tab-btn py-3 flex flex-col items-center gap-1" onclick="switchTab('logs', this)" id="nav-logs">
       <span class="text-xl">📄</span>
@@ -296,11 +313,12 @@ function switchTab(tab, btn) {
   else stopLogStream();
   if (tab === 'topics') loadTopics();
   if (tab === 'schedule') loadSchedule();
+  if (tab === 'shorts') loadShorts();
 }
 
 // Init nav color
 document.getElementById('nav-dashboard').style.color = '#d4a843';
-['nav-topics','nav-schedule','nav-logs'].forEach(id => {
+['nav-topics','nav-schedule','nav-shorts','nav-logs'].forEach(id => {
   const el = document.getElementById(id);
   if (el) el.style.color = '#4a4a6a';
 });
@@ -543,6 +561,36 @@ async function loadSchedule() {
       </div>`;
     }).join('');
   }
+}
+
+async function loadShorts() {
+  const listEl = document.getElementById('shorts-list');
+  let shorts = [];
+  try {
+    const res = await fetch('/api/shorts');
+    shorts = await res.json();
+  } catch (e) {
+    listEl.innerHTML = '<div class="rounded-2xl p-4 text-sm text-ink-muted text-center" style="background:#12121c;border:1px solid #1e1e36;">Gagal memuat daftar Shorts.</div>';
+    return;
+  }
+  if (!shorts.length) {
+    listEl.innerHTML = '<div class="rounded-2xl p-4 text-sm text-ink-muted text-center" style="background:#12121c;border:1px solid #1e1e36;">Belum ada Short yang ter-render.</div>';
+    return;
+  }
+  listEl.innerHTML = shorts.map(s => `
+    <div class="rounded-2xl p-4" style="background:#12121c; border:1px solid #1e1e36;">
+      <div class="flex items-start gap-3">
+        <span class="text-lg mt-0.5 flex-shrink-0">🩳</span>
+        <div class="flex-1 min-w-0">
+          <div class="text-sm text-ink font-medium leading-snug">${s.title || ('Topic #' + s.topic_id)}</div>
+          <div class="flex items-center gap-3 mt-2 flex-wrap">
+            ${s.download_url ? `<a href="${s.download_url}" download="apophenia_short_${s.topic_id}.mp4" class="text-xs font-semibold px-3 py-1.5 rounded-xl" style="background:rgba(212,168,67,.12); color:#d4a843; border:1px solid rgba(212,168,67,.3);">⬇ Download MP4</a>` : ''}
+            ${s.short_youtube_id ? `<a href="https://youtube.com/shorts/${s.short_youtube_id}" target="_blank" class="text-xs underline" style="color:#9090b0;">Lihat di YouTube ↗</a>` : ''}
+          </div>
+          <div class="text-xs text-ink-faint mt-1.5">Link otomatis dipasang sebagai caption: "Watch the full breakdown: youtu.be/${s.parent_video_id || ''}" — tinggal copy ke caption TikTok.</div>
+        </div>
+      </div>
+    </div>`).join('');
 }
 
 function formatWIB(utcStr) {

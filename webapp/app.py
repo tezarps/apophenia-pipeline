@@ -1,14 +1,16 @@
+import sys
 import json
 import asyncio
 from pathlib import Path
 from datetime import datetime
 
-import pandas as pd
 from fastapi import FastAPI, Request, HTTPException
-from fastapi.responses import HTMLResponse, StreamingResponse, JSONResponse
+from fastapi.responses import HTMLResponse, StreamingResponse
 
 BASE = Path(__file__).parent.parent
-TOPICS_FILE = BASE / "topics" / "mythology_topics.csv"
+sys.path.insert(0, str(BASE))
+import supabase_io as sb  # noqa: E402 — topics queue lives in Supabase, not a local CSV
+
 STATUS_FILE = BASE / "pipeline_status.json"
 SCHEDULE_FILE = BASE / "schedule.json"
 LOG_FILE = BASE / "logs" / "pipeline.log"
@@ -17,7 +19,7 @@ LOG_FILE.parent.mkdir(exist_ok=True)
 
 _HTML = (Path(__file__).parent / "templates" / "index.html").read_text()
 
-app = FastAPI(title="Narava AI Pipeline")
+app = FastAPI(title="Apophenia Pipeline")
 
 
 # ── HTML ──────────────────────────────────────────────────────────────────────
@@ -41,56 +43,39 @@ def api_status():
 
 @app.get("/api/topics")
 def api_topics(status: str = "all"):
-    df = pd.read_csv(TOPICS_FILE)
-    if status != "all":
-        df = df[df["status"] == status]
-    df = df.fillna("")
-    return df.to_dict(orient="records")
+    return sb.list_topics(status=None if status == "all" else status)
 
 
 @app.post("/api/topics")
 async def api_add_topic(request: Request):
     body = await request.json()
-    df = pd.read_csv(TOPICS_FILE)
-    df = df.fillna("")
-    new_id = int(df["id"].max()) + 1 if not df.empty else 1
-    new_row = {
-        "id": new_id,
-        "category": body.get("category", "greek").lower(),
-        "topic": body.get("topic", ""),
-        "angle": body.get("angle", ""),
-        "status": "pending",
-        "video_id": "",
-        "notes": "",
-    }
-    df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
-    df.to_csv(TOPICS_FILE, index=False)
-    return new_row
+    row = sb.add_topic(
+        body.get("category", "invisibility"),
+        body.get("topic", ""),
+        body.get("angle", ""),
+    )
+    if not row:
+        raise HTTPException(500, "Failed to insert topic")
+    return row
 
 
 @app.put("/api/topics/{topic_id}/reset")
 def api_reset_topic(topic_id: int):
-    df = pd.read_csv(TOPICS_FILE)
-    df.fillna("", inplace=True)
-    if topic_id not in df["id"].values:
+    if not sb.get_topic(topic_id):
         raise HTTPException(404, "Topic not found")
-    df.loc[df["id"] == topic_id, "status"] = "pending"
-    df.loc[df["id"] == topic_id, "notes"] = ""
-    df.to_csv(TOPICS_FILE, index=False)
+    sb.reset_topic(topic_id)
     return {"ok": True}
 
 
 @app.delete("/api/topics/{topic_id}")
 def api_delete_topic(topic_id: int):
-    df = pd.read_csv(TOPICS_FILE)
-    df = df[df["id"] != topic_id]
-    df.to_csv(TOPICS_FILE, index=False)
+    sb.delete_topic(topic_id)
     return {"ok": True}
 
 
 @app.get("/api/stats")
 def api_stats():
-    df = pd.read_csv(TOPICS_FILE).fillna("")
+    topics = sb.list_topics()
     status_data = json.loads(STATUS_FILE.read_text()) if STATUS_FILE.exists() else {}
     runs = status_data.get("runs", [])
     today = datetime.now().strftime("%Y-%m-%d")
@@ -99,10 +84,10 @@ def api_stats():
         if r.get("status") == "published" and r.get("started_at", "").startswith(today)
     })
     return {
-        "total": len(df),
-        "pending": int((df["status"] == "pending").sum()),
-        "published": int((df["status"] == "published").sum()),
-        "failed": int((df["status"] == "failed").sum()),
+        "total": len(topics),
+        "pending": sum(1 for t in topics if t.get("status") == "pending"),
+        "published": sum(1 for t in topics if t.get("status") == "published"),
+        "failed": sum(1 for t in topics if t.get("status") == "failed"),
         "published_today": published_today,
         "total_runs": len(runs),
     }
@@ -120,6 +105,19 @@ def api_schedule():
     upcoming = [e for e in entries if e.get("publish_at_utc", "") > now_utc]
     past = [e for e in entries if e.get("publish_at_utc", "") <= now_utc]
     return {"upcoming": upcoming, "past": past}
+
+
+@app.get("/api/shorts")
+def api_shorts():
+    """Shorts rendered + uploaded to YouTube by the pipeline, with a
+    time-limited signed download link so they can be pulled down and
+    posted manually to TikTok — see agents/shorts_agent.py +
+    supabase_io.upload_short(). Works even when the pipeline ran on a
+    GitHub Actions runner where the .mp4 never touched this machine."""
+    try:
+        return sb.list_shorts()
+    except Exception as e:
+        raise HTTPException(500, f"Failed to list shorts: {e}")
 
 
 @app.get("/api/logs")

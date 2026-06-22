@@ -13,6 +13,13 @@ from config import (
 )
 
 SILENCE_MS = 450          # gap between ordinary script chunks
+
+# The closing CTA line (the one mentioning "Apophenia") sat right up against
+# the previous sentence with only the normal 450ms gap, so it read as more
+# content rather than a deliberate sign-off — flagged by user feedback
+# 2026-06-22. A longer pause right before it signals "this is the close" the
+# same way a real narrator would drop their pace before a sign-off line.
+CTA_GAP_MS = 1600
 MAX_VOLUME_RANGE_DB = 9  # if segments within a chunk differ more than this, re-roll the chunk
 QUALITY_RETRIES = 2
 
@@ -34,6 +41,12 @@ def _chunk_text(text, max_chars=MAX_CHUNK_CHARS):
     sentences = text.replace("\n\n", " ").replace("\n", " ").split(". ")
     chunks, current = [], ""
     for s in sentences:
+        # Force the closing "Apophenia" sign-off sentence to start its own
+        # chunk (instead of getting packed onto the previous sentence) so
+        # _gap_durations_ms can actually isolate it with a longer pause.
+        if "apophenia" in s.lower() and current:
+            chunks.append(current.strip())
+            current = ""
         candidate = current + s + ". "
         if len(candidate) <= max_chars:
             current = candidate
@@ -165,8 +178,20 @@ def _synthesize_chunk(text, out_path, voice_id, voice_settings, capture_timestam
         print(f"    Volume drift {spread:.1f}dB detected — re-rolling chunk ({quality_attempt}/{max_quality_retries})...")
 
 
-def _merge_with_ffmpeg(chunk_dir, out_path):
+def _gap_durations_ms(chunk_texts):
+    """Returns one silence duration (ms) to insert AFTER each chunk. Normally
+    SILENCE_MS, except the gap right before the CTA chunk (the one mentioning
+    "Apophenia") gets CTA_GAP_MS instead, so the sign-off reads as deliberate."""
+    gaps = [SILENCE_MS] * len(chunk_texts)
+    for i in range(1, len(chunk_texts)):
+        if "apophenia" in chunk_texts[i].lower():
+            gaps[i - 1] = CTA_GAP_MS
+    return gaps
+
+
+def _merge_with_ffmpeg(chunk_dir, out_path, chunk_texts=None):
     chunks = sorted(chunk_dir.glob(f"[0-9][0-9][0-9][0-9].{_AUDIO_EXT}"))
+    gaps_ms = _gap_durations_ms(chunk_texts) if chunk_texts else [SILENCE_MS] * len(chunks)
 
     def _make_silence(ms, name):
         path = chunk_dir / name
@@ -178,13 +203,15 @@ def _merge_with_ffmpeg(chunk_dir, out_path):
         ], capture_output=True, check=True)
         return path
 
-    silence_path = _make_silence(SILENCE_MS, f"silence.{_AUDIO_EXT}")
+    silence_paths = {}
+    for ms in set(gaps_ms):
+        silence_paths[ms] = _make_silence(ms, f"silence_{ms}.{_AUDIO_EXT}")
 
     concat_file = chunk_dir / "concat.txt"
     lines = []
-    for chunk in chunks:
+    for chunk, gap_ms in zip(chunks, gaps_ms):
         lines.append(f"file '{chunk}'")
-        lines.append(f"file '{silence_path}'")
+        lines.append(f"file '{silence_paths[gap_ms]}'")
     concat_file.write_text("\n".join(lines))
 
     raw_merged = chunk_dir / f"merged_raw.{_AUDIO_EXT}"
@@ -233,8 +260,8 @@ def _compute_word_timings(chunk_dir, chunks, highlight_words):
     offsets into one global word-timing list, then zips in the
     highlight/blackscreen flags from caption_agent.annotate_script (same word
     order — both derive from the exact same clean text)."""
+    gaps_ms = _gap_durations_ms(chunks)
     offset = 0.0
-    silence_dur = SILENCE_MS / 1000
     all_words = []
     for i, chunk_text in enumerate(chunks):
         audio_path = chunk_dir / f"{i:04d}.{_AUDIO_EXT}"
@@ -243,7 +270,7 @@ def _compute_word_timings(chunk_dir, chunks, highlight_words):
             alignment = json.loads(align_path.read_text())
             for w in _words_from_alignment(chunk_text, alignment):
                 all_words.append({"text": w["text"], "start": w["start"] + offset, "end": w["end"] + offset})
-        offset += _audio_duration(audio_path) + silence_dur
+        offset += _audio_duration(audio_path) + gaps_ms[i] / 1000
 
     n = min(len(all_words), len(highlight_words))
     if len(all_words) != len(highlight_words):
@@ -314,7 +341,7 @@ def generate_audio(script_text, topic_id, category=None, with_captions=False, hi
         word_timings = _compute_word_timings(chunk_dir, chunks, highlight_words)
 
     print("    Merging audio...")
-    _merge_with_ffmpeg(chunk_dir, out_path)
+    _merge_with_ffmpeg(chunk_dir, out_path, chunk_texts=chunks)
     shutil.rmtree(chunk_dir)
 
     if with_captions:

@@ -9,6 +9,7 @@ write access). Falls back to raising a clear error if those aren't set yet,
 rather than silently doing nothing.
 """
 import os
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -22,6 +23,7 @@ AUDIO_BUCKET = "apophenia-audio"
 SCRIPTS_BUCKET = "apophenia-scripts"
 THUMBNAILS_BUCKET = "apophenia-thumbnails"
 IMAGES_BUCKET = "apophenia-images"
+SHORTS_BUCKET = "apophenia-shorts"
 
 _client = None
 
@@ -63,6 +65,38 @@ def get_topic(topic_id):
     return res.data[0] if res.data else None
 
 
+def add_topic(category, topic, angle):
+    db = _require_client()
+    res = db.table("topics").insert({
+        "category": category.lower(), "topic": topic, "angle": angle, "status": "pending",
+    }).execute()
+    return res.data[0] if res.data else None
+
+
+def reset_topic(topic_id):
+    db = _require_client()
+    db.table("topics").update({"status": "pending", "notes": ""}).eq("id", topic_id).execute()
+
+
+def delete_topic(topic_id):
+    db = _require_client()
+    db.table("topics").delete().eq("id", topic_id).execute()
+
+
+def list_topics(status=None, limit=200):
+    """Replaces the dead CSV-backed topic list the webapp dashboard used
+    before Apophenia moved its queue into Supabase (see supabase_io.py
+    module docstring) — confirmed 2026-06-23 the webapp was still pointed
+    at a leftover Narava-mythology CSV file that this pipeline no longer
+    reads or writes."""
+    db = _require_client()
+    q = db.table("topics").select("*").order("id")
+    if status:
+        q = q.eq("status", status)
+    res = q.limit(limit).execute()
+    return res.data or []
+
+
 # ---- Pipeline run log (for the dashboard) ----
 
 def run_start(topic_id, angle):
@@ -94,6 +128,25 @@ def run_failed(run_id, error):
     db.table("pipeline_runs").update({
         "status": "failed", "error": str(error)[:500], "finished_at": "now()",
     }).eq("id", run_id).execute()
+
+
+def sweep_stale_runs(stale_minutes=20):
+    """A killed/crashed process (kill -9, power loss) never reaches the
+    except block that calls run_failed(), leaving its pipeline_runs row stuck
+    at status='running' forever — the dashboard's realtime subscription has
+    nothing new to show, so it just displays a permanently "running" run.
+    Confirmed 2026-06-22 (Topic #4's run after it was force-killed). Called at
+    the top of every scheduler.py run() so the dashboard self-heals on the
+    very next run, even after a SIGKILL that no signal handler could catch."""
+    db = _require_client()
+    cutoff = (datetime.now(timezone.utc) - timedelta(minutes=stale_minutes)).strftime("%Y-%m-%dT%H:%M:%S.000Z")
+    stale = db.table("pipeline_runs").select("id").eq("status", "running").lt("started_at", cutoff).execute()
+    for row in stale.data or []:
+        db.table("pipeline_runs").update({
+            "status": "failed",
+            "error": "Stale — process stopped responding (killed or crashed without clean shutdown)",
+            "finished_at": "now()",
+        }).eq("id", row["id"]).execute()
 
 
 # ---- Storage: audio / script / thumbnail (NOT raw video) ----
@@ -153,6 +206,58 @@ def upload_script(topic_id, local_path):
 
 def download_script(topic_id, local_path):
     return _download(SCRIPTS_BUCKET, f"{topic_id}.txt", local_path)
+
+
+# ---- Shorts: rendered .mp4 + a small JSON sidecar (title/links), so the
+# webapp dashboard can list and serve them for manual TikTok download
+# without needing a new Supabase table. A Short is well under the 50MB
+# per-file cap (~16-20MB at 50-58s) so unlike audio it's uploaded whole,
+# no chunking needed. ----
+
+def upload_short(topic_id, local_video_path, meta: dict):
+    import json
+    db = _require_client()
+    _upload(SHORTS_BUCKET, f"{topic_id}.mp4", local_video_path)
+    db.storage.from_(SHORTS_BUCKET).upload(
+        f"{topic_id}.json",
+        json.dumps(meta, ensure_ascii=False).encode("utf-8"),
+        {"upsert": "true", "content-type": "application/json"},
+    )
+
+
+def list_shorts(signed_url_expires_in=3600):
+    """Returns [{topic_id, title, short_youtube_id, parent_video_id,
+    publish_at_utc, download_url}, ...] newest first, for the webapp's
+    download page. download_url is a time-limited signed URL (bucket is
+    private — service-role key only) rather than a permanent public link,
+    since these are unlisted-until-published assets."""
+    import json
+    db = _require_client()
+    entries = db.storage.from_(SHORTS_BUCKET).list()
+    by_topic = {}
+    for e in entries or []:
+        name = e["name"]
+        if "." not in name:
+            continue
+        topic_id, ext = name.rsplit(".", 1)
+        by_topic.setdefault(topic_id, {})[ext] = name
+
+    out = []
+    for topic_id, files in by_topic.items():
+        if "mp4" not in files:
+            continue
+        meta = {}
+        if "json" in files:
+            try:
+                meta = json.loads(db.storage.from_(SHORTS_BUCKET).download(files["json"]).decode("utf-8"))
+            except Exception:
+                pass
+        signed = db.storage.from_(SHORTS_BUCKET).create_signed_url(files["mp4"], signed_url_expires_in)
+        download_url = signed.get("signedURL") or signed.get("signedUrl")
+        out.append({"topic_id": topic_id, "download_url": download_url, **meta})
+
+    out.sort(key=lambda r: int(r["topic_id"]), reverse=True)
+    return out
 
 
 def upload_timings(topic_id, local_path):

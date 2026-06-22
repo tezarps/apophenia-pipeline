@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv(override=True)
 
 ANTHROPIC_API_KEY = os.environ["ANTHROPIC_API_KEY"]
 
@@ -51,3 +51,4 @@ FFPROBE_BIN = os.environ.get("FFPROBE_BIN", "ffprobe")
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 (OUTPUT_DIR / "audio").mkdir(exist_ok=True)
 (OUTPUT_DIR / "video").mkdir(exist_ok=True)
+(OUTPUT_DIR / "shorts").mkdir(exist_ok=True)
