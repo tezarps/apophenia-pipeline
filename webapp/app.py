@@ -107,6 +107,43 @@ def api_schedule():
     return {"upcoming": upcoming, "past": past}
 
 
+@app.get("/api/thumbnails")
+def api_thumbnails(ids: str = ""):
+    """Return signed download URLs for thumb A and B for the given topic IDs.
+    Called by dashboard loadThumbDownloads(). Returns {topic_id: {a: url, b: url}}."""
+    if not ids:
+        return {}
+    topic_ids = [int(x) for x in ids.split(",") if x.strip().isdigit()]
+    topics = {t["id"]: t for t in sb.list_topics()}
+    result = {}
+    db = sb._require_client()
+    for tid in topic_ids:
+        topic = topics.get(tid)
+        if not topic:
+            continue
+        slug = topic["topic"].lower().replace(" ", "_")
+        prefix = f"{topic['category'].lower()}/{slug}"
+        try:
+            entries = db.storage.from_(sb.THUMBNAILS_BUCKET).list(prefix)
+        except Exception:
+            continue
+        variants = {}
+        for e in entries:
+            name = e["name"]
+            key = "a" if name.startswith("A") else ("b" if name.startswith("B") else None)
+            if key:
+                try:
+                    signed = db.storage.from_(sb.THUMBNAILS_BUCKET).create_signed_url(
+                        f"{prefix}/{name}", 3600
+                    )
+                    variants[key] = signed.get("signedURL") or signed.get("signed_url") or signed
+                except Exception:
+                    pass
+        if variants:
+            result[tid] = variants
+    return result
+
+
 @app.get("/api/shorts")
 def api_shorts():
     """Shorts rendered + uploaded to YouTube by the pipeline, with a
