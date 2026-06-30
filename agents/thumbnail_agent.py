@@ -320,24 +320,48 @@ def _compose_thumbnail(scene_bytes, hook_text, text_side, out_path, bg_rgb=(10, 
     canvas = Image.alpha_composite(canvas.convert("RGBA"), overlay).convert("RGB")
 
     # Word-wrap hook text to fit inside the text-panel half
-    font = ImageFont.truetype(str(THUMBNAIL_FONT_PATH), 130)
+    font_size = 130
     margin = 56
     max_width = half - margin * 2
 
-    _measure = ImageDraw.Draw(Image.new("RGB", (1, 1)))
-    words = hook_text.upper().split()
-    lines, current = [], ""
-    for w in words:
-        trial = f"{current} {w}".strip()
-        if _measure.textlength(trial, font=font) <= max_width:
-            current = trial
-        else:
-            lines.append(current)
-            current = w
-    if current:
-        lines.append(current)
+    def _wrap(text, fnt, mw):
+        _m = ImageDraw.Draw(Image.new("RGB", (1, 1)))
+        # split on whitespace; also break hyphenated words at hyphens
+        words = text.upper().split()
+        tokens = []
+        for w in words:
+            if '-' in w:
+                parts = w.split('-')
+                for i, p in enumerate(parts):
+                    tokens.append(p + '-' if i < len(parts) - 1 else p)
+            else:
+                tokens.append(w)
+        tokens = [t for t in tokens if t]
+        ls, cur = [], ""
+        for t in tokens:
+            trial = (cur + " " + t).strip() if cur else t
+            if _m.textlength(trial, font=fnt) <= mw:
+                cur = trial
+            else:
+                if cur:
+                    ls.append(cur)
+                cur = t
+        if cur:
+            ls.append(cur)
+        return ls
 
-    line_height = 130
+    font = ImageFont.truetype(str(THUMBNAIL_FONT_PATH), font_size)
+    lines = _wrap(hook_text, font, max_width)
+
+    # If any single line still overflows (very long word), shrink font globally
+    _m2 = ImageDraw.Draw(Image.new("RGB", (1, 1)))
+    widest = max((_m2.textlength(l, font=font) for l in lines), default=1)
+    if widest > max_width:
+        font_size = int(font_size * max_width / widest)
+        font = ImageFont.truetype(str(THUMBNAIL_FONT_PATH), font_size)
+        lines = _wrap(hook_text, font, max_width)
+
+    line_height = int(font_size * 1.1)
     total_h = line_height * len(lines)
     y = (THUMB_SIZE[1] - total_h) // 2
     x = margin if text_side == "left" else half + margin
