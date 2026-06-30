@@ -445,6 +445,28 @@ Style rules:
 - Full bleed edge-to-edge. NO text, NO borders, NO frames, NO vignette.
 Return ONLY the prompt text, no labels, no preamble."""
 
+_SCENE_PSY_PAIR_SYSTEM = """\
+You are a visual prompt writer for an AI image generator.
+Given a psychology topic and TWO hook texts, write TWO scene prompts — A in watercolor style, B in comic vintage style.
+
+PROMPT A (watercolor/gouache):
+Bold gouache and watercolor illustration, visible wet brushstrokes, rich saturated color, painterly texture, slightly dreamlike.
+Warm light against cool shadow. Objects and figures fully visible and clearly rendered — NOT ghostly, NOT transparent washes.
+
+PROMPT B (vintage comic halftone):
+Vintage-comic illustration with visible halftone-dot texture, gouache and ink, bold vivid saturated palette, sharp contrast.
+Slightly surreal and graphic. Background color fills edge-to-edge.
+
+Both prompts must follow these rules:
+- Close-up portrait or half-body. Figure fills most of the frame. Strong emotional expression readable on the face.
+- 2-3 dominant vivid contrasting colors. Full bleed edge-to-edge — ZERO white border, ZERO frame, ZERO vignette.
+- Scene visually reinforces its hook text — the image is a metaphor FOR the text, not a generic archetype illustration.
+- Two DIFFERENT scene concepts (different setting, symbol, or situation) — not the same scene restated in two styles.
+- No text in the image, no logos, no real/identifiable person, no grimace or contorted face.
+
+Return ONLY JSON: {"a": "...", "b": "..."}
+Nothing else."""
+
 
 def _compose_psyphoria(scene_bytes, hook_text, out_path):
     """Psyphoria style: solid black band at top, full scene image directly below — no overlap, no fade."""
@@ -491,8 +513,9 @@ def _compose_psyphoria(scene_bytes, hook_text, out_path):
 
 
 def generate_thumbnails_psyphoria(topic_data):
-    """Psyphoria-style: full expressionist painting + 2-3 word bold text overlay.
-    A and B share the same scene; only the hook text differs."""
+    """Psyphoria layout (solid black top band + full image below) with two art styles:
+    A = watercolor/gouache, B = vintage comic halftone. Each variant gets its own
+    scene image generated to match its hook text."""
     topic    = topic_data["topic"]
     angle    = topic_data["angle"]
     category = topic_data["category"]
@@ -508,21 +531,27 @@ def generate_thumbnails_psyphoria(topic_data):
     ))
     print(f"  Hook A: {hooks['a']} | Hook B: {hooks['b']}")
 
-    print("  [psyphoria] Generating scene prompt...")
-    scene_prompt = _call_claude(
-        _SCENE_PSY_SYSTEM,
-        f"Topic: {topic}\nAngle: {angle}\nCategory: {category}",
-        max_tokens=300,
+    print("  [psyphoria] Generating scene prompts (watercolor A + comic B)...")
+    raw = _call_claude(
+        _SCENE_PSY_PAIR_SYSTEM,
+        f"Topic: {topic}\nAngle: {angle}\nCategory: {category}\nHook A: {hooks['a']}\nHook B: {hooks['b']}",
+        max_tokens=600,
     )
-    print(f"  Scene: {scene_prompt[:90]}...")
+    clean = raw.replace("```json", "").replace("```", "").strip()
+    s, e = clean.find("{"), clean.rfind("}")
+    scenes = json.loads(clean[s:e + 1])
+    print(f"  Scene A (watercolor): {scenes['a'][:80]}...")
+    print(f"  Scene B (comic):      {scenes['b'][:80]}...")
 
-    print("  [psyphoria] Generating scene image...")
-    scene_bytes = _call_nano_banana(scene_prompt)
+    print("  [psyphoria] Generating scene A (watercolor)...")
+    scene_a_bytes = _call_nano_banana(scenes["a"])
+    print("  [psyphoria] Generating scene B (comic vintage)...")
+    scene_b_bytes = _call_nano_banana(scenes["b"])
 
-    path_a = out_dir / "thumb_psy_A.jpg"
-    path_b = out_dir / "thumb_psy_B.jpg"
-    _compose_psyphoria(scene_bytes, hooks["a"], path_a)
-    _compose_psyphoria(scene_bytes, hooks["b"], path_b)
-    print(f"  psy_A: {path_a}")
-    print(f"  psy_B: {path_b}")
+    path_a = out_dir / "thumb_A.jpg"
+    path_b = out_dir / "thumb_B.jpg"
+    _compose_psyphoria(scene_a_bytes, hooks["a"], path_a)
+    _compose_psyphoria(scene_b_bytes, hooks["b"], path_b)
+    print(f"  A (watercolor): {path_a}")
+    print(f"  B (comic):      {path_b}")
     return path_a, path_b

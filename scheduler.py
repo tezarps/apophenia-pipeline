@@ -12,7 +12,7 @@ from agents.script_agent import generate_script
 from agents.tts_agent import generate_audio
 from agents.assembly_agent import create_video, _audio_duration, OUTRO_TAIL_SEC
 from agents.image_agent import generate_images, images_for_duration
-from agents.thumbnail_agent import generate_thumbnails
+from agents.thumbnail_agent import generate_thumbnails_psyphoria
 from agents.caption_agent import annotate_script, build_ass, blackscreen_spans as compute_blackscreen_spans
 from agents.metadata_agent import generate_metadata, generate_engagement_question
 from agents.music_agent import generate_topic_music
@@ -79,8 +79,8 @@ def _ensure_local_thumbnails(topic_data, slug):
             return local_dir / "thumb_A.jpg", local_dir / "thumb_B.jpg"
     except Exception:
         pass
-    print(f"    No thumbnails cached — generating via thumbnail_agent...")
-    return generate_thumbnails(topic_data)
+    print(f"    No thumbnails cached — generating via thumbnail_agent (psyphoria)...")
+    return generate_thumbnails_psyphoria(topic_data)
 
 
 def _cleanup(topic_id, failed_stage):
