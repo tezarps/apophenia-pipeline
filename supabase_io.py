@@ -45,7 +45,9 @@ def _require_client() -> Client:
 
 def get_next_topic():
     db = _require_client()
-    res = db.table("topics").select("*").eq("status", "pending").order("id").limit(1).execute()
+    # Retry failed topics before advancing to new pending ones — order by id
+    # ensures the lowest-numbered failed/pending topic is always attempted first.
+    res = db.table("topics").select("*").in_("status", ["pending", "failed"]).order("id").limit(1).execute()
     return res.data[0] if res.data else None
 
 
@@ -214,12 +216,17 @@ def download_script(topic_id, local_path):
 # per-file cap (~16-20MB at 50-58s) so unlike audio it's uploaded whole,
 # no chunking needed. ----
 
-def upload_short(topic_id, local_video_path, meta: dict):
+def upload_short(topic_id, local_video_path, meta: dict, key_suffix=""):
+    """key_suffix added 2026-06-24 for the turning-point Short variant
+    (e.g. "_turn") so it doesn't collide with the original hook Short's
+    {topic_id}.mp4/.json keys — dashboard/api/shorts.js groups by everything
+    before the last dot, so the suffix surfaces as its own row there."""
     import json
     db = _require_client()
-    _upload(SHORTS_BUCKET, f"{topic_id}.mp4", local_video_path)
+    key = f"{topic_id}{key_suffix}"
+    _upload(SHORTS_BUCKET, f"{key}.mp4", local_video_path)
     db.storage.from_(SHORTS_BUCKET).upload(
-        f"{topic_id}.json",
+        f"{key}.json",
         json.dumps(meta, ensure_ascii=False).encode("utf-8"),
         {"upsert": "true", "content-type": "application/json"},
     )
