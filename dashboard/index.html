@@ -7,6 +7,14 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Apophenia">
 <style>
   :root {
     --bg: #0f1813;
@@ -80,17 +88,31 @@
   .stat-hint { font-size: 11px; color: var(--muted); }
   .stat-card.hero .stat-hint { color: rgba(255,255,255,0.75); }
 
-  /* ---- Main grid ---- */
-  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
-  .grid .span-2 { grid-column: 1 / -1; }
+  /* ---- Main content: single-column flow, no boxed cards — each section
+  sizes purely to its own content, so a short list never inherits a tall
+  neighbor's height (the old 2-col card grid did this via row stretch). ---- */
   @media (max-width: 860px) {
     .stat-cards { grid-template-columns: repeat(2, 1fr); }
-    .grid { grid-template-columns: 1fr; }
   }
 
-  .card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 18px; margin-bottom: 0; position: relative; overflow: hidden; box-shadow: var(--shadow); transition: box-shadow 0.2s, transform 0.2s; }
-  .card::before { content: ""; position: absolute; top: 0; left: 0; width: 3px; height: 100%; background: linear-gradient(180deg, var(--accent), transparent); opacity: 0.6; }
-  .card h2 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.09em; color: var(--muted); margin: 0 0 14px; display: flex; justify-content: space-between; align-items: center; font-weight: 700; }
+  .stack { display: flex; flex-direction: column; }
+  .block { padding: 24px 0; border-bottom: 1px solid var(--border); position: relative; padding-left: 16px; animation: fadeInUp 0.45s ease both; }
+  .block::before { content: ""; position: absolute; top: 24px; bottom: 24px; left: 0; width: 3px; border-radius: 3px; background: linear-gradient(180deg, var(--accent), transparent); opacity: 0.6; }
+  .block:first-child { padding-top: 0; }
+  .block:first-child::before { top: 0; }
+  .block:last-child { border-bottom: none; padding-bottom: 0; }
+  .block:nth-child(1) { animation-delay: 0.02s; }
+  .block:nth-child(2) { animation-delay: 0.06s; }
+  .block:nth-child(3) { animation-delay: 0.10s; }
+  .block:nth-child(4) { animation-delay: 0.14s; }
+  .block:nth-child(5) { animation-delay: 0.18s; }
+  .block:nth-child(6) { animation-delay: 0.22s; }
+  .block:nth-child(7) { animation-delay: 0.26s; }
+  @keyframes fadeInUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .block h2 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.09em; color: var(--muted); margin: 0 0 14px; display: flex; justify-content: space-between; align-items: center; font-weight: 700; }
+
+  .chip-row { display: flex; flex-wrap: wrap; gap: 10px; }
+  .chip-row .ab-card { flex: 1 1 240px; margin-bottom: 0; }
 
   /* Live pipeline stepper */
   .stepper { display: flex; flex-direction: column; gap: 0; }
@@ -117,11 +139,14 @@
   .status-failed { background: rgba(242,105,122,0.15); color: var(--red); }
   .status-pending { background: rgba(140,137,171,0.15); color: var(--muted); }
 
-  .row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); gap: 8px; }
+  .row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); gap: 12px; }
   .row:last-child { border-bottom: none; }
-  .row-title { font-size: 14px; font-weight: 600; }
-  .row-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .row-text { flex: 1; min-width: 0; text-align: left; }
+  .row-title { font-size: 14px; font-weight: 600; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .row-sub { font-size: 12px; color: var(--muted); margin-top: 2px; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   a { color: var(--accent); text-decoration: none; font-weight: 600; }
+  .link-pill { display: inline-flex; align-items: center; gap: 5px; background: var(--card-hi); border: 1px solid var(--border); border-radius: 8px; padding: 6px 11px; font-size: 12px; white-space: nowrap; }
+  .link-pill:hover { border-color: var(--accent); }
   .empty { color: var(--muted); font-size: 13px; text-align: center; padding: 14px 0; }
   .cat-pill { display: inline-flex; align-items: center; gap: 6px; background: var(--card-hi); border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; margin: 3px; font-size: 12px; }
   .cat-pill strong { color: var(--accent); }
@@ -137,7 +162,7 @@
   button:disabled { opacity: 0.4; cursor: default; }
   input, select { background: var(--bg); border: 1px solid var(--border); color: var(--text); border-radius: 8px; padding: 9px 10px; font-size: 13px; width: 100%; font-family: inherit; }
   .form-grid { display: grid; gap: 8px; margin-bottom: 10px; }
-  .btn-row { display: flex; gap: 6px; flex-shrink: 0; }
+  .btn-row { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
   .analytics-panel { background: var(--bg); border-radius: 8px; padding: 12px; margin-top: 8px; font-size: 12px; display: none; }
   .analytics-panel.show { display: block; }
   .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
@@ -152,9 +177,35 @@
   .ab-bar { flex: 1; height: 6px; border-radius: 3px; background: var(--border); overflow: hidden; }
   .ab-bar-fill { height: 100%; background: var(--accent); transition: width 0.4s; }
   .ab-ctr { font-size: 11px; color: var(--muted); min-width: 48px; text-align: right; }
+
+  /* Agent modal */
+  .step.clickable { cursor: pointer; }
+  .step.clickable:hover .step-body { opacity: 0.8; }
+  #agent-modal-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 100; }
+  #agent-modal-backdrop.open { display: flex; align-items: flex-end; }
+  #agent-modal { background: var(--card); border-radius: 16px 16px 0 0; width: 100%; max-height: 80vh; display: flex; flex-direction: column; padding: 20px 18px 32px; overflow: hidden; }
+  #agent-modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  #agent-modal-title { font-size: 16px; font-weight: 700; }
+  #agent-modal-close { background: var(--card-hi); color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 4px 10px; font-size: 13px; cursor: pointer; }
+  #agent-modal-body { overflow-y: auto; flex: 1; }
+  .script-pre { white-space: pre-wrap; word-break: break-word; font-size: 13px; line-height: 1.75; color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif; }
+  .info-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+  .info-row:last-child { border-bottom: none; }
+  .info-label { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
 </style>
 </head>
 <body>
+<!-- Agent output modal -->
+<div id="agent-modal-backdrop" onclick="closeAgentModal()">
+  <div id="agent-modal" onclick="event.stopPropagation()">
+    <div id="agent-modal-header">
+      <div id="agent-modal-title">Agent</div>
+      <button id="agent-modal-close" onclick="closeAgentModal()">✕ Tutup</button>
+    </div>
+    <div id="agent-modal-body"><div style="color:var(--muted);font-size:13px;">Memuat...</div></div>
+  </div>
+</div>
+
 <div class="wrap">
   <header>
     <div class="brand">
@@ -190,35 +241,43 @@
     </div>
   </div>
 
-  <div class="grid">
-    <div class="card span-2">
+  <div class="stack">
+    <section class="block">
       <h2>Run Saat Ini</h2>
       <div id="current-run">
         <div class="empty">Memuat...</div>
       </div>
-    </div>
+    </section>
 
-    <div class="card">
+    <section class="block">
       <h2>Thumbnail A/B Test</h2>
-      <div id="ab-tests" class="empty">Memuat...</div>
-    </div>
+      <div id="ab-tests" class="chip-row empty">Memuat...</div>
+    </section>
 
-    <div class="card">
+    <section class="block">
       <h2>Episode Terbaru</h2>
       <div id="recent-published" class="empty">Memuat...</div>
-    </div>
+    </section>
 
-    <div class="card">
+    <section class="block">
+      <h2>
+        Shorts — Download untuk TikTok
+        <button class="secondary" style="padding:4px 10px; font-size:11px;" onclick="loadShorts()">Refresh</button>
+      </h2>
+      <div id="shorts-list" class="empty">Memuat...</div>
+    </section>
+
+    <section class="block">
       <h2>Run Terakhir</h2>
       <div id="recent-runs" class="empty">Memuat...</div>
-    </div>
+    </section>
 
-    <div class="card">
+    <section class="block">
       <h2>Topik Pending per Kategori</h2>
       <div id="pending-by-category" class="empty">Memuat...</div>
-    </div>
+    </section>
 
-    <div class="card span-2">
+    <section class="block">
       <h2>
         Kelola Antrian
         <span id="pin-status" class="locked-note">🔒 Terkunci</span>
@@ -248,7 +307,7 @@
         </div>
         <div id="pending-list" class="empty">Memuat...</div>
       </div>
-    </div>
+    </section>
   </div>
 
   <div class="refresh-note">
@@ -298,6 +357,7 @@
       moon: '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>',
       barChart: '<line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/>',
       check: '<polyline points="20 6 9 17 4 12"/>',
+      download: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>',
       x: '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>'
     };
     return '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + (paths[name] || "") + '</svg>';
@@ -379,8 +439,9 @@
     return "";
   }
 
-  function renderStepper(currentAgent, runStatus) {
+  function renderStepper(currentAgent, runStatus, topicId) {
     const currentIdx = AGENT_ORDER.indexOf(currentAgent);
+    const CLICKABLE = ["scribe", "herald", "oracle", "voice", "architect", "messenger"];
     return AGENT_ORDER.map((key, i) => {
       const a = AGENTS[key];
       let state = "idle", detail = "";
@@ -388,8 +449,9 @@
       else if (i < currentIdx || (runStatus === "done")) { state = "done"; }
       else if (i === currentIdx) { state = "running"; detail = "Sedang berjalan..."; }
       const iconName = state === "done" ? "check" : state === "error" ? "x" : a.icon;
+      const clickable = CLICKABLE.includes(key);
       return `
-        <div class="step ${state}">
+        <div class="step ${state}${clickable ? " clickable" : ""}"${clickable ? ` onclick="openAgentModal('${key}', ${topicId || "null"})"` : ""}>
           <div class="step-line"></div>
           <div class="step-dot">${icon(iconName, 16)}</div>
           <div class="step-body">
@@ -399,6 +461,63 @@
           </div>
         </div>`;
     }).join("");
+  }
+
+  function closeAgentModal() {
+    document.getElementById("agent-modal-backdrop").classList.remove("open");
+  }
+
+  function esc(s) { return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+  async function openAgentModal(key, topicId) {
+    const a = AGENTS[key] || { name: key };
+    document.getElementById("agent-modal-title").textContent = a.name + (topicId ? " — Topic #" + topicId : "");
+    document.getElementById("agent-modal-body").innerHTML = '<div style="color:var(--muted);font-size:13px;padding:20px 0;text-align:center;">Memuat...</div>';
+    document.getElementById("agent-modal-backdrop").classList.add("open");
+
+    const body = document.getElementById("agent-modal-body");
+
+    if (key === "scribe") {
+      if (!topicId) { body.innerHTML = '<div style="color:var(--muted);font-size:13px;">Topic ID tidak tersedia.</div>'; return; }
+      try {
+        const { data, error } = await db.storage.from("apophenia-scripts").download(`${topicId}.txt`);
+        if (error || !data) throw error || new Error("Not found");
+        const text = await data.text();
+        const words = text.trim().split(/\s+/).length;
+        body.innerHTML = `<div style="font-size:12px;color:var(--muted);margin-bottom:12px;">${words.toLocaleString()} kata · ~${Math.round(words/130)} menit</div><pre class="script-pre">${esc(text)}</pre>`;
+      } catch(e) {
+        body.innerHTML = `<div style="color:var(--muted);font-size:13px;">Naskah belum tersedia di Storage. Pipeline perlu dijalankan dulu.</div>`;
+      }
+      return;
+    }
+
+    if (key === "herald") {
+      if (!topicId) { body.innerHTML = '<div style="color:var(--muted);font-size:13px;">Topic ID tidak tersedia.</div>'; return; }
+      try {
+        const { data, error } = await db.storage.from("apophenia-scripts").download(`${topicId}_meta.json`);
+        if (error || !data) throw error || new Error("Not found");
+        const m = JSON.parse(await data.text());
+        body.innerHTML = `
+          <div class="info-row"><span class="info-label">Title A</span><span>${esc(m.title_a||m.title||"—")}</span></div>
+          <div class="info-row"><span class="info-label">Title B</span><span>${esc(m.title_b||"—")}</span></div>
+          <div class="info-row"><span class="info-label">Tags</span><span style="font-size:12px;">${esc((m.tags||[]).join(", "))}</span></div>
+          <div style="margin-top:14px;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px;">Deskripsi</div>
+          <pre class="script-pre" style="font-size:12px;">${esc(m.description||"—")}</pre>`;
+      } catch(e) {
+        body.innerHTML = `<div style="color:var(--muted);font-size:13px;">Metadata belum tersedia. Pipeline perlu dijalankan sampai step Herald.</div>`;
+      }
+      return;
+    }
+
+    // Static info for other agents
+    const staticInfo = {
+      oracle:    [["Tugasnya", "Pilih topik berikutnya dari antrian Supabase"], ["Output", "topic_id + angle"]],
+      voice:     [["Model TTS", "gemini-3.1-flash-tts-preview"], ["Voice", "Achird"], ["Chunk", "1800 chars"], ["Loudnorm", "-16 LUFS, TP -1.5"]],
+      architect: [["Resolusi", "1920×1080"], ["FPS", "25"], ["Images", "~30–60 scene unik"], ["Zoom", "Ken Burns ±3%"], ["BGM", "20% volume"]],
+      messenger: [["Platform", "YouTube"], ["Schedule", "Selasa & Jumat 07:00 WIB"], ["Short", "Auto-cut dari video utama"]],
+    };
+    const rows = staticInfo[key] || [];
+    body.innerHTML = rows.map(([l,v]) => `<div class="info-row"><span class="info-label">${esc(l)}</span><span>${esc(v)}</span></div>`).join("") || '<div style="color:var(--muted);font-size:13px;">Tidak ada info tambahan.</div>';
   }
 
   async function loadCurrentRun() {
@@ -417,13 +536,13 @@
     const r = data[0];
     el.innerHTML = `
       <div class="row" style="border-bottom:none; padding-top:0; margin-bottom:14px;">
-        <div>
+        <div class="row-text">
           <div class="row-title">Topic #${r.topic_id}</div>
-          <div class="row-sub">${esc(r.angle) || ""} · mulai ${timeAgo(r.started_at)}</div>
+          <div class="row-sub" title="${esc(r.angle) || ""}">${esc(r.angle) || ""} · mulai ${timeAgo(r.started_at)}</div>
         </div>
         <span class="status-badge status-running">RUNNING</span>
       </div>
-      <div class="stepper">${renderStepper(r.current_agent, r.status)}</div>`;
+      <div class="stepper">${renderStepper(r.current_agent, r.status, r.topic_id)}</div>`;
   }
 
   async function loadAbTests() {
@@ -454,8 +573,29 @@
           <div class="ab-bar"><div class="ab-bar-fill" style="width:${ctrB ? (ctrB / maxCtr * 100) : 0}%"></div></div>
           <span class="ab-ctr">${ctrB != null ? ctrB + "%" : "–"}</span>
         </div>` : ""}
+        <div class="btn-row" id="thumb-dl-${t.topic_id}" style="margin-top:10px;"></div>
       </div>`;
     }).join("");
+    loadThumbDownloads(data.map(t => t.topic_id));
+  }
+
+  async function loadThumbDownloads(topicIds) {
+    if (!topicIds.length) return;
+    try {
+      const r = await fetch(`/api/thumbnails?ids=${topicIds.join(",")}`);
+      const map = await r.json();
+      for (const topicId of topicIds) {
+        const el = document.getElementById(`thumb-dl-${topicId}`);
+        if (!el) continue;
+        const variants = map[topicId] || {};
+        const links = [];
+        if (variants.a) links.push(`<a class="link-pill" href="${variants.a}">${icon("download", 12)} Thumb A</a>`);
+        if (variants.b) links.push(`<a class="link-pill" href="${variants.b}">${icon("download", 12)} Thumb B</a>`);
+        el.innerHTML = links.join("");
+      }
+    } catch (e) {
+      // Non-fatal — A/B CTR bars above already rendered fine without this.
+    }
   }
 
   async function loadRecentPublished() {
@@ -465,13 +605,13 @@
     el.innerHTML = data.map(t => `
       <div>
         <div class="row">
-          <div>
-            <div class="row-title">${esc(t.topic)}</div>
+          <div class="row-text">
+            <div class="row-title" title="${esc(t.topic)}">${esc(t.topic)}</div>
             <div class="row-sub">${esc(t.category)}</div>
           </div>
           <div class="btn-row">
             ${t.video_id ? `<button class="secondary" onclick="toggleAnalytics('${t.video_id}')" style="display:inline-flex;align-items:center;gap:6px;">${icon("barChart", 14)} Analitik</button>` : ""}
-            ${t.video_id ? `<a href="https://youtube.com/watch?v=${t.video_id}" target="_blank">Tonton →</a>` : ""}
+            ${t.video_id ? `<a class="link-pill" href="https://youtube.com/watch?v=${t.video_id}" target="_blank">Tonton →</a>` : ""}
           </div>
         </div>
         ${t.video_id ? `<div id="analytics-${t.video_id}" class="analytics-panel"></div>` : ""}
@@ -501,15 +641,43 @@
     }
   }
 
+  async function loadShorts() {
+    const el = document.getElementById("shorts-list");
+    el.innerHTML = '<div class="empty">Memuat...</div>';
+    let shorts = [];
+    try {
+      const r = await fetch("/api/shorts");
+      shorts = await r.json();
+    } catch (e) {
+      el.innerHTML = '<div class="empty">Gagal memuat daftar Shorts.</div>';
+      return;
+    }
+    if (!Array.isArray(shorts) || shorts.length === 0) {
+      el.innerHTML = '<div class="empty">Belum ada Short yang ter-render.</div>';
+      return;
+    }
+    el.innerHTML = shorts.map(s => `
+      <div class="row">
+        <div class="row-text">
+          <div class="row-title" title="${esc(s.title) || ("Topic #" + esc(s.topic_id))}">${esc(s.title) || ("Topic #" + esc(s.topic_id))}</div>
+          <div class="row-sub">${s.parent_video_id ? "Link ke video: youtu.be/" + esc(s.parent_video_id) : ""}</div>
+        </div>
+        <div class="btn-row">
+          ${s.download_url ? `<a class="link-pill" href="${s.download_url}" download="apophenia_short_${esc(s.topic_id)}.mp4">⬇ Download</a>` : ""}
+          ${s.short_youtube_id ? `<a class="link-pill" href="https://youtube.com/shorts/${esc(s.short_youtube_id)}" target="_blank">YouTube →</a>` : ""}
+        </div>
+      </div>`).join("");
+  }
+
   async function loadRecentRuns() {
     const { data } = await db.from("pipeline_runs").select("*").order("started_at", { ascending: false }).limit(6);
     const el = document.getElementById("recent-runs");
     if (!data || data.length === 0) { el.innerHTML = '<div class="empty">Belum ada riwayat run</div>'; return; }
     el.innerHTML = data.map(r => `
       <div class="row">
-        <div>
+        <div class="row-text">
           <div class="row-title">Topic #${r.topic_id}</div>
-          <div class="row-sub">${timeAgo(r.started_at)}${r.status === "failed" && r.current_agent ? " · gagal di " + esc((AGENTS[r.current_agent] && AGENTS[r.current_agent].name) || r.current_agent) : ""}${r.error ? " · " + esc(r.error.slice(0, 50)) : ""}</div>
+          <div class="row-sub" title="${esc(r.error || "")}">${timeAgo(r.started_at)}${r.status === "failed" && r.current_agent ? " · gagal di " + esc((AGENTS[r.current_agent] && AGENTS[r.current_agent].name) || r.current_agent) : ""}${r.error ? " · " + esc(r.error.slice(0, 50)) + (r.error.length > 50 ? "…" : "") : ""}</div>
         </div>
         <span class="status-badge status-${r.status}">${r.status.toUpperCase()}</span>
       </div>`).join("");
@@ -549,9 +717,9 @@
     if (!data || data.length === 0) { el.innerHTML = '<div class="empty">Tidak ada topik pending</div>'; return; }
     el.innerHTML = data.map(t => `
       <div class="row">
-        <div>
-          <div class="row-title">#${t.id} ${esc(t.topic)}</div>
-          <div class="row-sub">${esc(t.category)}${t.angle ? " · " + esc(t.angle.slice(0, 50)) : ""}</div>
+        <div class="row-text">
+          <div class="row-title" title="${esc(t.topic)}">#${t.id} ${esc(t.topic)}</div>
+          <div class="row-sub" title="${esc(t.angle || "")}">${esc(t.category)}${t.angle ? " · " + esc(t.angle.slice(0, 50)) + (t.angle.length > 50 ? "…" : "") : ""}</div>
         </div>
         <div class="btn-row">
           <button class="danger" onclick="deleteTopic(${t.id})">Hapus</button>
@@ -601,6 +769,7 @@
     await loadCurrentRun();
     await loadAbTests();
     await loadRecentPublished();
+    await loadShorts();
     await loadRecentRuns();
     await loadPendingByCategory();
     if (getPin()) loadPendingList();
