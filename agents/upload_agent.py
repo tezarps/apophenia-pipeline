@@ -1,7 +1,18 @@
 import json
 import pickle
+import socket
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
+
+# Force IPv4 — upload.googleapis.com resolves to IPv6 first but IPv6 is broken
+# on some networks (including the primary dev machine). curl falls back to IPv4
+# automatically; Python/httplib2 does not. Confirmed root cause 2026-06-24.
+_orig_getaddrinfo = socket.getaddrinfo
+def _ipv4_only(host, port, *args, **kwargs):
+    results = _orig_getaddrinfo(host, port, *args, **kwargs)
+    ipv4 = [r for r in results if r[0] == socket.AF_INET]
+    return ipv4 if ipv4 else results
+socket.getaddrinfo = _ipv4_only
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
@@ -15,13 +26,13 @@ SCOPES = [
     "https://www.googleapis.com/auth/yt-analytics.readonly",
 ]
 
-# Switched 2026-06-22 from 8 PM ET to 3 PM ET — multiple 2026 posting-time
-# studies agree the algorithm rewards publishing 2-3 hours AHEAD of evening
-# peak traffic (so the video already has early watch-time signal by the time
-# the evening surge hits) rather than publishing INTO the peak. Revisit once
-# this channel has its own YouTube Studio "when your viewers are on YouTube"
-# heatmap data (needs several published videos first).
-PUBLISH_HOUR = 15  # 3 PM ET
+# Switched 2026-06-23 from 3 PM ET (US) to 4 PM Australian Eastern — target
+# audience moved to AU. Same underlying principle as the original ET choice:
+# publish 2-3 hours AHEAD of the evening peak (~7-9 PM local) so the video
+# already has early watch-time signal by the time the evening surge hits,
+# rather than publishing INTO the peak. Revisit once this channel has its
+# own YouTube Studio "when your viewers are on YouTube" heatmap data.
+PUBLISH_HOUR = 16  # 4 PM AU Eastern
 
 # 2x/week cadence, switched 2026-06-22 from Sun/Wed to Wed/Thu — 2026 studies
 # consistently flag Sunday as one of the weakest YouTube days, and mid-week
@@ -85,29 +96,31 @@ def _latest_scheduled_utc_from_cache():
 
 
 def _next_publish_time(yt=None):
-    """Return next Tuesday/Friday 8 PM US Eastern as UTC RFC3339, queued after
-    any already-scheduled (future) upload so videos publish on cadence without
-    colliding."""
+    """Return next Wednesday/Thursday 4 PM Australian Eastern as UTC RFC3339,
+    queued after any already-scheduled (future) upload so videos publish on
+    cadence without colliding."""
+    # AEDT (DST, Oct-Apr) = UTC+11 | AEST (Apr-Oct) = UTC+10. Southern
+    # hemisphere DST is inverted vs the old US ET logic.
     month = datetime.now(timezone.utc).month
-    et_offset = -4 if 3 <= month <= 11 else -5
-    et_zone = timezone(timedelta(hours=et_offset))
-    label = "EDT" if et_offset == -4 else "EST"
+    au_offset = 11 if month in (10, 11, 12, 1, 2, 3) else 10
+    au_zone = timezone(timedelta(hours=au_offset))
+    label = "AEDT" if au_offset == 11 else "AEST"
 
-    now_et = datetime.now(et_zone)
-    target = now_et.replace(hour=PUBLISH_HOUR, minute=0, second=0, microsecond=0)
-    if now_et >= target:
+    now_au = datetime.now(au_zone)
+    target = now_au.replace(hour=PUBLISH_HOUR, minute=0, second=0, microsecond=0)
+    if now_au >= target:
         target += timedelta(days=1)
 
     latest = _latest_scheduled_utc(yt)
     if latest is not None:
-        latest_et = latest.astimezone(et_zone)
-        if target <= latest_et:
+        latest_au = latest.astimezone(au_zone)
+        if target <= latest_au:
             # Bumping past an existing slot must still land on PUBLISH_HOUR —
-            # carrying latest_et's own clock time forward (e.g. a leftover
-            # 20:00 from before a cadence change) silently reverted any
-            # PUBLISH_HOUR update. Confirmed 2026-06-22 right after switching
-            # 20:00->15:00 ET: the next slot still came out as 20:00.
-            target = (latest_et + timedelta(days=1)).replace(
+            # carrying latest_au's own clock time forward (e.g. a leftover
+            # hour from before a cadence change) would silently revert any
+            # PUBLISH_HOUR update (confirmed bug class, see ET-era comment
+            # history for this same fix on the old US targeting).
+            target = (latest_au + timedelta(days=1)).replace(
                 hour=PUBLISH_HOUR, minute=0, second=0, microsecond=0
             )
 
@@ -200,16 +213,26 @@ def upload_video(video_path, thumbnail_path, metadata, category=None, one_off_wi
         str(video_path),
         mimetype="video/mp4",
         resumable=True,
-        chunksize=50 * 1024 * 1024,
+        chunksize=1 * 1024 * 1024,  # 1MB — small chunks + retry for unstable connections
     )
 
     request = yt.videos().insert(
         part="snippet,status", body=body, media_body=media
     )
 
+    import time as _time
     response = None
     while response is None:
-        status, response = request.next_chunk()
+        for attempt in range(5):
+            try:
+                status, response = request.next_chunk()
+                break
+            except Exception as chunk_err:
+                if attempt == 4:
+                    raise
+                wait = 2 ** attempt
+                print(f"    Upload chunk error ({chunk_err}), retry in {wait}s...")
+                _time.sleep(wait)
         if status:
             pct = int(status.progress() * 100)
             print(f"    Upload: {pct}%", end="\r")
@@ -241,6 +264,32 @@ def upload_video(video_path, thumbnail_path, metadata, category=None, one_off_wi
         add_video_to_playlist(yt, category, video_id)
 
     return video_id, publish_at_utc
+
+
+def post_comment(video_id, text):
+    """Posts a top-level comment as the channel itself. Added 2026-06-24 to
+    seed low-stakes engagement on sensitive topics that otherwise get zero
+    comments despite high retention (per Gemini performance review).
+
+    NOTE: the YouTube Data API v3 has no endpoint to pin a comment — pinning
+    is only exposed in YouTube Studio's UI. This posts the comment; pinning
+    it on top still needs one manual tap in Studio. Best-effort/non-fatal —
+    a comment failure must never affect the main upload, same principle as
+    the thumbnail-set step above."""
+    try:
+        yt = _get_service()
+        yt.commentThreads().insert(
+            part="snippet",
+            body={
+                "snippet": {
+                    "videoId": video_id,
+                    "topLevelComment": {"snippet": {"textOriginal": text}},
+                }
+            },
+        ).execute()
+        print(f"    Comment posted (pin it manually in Studio): {text!r}")
+    except Exception as e:
+        print(f"    Warning: comment post failed (video still uploaded fine): {e}")
 
 
 def upload_short(video_path, metadata, parent_video_id, publish_at_utc):

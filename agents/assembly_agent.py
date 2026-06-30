@@ -286,7 +286,7 @@ def create_video(audio_path, category, topic_id, topic_slug=None, blackscreen_sp
         fade_start = max(0.0, total_duration - OUTRO_FADE_SEC)
         af = (
             f"[1:a]aformat=sample_rates=44100:channel_layouts=stereo,volume=1.0,apad=pad_dur={OUTRO_TAIL_SEC}[narration];"
-            f"[2:a]aformat=sample_rates=44100:channel_layouts=stereo,volume=0.30,aloop=loop=-1:size=2e+09{duck_filters},"
+            f"[2:a]aformat=sample_rates=44100:channel_layouts=stereo,volume=0.45,aloop=loop=-1:size=2e+09{duck_filters},"
             f"afade=t=out:st={fade_start:.2f}:d={OUTRO_FADE_SEC}[music];"
             "[narration][music]amix=inputs=2:duration=first:dropout_transition=3[aout]"
         )

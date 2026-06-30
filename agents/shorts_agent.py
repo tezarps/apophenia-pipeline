@@ -115,17 +115,33 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
     return out_path
 
 
-def generate_short(video_path, word_timings, topic_id):
-    """Cuts output/shorts/{topic_id}.mp4 from `video_path` (the finished
-    main video). Returns the output path."""
-    clip_end = _nearest_sentence_end(word_timings, SHORT_TARGET_SEC)
-    clip_end = min(clip_end, SHORT_MAX_SEC)
+def generate_short(video_path, word_timings, topic_id, clip_start_sec=0.0, variant="hook"):
+    """Cuts output/shorts/{topic_id}.mp4 (or {topic_id}_{variant}.mp4 for any
+    non-"hook" variant) from `video_path` (the finished main video). Returns
+    the output path.
 
-    out_path = OUTPUT_DIR / "shorts" / f"{topic_id}.mp4"
-    cta_start = max(0.0, clip_end - CTA_WINDOW_SEC)
+    clip_start_sec added 2026-06-24 so a SECOND short can be cut from a
+    video's conceptual "aha" turning point instead of always the opening
+    hook — per Gemini performance feedback flagging the turning-point
+    explanation as the strongest (underused) growth lever on a high-
+    retention video. word_timings are shifted to be local to clip_start_sec
+    before any of the existing hook/CTA timing math runs, so everything
+    downstream (sentence-boundary snapping, caption sync, CTA window) works
+    identically regardless of where in the main video the clip starts."""
+    local_words = [
+        {**w, "start": w["start"] - clip_start_sec, "end": w["end"] - clip_start_sec}
+        for w in word_timings if w["start"] >= clip_start_sec
+    ]
 
-    ass_path = OUTPUT_DIR / "shorts" / f"{topic_id}_cta.ass"
-    _build_short_ass(word_timings, clip_end, cta_start, clip_end, ass_path)
+    clip_dur = _nearest_sentence_end(local_words, SHORT_TARGET_SEC)
+    clip_dur = min(clip_dur, SHORT_MAX_SEC)
+
+    suffix = "" if variant == "hook" else f"_{variant}"
+    out_path = OUTPUT_DIR / "shorts" / f"{topic_id}{suffix}.mp4"
+    cta_start = max(0.0, clip_dur - CTA_WINDOW_SEC)
+
+    ass_path = OUTPUT_DIR / "shorts" / f"{topic_id}{suffix}_cta.ass"
+    _build_short_ass(local_words, clip_dur, cta_start, clip_dur, ass_path)
     ass_escaped = str(ass_path).replace("\\", "/").replace(":", "\\:")
     fonts_escaped = str(FONTS_DIR).replace("\\", "/").replace(":", "\\:")
 
@@ -137,7 +153,8 @@ def generate_short(video_path, word_timings, topic_id):
     cmd = [
         FFMPEG_BIN, "-y",
         "-i", str(video_path),
-        "-t", f"{clip_end:.2f}",
+        "-ss", f"{clip_start_sec:.2f}",
+        "-t", f"{clip_dur:.2f}",
         "-vf", vf,
         "-c:v", "libx264", "-preset", "fast", "-pix_fmt", "yuv420p",
         "-c:a", "aac", "-b:a", "192k",
@@ -148,5 +165,5 @@ def generate_short(video_path, word_timings, topic_id):
     if result.returncode != 0:
         raise RuntimeError(f"Shorts cut failed: {result.stderr[-600:]}")
 
-    print(f"    Short: {clip_end:.0f}s, CTA from {cta_start:.0f}s -> {out_path.name}")
+    print(f"    Short ({variant}): {clip_dur:.0f}s from t={clip_start_sec:.0f}s, CTA from {cta_start:.0f}s -> {out_path.name}")
     return out_path

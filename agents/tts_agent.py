@@ -225,9 +225,14 @@ def _merge_with_ffmpeg(chunk_dir, out_path, chunk_texts=None):
 
     # Single loudness normalization pass over the whole program — same reasoning
     # as Narava: far more reliable than many independent per-chunk passes.
+    # Bumped -16 -> -14 LUFS (2026-06-24, user feedback: video was only
+    # audible with earphones). -14 LUFS matches YouTube's own normalization
+    # target, so playback no longer gets quietly attenuated relative to other
+    # videos — going louder than -14 would just get turned back down by
+    # YouTube anyway, so this is the ceiling worth targeting, not just "louder".
     subprocess.run([
         FFMPEG_BIN, "-y", "-i", str(raw_merged),
-        "-af", "loudnorm=I=-16:TP=-3.0:LRA=20",
+        "-af", "loudnorm=I=-14:TP=-2.0:LRA=20",
         *_CODEC_ARGS, str(out_path)
     ], capture_output=True, check=True)
 
