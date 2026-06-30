@@ -14,9 +14,9 @@ from agents.assembly_agent import create_video, _audio_duration, OUTRO_TAIL_SEC
 from agents.image_agent import generate_images, images_for_duration
 from agents.thumbnail_agent import generate_thumbnails
 from agents.caption_agent import annotate_script, build_ass, blackscreen_spans as compute_blackscreen_spans
-from agents.metadata_agent import generate_metadata
+from agents.metadata_agent import generate_metadata, generate_engagement_question
 from agents.music_agent import generate_topic_music
-from agents.upload_agent import upload_video, upload_short
+from agents.upload_agent import upload_video, upload_short, post_comment
 from agents.shorts_agent import generate_short
 from status_manager import (
     agent_start, agent_done, agent_error,
@@ -245,8 +245,10 @@ def run(audio_only=False):
         meta_path.parent.mkdir(exist_ok=True)
         import json as _json
         meta_path.write_text(_json.dumps(metadata, ensure_ascii=False, indent=2), encoding="utf-8")
-        agent_done("herald", metadata["title"][:60])
-        print(f"    Title: {metadata['title']}")
+        sb.upload_metadata(topic_id, metadata)
+        agent_done("herald", metadata["title_a"][:60])
+        print(f"    Title A: {metadata['title_a']}")
+        print(f"    Title B: {metadata['title_b']}")
 
         thumb_a, thumb_b = _ensure_local_thumbnails(topic, topic_slug)
         print(f"    Thumbnail A: {thumb_a.name} | Thumbnail B: {thumb_b.name}")
@@ -257,6 +259,15 @@ def run(audio_only=False):
         sb.run_update_agent(sb_run_id, "messenger")
         video_id, publish_at_utc = upload_video(video_path, thumb_a, metadata, category=topic["category"], one_off_wib_target=ONE_OFF_WIB_TARGET)
         agent_done("messenger", f"youtube.com/watch?v={video_id}")
+
+        # Seed a low-stakes engagement comment — best-effort, see
+        # agents/upload_agent.post_comment docstring re: pinning being a
+        # manual Studio step (no API for it).
+        try:
+            engagement_q = generate_engagement_question(topic)
+            post_comment(video_id, engagement_q)
+        except Exception as e:
+            print(f"    Warning: engagement comment skipped: {e}")
 
         sb.mark_topic_done(topic_id, video_id)
         run_done(topic_id, angle, video_id, started_at)
@@ -295,6 +306,7 @@ def run(audio_only=False):
             })
         except Exception as e:
             print(f"    Warning: Short generation/upload failed (main video still published fine): {e}")
+
         print()
 
     except Exception as e:

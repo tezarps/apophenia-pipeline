@@ -31,14 +31,76 @@ async def dashboard():
 
 # ── API ───────────────────────────────────────────────────────────────────────
 
+_AGENT_DEFS = {
+    "oracle":    {"name": "Maya",    "icon": "🔮", "role": "Topic selector"},
+    "scribe":    {"name": "Jordan",  "icon": "✍️",  "role": "Script writer"},
+    "voice":     {"name": "Priya",   "icon": "🎙️",  "role": "TTS narrator"},
+    "architect": {"name": "Kai",     "icon": "🎬",  "role": "Video assembler"},
+    "herald":    {"name": "Morgan",  "icon": "📋",  "role": "Metadata + upload"},
+    "messenger": {"name": "Sage",    "icon": "📣",  "role": "YouTube uploader"},
+}
+_AGENT_ORDER = ["oracle", "scribe", "voice", "architect", "herald", "messenger"]
+
+
 @app.get("/api/status")
 def api_status():
-    if STATUS_FILE.exists():
-        try:
-            return json.loads(STATUS_FILE.read_text())
-        except Exception:
-            pass
-    return {"agents": {}, "runs": [], "current_run": None}
+    try:
+        runs = sb.list_recent_runs(limit=20)
+    except Exception:
+        runs = []
+
+    current_run = next((r for r in runs if r["status"] == "running"), None)
+    current_agent = current_run.get("current_agent", "") if current_run else ""
+
+    # Build agent statuses from current run
+    agents = {}
+    for i, key in enumerate(_AGENT_ORDER):
+        defn = _AGENT_DEFS.get(key, {})
+        if not current_run:
+            status = "idle"
+            detail = ""
+        elif key == current_agent:
+            status = "running"
+            detail = f"Processing topic #{current_run.get('topic_id', '?')}"
+        elif _AGENT_ORDER.index(key) < _AGENT_ORDER.index(current_agent) if current_agent in _AGENT_ORDER else False:
+            status = "done"
+            detail = ""
+        else:
+            status = "idle"
+            detail = ""
+
+        # Check last completed run for error state
+        last = next((r for r in runs if r["status"] in ("done", "failed")), None)
+        if last and last.get("current_agent") == key and last["status"] == "failed":
+            status = "error"
+            detail = last.get("error", "")[:80]
+
+        agents[key] = {**defn, "status": status, "detail": detail,
+                       "payload": current_run if key == "oracle" and current_run else None}
+
+    formatted_runs = [
+        {
+            "id": r["topic_id"],
+            "topic": r["topic"],
+            "status": "published" if r["status"] == "done" else r["status"],
+            "started_at": r["started_at"],
+            "finished_at": r["finished_at"],
+            "error": r["error"],
+            "video_id": r["video_id"],
+            "duration_min": None,
+        }
+        for r in runs if r["status"] != "running"
+    ]
+
+    return {
+        "agents": agents,
+        "runs": formatted_runs,
+        "current_run": {
+            "topic_id": current_run["topic_id"],
+            "topic": current_run["topic"],
+            "angle": current_run["angle"],
+        } if current_run else None,
+    }
 
 
 @app.get("/api/topics")
@@ -76,13 +138,15 @@ def api_delete_topic(topic_id: int):
 @app.get("/api/stats")
 def api_stats():
     topics = sb.list_topics()
-    status_data = json.loads(STATUS_FILE.read_text()) if STATUS_FILE.exists() else {}
-    runs = status_data.get("runs", [])
+    try:
+        runs = sb.list_recent_runs(limit=100)
+    except Exception:
+        runs = []
     today = datetime.now().strftime("%Y-%m-%d")
-    published_today = len({
-        r.get("id") for r in runs
-        if r.get("status") == "published" and r.get("started_at", "").startswith(today)
-    })
+    published_today = sum(
+        1 for r in runs
+        if r.get("status") == "done" and (r.get("finished_at") or "").startswith(today)
+    )
     return {
         "total": len(topics),
         "pending": sum(1 for t in topics if t.get("status") == "pending"),
@@ -168,18 +232,28 @@ def api_logs(lines: int = 80):
 
 @app.get("/api/output/script/{topic_id}")
 def api_output_script(topic_id: int):
-    path = OUTPUT_DIR / "scripts" / f"{topic_id}.txt"
-    if not path.exists():
-        raise HTTPException(404, "Script not saved yet")
-    return {"topic_id": topic_id, "script": path.read_text(encoding="utf-8")}
+    try:
+        text = sb.get_script_text(topic_id)
+        if text is None:
+            raise HTTPException(404, "Script not in Supabase yet")
+        return {"topic_id": topic_id, "script": text}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(500, f"Error fetching script: {e}")
 
 
 @app.get("/api/output/metadata/{topic_id}")
 def api_output_metadata(topic_id: int):
-    path = OUTPUT_DIR / "metadata" / f"{topic_id}.json"
-    if not path.exists():
-        raise HTTPException(404, "Metadata not saved yet")
-    return json.loads(path.read_text(encoding="utf-8"))
+    try:
+        meta = sb.get_metadata(topic_id)
+        if meta is None:
+            raise HTTPException(404, "Metadata not in Supabase yet")
+        return meta
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(500, f"Error fetching metadata: {e}")
 
 
 @app.get("/api/logs/stream")

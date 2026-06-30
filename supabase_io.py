@@ -8,6 +8,7 @@ anon — this runs server-side in CI/local scripts, not in a browser, and needs
 write access). Falls back to raising a clear error if those aren't set yet,
 rather than silently doing nothing.
 """
+import json
 import os
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
@@ -208,6 +209,56 @@ def upload_script(topic_id, local_path):
 
 def download_script(topic_id, local_path):
     return _download(SCRIPTS_BUCKET, f"{topic_id}.txt", local_path)
+
+
+def get_script_text(topic_id):
+    """Return script as string, or None if not found."""
+    try:
+        db = _require_client()
+        data = db.storage.from_(SCRIPTS_BUCKET).download(f"{topic_id}.txt")
+        return data.decode("utf-8")
+    except Exception:
+        return None
+
+
+def upload_metadata(topic_id, meta: dict):
+    db = _require_client()
+    data = json.dumps(meta, ensure_ascii=False).encode("utf-8")
+    db.storage.from_(SCRIPTS_BUCKET).upload(f"{topic_id}_meta.json", data, {"upsert": "true"})
+
+
+def get_metadata(topic_id):
+    """Return metadata dict, or None if not found."""
+    try:
+        db = _require_client()
+        data = db.storage.from_(SCRIPTS_BUCKET).download(f"{topic_id}_meta.json")
+        return json.loads(data.decode("utf-8"))
+    except Exception:
+        return None
+
+
+def list_recent_runs(limit=20):
+    """Return recent pipeline_runs joined with topic names, newest first."""
+    db = _require_client()
+    runs = db.table("pipeline_runs").select("*").order("started_at", desc=True).limit(limit).execute().data
+    topics = {t["id"]: t for t in list_topics()}
+    result = []
+    for r in runs:
+        t = topics.get(r.get("topic_id"), {})
+        result.append({
+            "id": r["id"],
+            "topic_id": r.get("topic_id"),
+            "topic": t.get("topic", "—"),
+            "angle": t.get("angle", r.get("angle", "")),
+            "category": t.get("category", ""),
+            "status": r.get("status", ""),
+            "current_agent": r.get("current_agent", ""),
+            "error": r.get("error", ""),
+            "started_at": r.get("started_at", ""),
+            "finished_at": r.get("finished_at", ""),
+            "video_id": t.get("video_id", ""),
+        })
+    return result
 
 
 # ---- Shorts: rendered .mp4 + a small JSON sidecar (title/links), so the
