@@ -24,12 +24,11 @@ SEPARATE generated scene image each. See _generate_scene_prompt_pair().
 import io
 import json
 
-import anthropic
+import urllib.request as _urllib_req
+
 from PIL import Image, ImageDraw, ImageFont
 
-from config import ANTHROPIC_API_KEY, GEMINI_IMAGE_API_KEY, NANO_BANANA_MODEL, HAIKU_MODEL, BASE_DIR
-
-client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+from config import DEEPSEEK_API_KEY, DEEPSEEK_MODEL, OPENROUTER_API_KEY, NANO_BANANA_MODEL, BASE_DIR
 
 THUMBNAILS_DIR = BASE_DIR / "thumbnails"
 THUMBNAIL_FONT_PATH = BASE_DIR / "assets" / "fonts" / "BebasNeue-Regular.ttf"
@@ -164,13 +163,25 @@ Return ONLY that JSON object, nothing else."""
 
 
 def _call_claude(system, user, max_tokens=300):
-    msg = client.messages.create(
-        model=HAIKU_MODEL,
-        max_tokens=max_tokens,
-        system=system,
-        messages=[{"role": "user", "content": user}],
+    body = json.dumps({
+        "model": DEEPSEEK_MODEL,
+        "messages": [
+            {"role": "system", "content": system},
+            {"role": "user", "content": user},
+        ],
+        "max_tokens": max_tokens,
+    }).encode()
+    req = _urllib_req.Request(
+        "https://api.deepseek.com/chat/completions",
+        data=body,
+        headers={
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {DEEPSEEK_API_KEY}",
+        },
     )
-    return msg.content[0].text.strip()
+    with _urllib_req.urlopen(req, timeout=30) as resp:
+        data = json.loads(resp.read())
+    return data["choices"][0]["message"]["content"].strip()
 
 
 def _generate_scene_prompt_pair(topic, angle, bg, accent, character_side, text_side, hooks, retries=3):
@@ -216,19 +227,29 @@ def _call_nano_banana(prompt):
     import base64
     import urllib.request
 
-    url = (
-        f"https://generativelanguage.googleapis.com/v1beta/models/"
-        f"{NANO_BANANA_MODEL}:generateContent?key={GEMINI_IMAGE_API_KEY}"
+    url = "https://openrouter.ai/api/v1/chat/completions"
+    body = json.dumps({
+        "model": f"google/{NANO_BANANA_MODEL}",
+        "messages": [{"role": "user", "content": prompt}],
+        "max_tokens": 8192,
+        "include_reasoning": False,
+    }).encode()
+    req = urllib.request.Request(
+        url,
+        data=body,
+        headers={
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+        },
     )
-    body = json.dumps({"contents": [{"parts": [{"text": prompt}]}]}).encode()
-    req = urllib.request.Request(url, data=body, headers={"Content-Type": "application/json"})
-    with urllib.request.urlopen(req, timeout=60) as resp:
+    with urllib.request.urlopen(req, timeout=120) as resp:
         data = json.loads(resp.read())
-    for cand in data.get("candidates", []):
-        for part in cand["content"]["parts"]:
-            if "inlineData" in part:
-                return base64.b64decode(part["inlineData"]["data"])
-    raise RuntimeError(f"No image in Nano Banana response: {data}")
+    images = data.get("choices", [{}])[0].get("message", {}).get("images", [])
+    if not images:
+        raise RuntimeError(f"No image in OpenRouter response: {data}")
+    # data URL format: "data:image/jpeg;base64,<b64>"
+    b64 = images[0]["image_url"]["url"].split(",", 1)[1]
+    return base64.b64decode(b64)
 
 
 def _fit_cover(img, size):
@@ -375,4 +396,109 @@ def generate_thumbnails(topic_data):
     path_b = out_dir / "thumb_B.jpg"
     _compose_thumbnail(scene_bytes_a, hooks["a"], text_side, path_a, bg_rgb=bg_rgb)
     _compose_thumbnail(scene_bytes_b, hooks["b"], text_side, path_b, bg_rgb=bg_rgb)
+    return path_a, path_b
+
+
+# ── Psyphoria template ───────────────────────────────────────────────────────
+
+_HOOK_SHORT_SYSTEM = """\
+You are a YouTube thumbnail copywriter for a psychology channel (English).
+Generate TWO ultra-short hook variants — 2-3 words MAXIMUM each.
+Good examples: "Stop Explaining", "You're Not Crazy", "They Need You Weak", "The Silent Exit", "You Already Know".
+Rules: punchy, personal, instant recognition, no punctuation, Title Case.
+Return ONLY JSON: {"a": "...", "b": "..."}"""
+
+_SCENE_PSY_SYSTEM = """\
+You are a visual prompt writer for an AI image generator.
+Given a psychology topic, write ONE image generation prompt (3-4 sentences).
+
+Style rules:
+- Bold expressionist / fauvist oil painting. Think Kirchner, Matisse, Munch.
+  Thick visible brushstrokes, vivid saturated color fields, slightly distorted forms.
+- Composition: close-up portrait or half-body. Figure fills most of the frame.
+  Strong emotional expression readable on the face.
+- 2-3 dominant vivid contrasting colors.
+- Full bleed edge-to-edge. NO text, NO borders, NO frames, NO vignette.
+Return ONLY the prompt text, no labels, no preamble."""
+
+
+def _compose_psyphoria(scene_bytes, hook_text, out_path):
+    """Psyphoria style: solid black band at top, full scene image directly below — no overlap, no fade."""
+    text = hook_text.upper()
+    font_size = 165
+    font = ImageFont.truetype(str(THUMBNAIL_FONT_PATH), font_size)
+
+    bbox = font.getbbox(text)
+    text_w = bbox[2] - bbox[0]
+    text_h = bbox[3] - bbox[1]
+    max_w = int(THUMB_SIZE[0] * 0.92)
+    if text_w > max_w:
+        font_size = int(font_size * max_w / text_w)
+        font = ImageFont.truetype(str(THUMBNAIL_FONT_PATH), font_size)
+        bbox = font.getbbox(text)
+        text_w = bbox[2] - bbox[0]
+        text_h = bbox[3] - bbox[1]
+
+    pad_v = 28
+    band_h = pad_v + text_h + pad_v       # solid black band
+    img_h  = THUMB_SIZE[1] - band_h       # image area below band
+
+    # Scale scene to fill 1280 × img_h (cover)
+    scene = Image.open(io.BytesIO(scene_bytes)).convert("RGB")
+    scale = max(THUMB_SIZE[0] / scene.width, img_h / scene.height)
+    new_w = int(scene.width  * scale) + 1
+    new_h = int(scene.height * scale) + 1
+    scene = scene.resize((new_w, new_h), Image.LANCZOS)
+    x0 = (new_w - THUMB_SIZE[0]) // 2
+    y0 = (new_h - img_h) // 2
+    scene = scene.crop((x0, y0, x0 + THUMB_SIZE[0], y0 + img_h))
+
+    # Solid black canvas, paste image below band
+    canvas = Image.new("RGB", THUMB_SIZE, (0, 0, 0))
+    canvas.paste(scene, (0, band_h))
+
+    # White text in band
+    draw = ImageDraw.Draw(canvas)
+    x = (THUMB_SIZE[0] - text_w) // 2
+    y = pad_v - bbox[1]
+    draw.text((x, y), text, font=font, fill=(255, 255, 255))
+
+    canvas.save(out_path, "JPEG", quality=95)
+
+
+def generate_thumbnails_psyphoria(topic_data):
+    """Psyphoria-style: full expressionist painting + 2-3 word bold text overlay.
+    A and B share the same scene; only the hook text differs."""
+    topic    = topic_data["topic"]
+    angle    = topic_data["angle"]
+    category = topic_data["category"]
+    slug     = topic.lower().replace(" ", "_")
+    out_dir  = THUMBNAILS_DIR / category / slug
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    print("  [psyphoria] Generating hooks...")
+    hooks = json.loads(_call_claude(
+        _HOOK_SHORT_SYSTEM,
+        f"Archetype: {topic}\nAngle: {angle}",
+        max_tokens=80,
+    ))
+    print(f"  Hook A: {hooks['a']} | Hook B: {hooks['b']}")
+
+    print("  [psyphoria] Generating scene prompt...")
+    scene_prompt = _call_claude(
+        _SCENE_PSY_SYSTEM,
+        f"Topic: {topic}\nAngle: {angle}\nCategory: {category}",
+        max_tokens=300,
+    )
+    print(f"  Scene: {scene_prompt[:90]}...")
+
+    print("  [psyphoria] Generating scene image...")
+    scene_bytes = _call_nano_banana(scene_prompt)
+
+    path_a = out_dir / "thumb_psy_A.jpg"
+    path_b = out_dir / "thumb_psy_B.jpg"
+    _compose_psyphoria(scene_bytes, hooks["a"], path_a)
+    _compose_psyphoria(scene_bytes, hooks["b"], path_b)
+    print(f"  psy_A: {path_a}")
+    print(f"  psy_B: {path_b}")
     return path_a, path_b

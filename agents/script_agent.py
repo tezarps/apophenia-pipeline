@@ -1,9 +1,6 @@
 import re
 
-import anthropic
-from config import ANTHROPIC_API_KEY, HAIKU_MODEL, SONNET_MODEL
-
-client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+import agents.llm as _llm
 
 # Deterministic backstop — the _AUDIT LLM pass catches most banned AI-speak but
 # isn't 100% reliable (confirmed empirically: "not because X, but because Y"
@@ -35,6 +32,11 @@ _BANNED_REGEX = [
     re.compile(r"^(in today'?s|it'?s important to note|let'?s (?:dive in|explore|unpack)|nobody is talking about)", re.I),
     re.compile(r"\b(furthermore|moreover|additionally)\b,", re.I),
     re.compile(r"\b(let that sink in|read that again|this changes everything)\b", re.I),
+    # Meta-announcement filler — kills hook momentum (observed in Topic #3 post-mortem)
+    re.compile(r"\bthat'?s what I want to (?:talk about|explore|discuss)\b", re.I),
+    re.compile(r"\blet me (?:start|begin) with\b", re.I),
+    re.compile(r"\btoday (?:I want to|we'?re going to|we will)\b", re.I),
+    re.compile(r"\bin this video\b", re.I),
 ]
 
 
@@ -86,6 +88,13 @@ currently believes about themselves or this pattern (A), and set it against what
 actually about to reveal (B) — B must be concrete (a mechanism, a specific reframe), not a vague tease. \
 That A-vs-B gap is the open question that only resolves later in the video. {hook_instruction}
 
+CRITICAL — NO TRANSITION ANNOUNCEMENT after the hook. The hook's last word flows directly into babak 2 \
+with NO meta-commentary bridge sentence. The following phrases are absolutely banned anywhere in the \
+script but especially between babak 1 and 2: "That's what I want to talk about today", \
+"Let me start with", "Today I want to", "In this video", "What I'm going to explore", or any \
+sentence that announces what the video is about to do instead of just doing it. \
+The hook ends — babak 2 begins. No announcement needed.
+
 BABAK 2 — THE WOUND. Explore where this pattern was likely formed — a believable, generic formative \
 scenario (childhood home dynamic, an early relationship, a repeated small moment), written in second \
 person ("you"). Not a single traumatic event necessarily — often it's something that happened quietly, \
@@ -114,6 +123,14 @@ wrap-up. After that lands, add ONE final short sentence that names the channel n
 invitation to keep watching more — something like "There's more of this every week here on Apophenia" \
 or "If this is you, you'll find more of yourself here on Apophenia" — channel name "Apophenia" must \
 appear, said like a person talking, never like a corporate subscribe-and-like ad read.
+
+After the channel mention, add ONE more short sentence — the actual spoken engagement ask (subscribe, \
+like, comment, share) — but said like a real person closing out a conversation, never like a read ad. \
+Anchor it to the specific archetype just discussed instead of being generic: e.g. invite the viewer to \
+say in the comments whether this pattern is them (or who it reminds them of), mention that liking helps \
+this reach someone who needs to hear it, and a quick "subscribe if you want more of these." Vary the \
+exact phrasing and which of the four asks (like/comment/subscribe/share) gets the most emphasis each \
+time — don't reuse the same sentence shape across videos. This is the very last line of the script.
 
 Point of view: second person ("you"), present tense, conversational, throughout (except the brief \
 first-person hook moment in the "confession" variant, if used). Tone: warm, a little intimate, calm \
@@ -190,8 +207,11 @@ be quotable on its own (a "last dab"), not a generic wrap-up.
 4. Make sure the very first 1-2 sentences are an instantly-recognizable "wait, that's me" moment with a \
 real A-vs-B contrast — not a general statement about psychology or this archetype. Sharpen it if it \
 reads slow or warmed-up instead of immediately gripping.
-5. Make sure the final sentence is a natural, non-corporate-sounding mention of "Apophenia" inviting \
-the viewer to keep watching more — add one if it's missing, sharpen it if it sounds like an ad read.
+5. Make sure there's a natural, non-corporate-sounding mention of "Apophenia" inviting the viewer to \
+keep watching more — add one if it's missing, sharpen it if it sounds like an ad read.
+5b. Make sure the VERY LAST sentence is a spoken like/comment/subscribe/share ask, anchored to the \
+specific archetype just discussed (not generic) and phrased like a real person, not an ad read — add \
+one if it's missing, sharpen it if it sounds canned.
 6. Keep delivery conversational, not academic. No citations, no "research shows" hedging.
 7. Keep reading level around 8th grade — common words over fancy ones, one idea per sentence. Flag and \
 simplify any sentence that needs a second read to parse.
@@ -243,12 +263,7 @@ Output ONLY the rewritten sentence, nothing else."""
 
 
 def _call(model, prompt, max_tokens=8000):
-    r = client.messages.create(
-        model=model,
-        max_tokens=max_tokens,
-        messages=[{"role": "user", "content": prompt}],
-    )
-    return r.content[0].text
+    return _llm.call(prompt, max_tokens=max_tokens)
 
 
 def generate_script(topic_data):

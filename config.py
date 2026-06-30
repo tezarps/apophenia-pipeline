@@ -9,7 +9,11 @@ ANTHROPIC_API_KEY = os.environ["ANTHROPIC_API_KEY"]
 # Reused from narava-pipeline GCP project on purpose — keeps billing on the
 # same free-trial credit pool. See project memory project_apophenia.md.
 GEMINI_IMAGE_API_KEY = os.environ.get("GEMINI_IMAGE_API_KEY", "")
+OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "")
 NANO_BANANA_MODEL = "gemini-3.1-flash-image"
+
+DEEPSEEK_API_KEY = os.environ.get("DEEPSEEK_API_KEY", "")
+DEEPSEEK_MODEL = "deepseek-chat"
 
 ELEVENLABS_API_KEY = os.environ.get("ELEVENLABS_API_KEY", "")
 YOUTUBE_CLIENT_SECRET = os.environ.get("YOUTUBE_CLIENT_SECRET_PATH", "youtube_client_secret.json")

@@ -5,15 +5,15 @@ Called from scheduler.py only when a topic has no images locally and none in
 Supabase Storage yet.
 """
 import base64
+import io
 import json
 import time
 import urllib.request
 import urllib.error
 
-import anthropic
-from config import ANTHROPIC_API_KEY, GEMINI_IMAGE_API_KEY, NANO_BANANA_MODEL, HAIKU_MODEL, IMAGES_DIR
-
-client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+from PIL import Image
+from config import OPENROUTER_API_KEY, NANO_BANANA_MODEL, IMAGES_DIR
+import agents.llm as _llm
 
 IMAGE_COUNT = 12  # fallback only — generate_images() is normally called with an explicit
                   # duration-derived count, see images_for_duration() below
@@ -82,40 +82,85 @@ Return ONLY a JSON array of {n} strings, nothing else."""
 
 
 def _generate_scene_prompts(topic, angle, n=IMAGE_COUNT):
-    msg = client.messages.create(
-        model=HAIKU_MODEL,
-        max_tokens=max(1500, n * 130),  # scales for the higher end of images_for_duration()'s range
+    text = _llm.call(
+        f"Archetype: {topic}\nAngle: {angle}",
         system=_PROMPTS_SYSTEM.format(n=n),
-        messages=[{"role": "user", "content": f"Archetype: {topic}\nAngle: {angle}"}],
+        max_tokens=max(1500, n * 130),
     )
-    text = msg.content[0].text.strip()
     start, end = text.find("["), text.rfind("]")
     scenes = json.loads(text[start:end + 1])
     return scenes[:n]
 
 
 def _call_nano_banana(prompt, retries=3):
-    url = (
-        f"https://generativelanguage.googleapis.com/v1beta/models/"
-        f"{NANO_BANANA_MODEL}:generateContent?key={GEMINI_IMAGE_API_KEY}"
-    )
-    body = json.dumps({"contents": [{"parts": [{"text": prompt + _STYLE_SUFFIX}]}]}).encode()
-    req = urllib.request.Request(url, data=body, headers={"Content-Type": "application/json"})
+    url = "https://openrouter.ai/api/v1/chat/completions"
+    body = json.dumps({
+        "model": f"google/{NANO_BANANA_MODEL}",
+        "messages": [{"role": "user", "content": prompt + _STYLE_SUFFIX}],
+        "max_tokens": 8192,
+        "include_reasoning": False,
+    }).encode()
     for attempt in range(retries):
         try:
-            with urllib.request.urlopen(req, timeout=60) as resp:
+            req = urllib.request.Request(url, data=body, headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+            })
+            with urllib.request.urlopen(req, timeout=120) as resp:
                 data = json.loads(resp.read())
-            for cand in data.get("candidates", []):
-                for part in cand["content"]["parts"]:
-                    if "inlineData" in part:
-                        return base64.b64decode(part["inlineData"]["data"])
-            raise RuntimeError(f"No image in Nano Banana response: {data}")
-        except urllib.error.HTTPError as e:
-            if e.code == 429 and attempt < retries - 1:
+            images = data.get("choices", [{}])[0].get("message", {}).get("images", [])
+            if not images:
+                raise RuntimeError(f"No image in OpenRouter response: {data}")
+            b64 = images[0]["image_url"]["url"].split(",", 1)[1]
+            return base64.b64decode(b64)
+        except Exception as e:
+            if attempt < retries - 1:
                 time.sleep(5 * (attempt + 1))
                 continue
-            raise RuntimeError(f"Nano Banana {e.code}: {e.read().decode()}")
-    raise RuntimeError("Nano Banana: exhausted retries")
+            raise RuntimeError(f"Nano Banana failed after {retries} attempts: {e}")
+
+
+# Deterministic backstop for the _STYLE_SUFFIX's "no white border" instruction
+# above — Nano Banana ignores it often enough (confirmed visually on multiple
+# published episodes, 2026-06-23) that a prompt-only fix isn't reliable, same
+# reasoning as script_agent.py's regex backstop for AI-speak surviving the LLM
+# audit pass. Trims any near-white/cream band creeping in from an edge before
+# the image is ever written to disk. Capped at max_frac of each dimension so a
+# legitimately bright scene (a lit window, daylight sky) in the middle of the
+# frame is never mistaken for a border.
+def _strip_white_border(img_bytes, threshold=235, max_frac=0.10):
+    img = Image.open(io.BytesIO(img_bytes)).convert("RGB")
+    w, h = img.size
+    px = img.load()
+    step_x, step_y = max(1, w // 40), max(1, h // 40)
+
+    def row_is_border(y):
+        return all(all(c >= threshold for c in px[x, y]) for x in range(0, w, step_x))
+
+    def col_is_border(x):
+        return all(all(c >= threshold for c in px[x, y]) for y in range(0, h, step_y))
+
+    top = 0
+    while top < h * max_frac and row_is_border(top):
+        top += 1
+    bottom = h - 1
+    while bottom > h * (1 - max_frac) and row_is_border(bottom):
+        bottom -= 1
+    left = 0
+    while left < w * max_frac and col_is_border(left):
+        left += 1
+    right = w - 1
+    while right > w * (1 - max_frac) and col_is_border(right):
+        right -= 1
+
+    if top == 0 and bottom == h - 1 and left == 0 and right == w - 1:
+        return img_bytes  # no border detected — skip re-encoding to avoid any quality loss
+
+    cropped = img.crop((left, top, right + 1, bottom + 1))
+    buf = io.BytesIO()
+    cropped.save(buf, format="JPEG", quality=92)
+    print(f"    (trimmed white border: {left}/{top}/{w - 1 - right}/{h - 1 - bottom}px L/T/R/B)")
+    return buf.getvalue()
 
 
 def generate_images(topic, angle, category, slug, count=IMAGE_COUNT):
@@ -128,6 +173,7 @@ def generate_images(topic, angle, category, slug, count=IMAGE_COUNT):
     paths = []
     for i, scene_prompt in enumerate(scenes, start=1):
         img_bytes = _call_nano_banana(scene_prompt)
+        img_bytes = _strip_white_border(img_bytes)
         out_path = out_dir / f"scene_{i:02d}.jpg"
         out_path.write_bytes(img_bytes)
         paths.append(out_path)

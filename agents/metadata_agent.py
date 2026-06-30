@@ -1,7 +1,4 @@
-import anthropic
-from config import ANTHROPIC_API_KEY, HAIKU_MODEL
-
-client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+import agents.llm as _llm
 
 CHANNEL_URL = "https://www.youtube.com/@heyapophenia"
 
@@ -75,7 +72,9 @@ TAGS rules:
 
 Output EXACTLY this format, nothing else:
 
-TITLE: [your optimized title]
+TITLE_A: [your primary optimized title]
+TITLE_B: [alternate title — same "The Psychology of" anchor, different behavioral hook phrase; \
+still 60-100 characters, different curiosity angle from A, equally clickable]
 
 DESCRIPTION:
 [First line: 125-char hook matching search intent]
@@ -107,31 +106,32 @@ def generate_metadata(topic_data, duration_min=15):
     category = topic_data["category"]
     category_words = category.replace("-", " ")
     category_tag = "".join(w.capitalize() for w in category.split("-"))
-    r = client.messages.create(
-        model=HAIKU_MODEL,
-        max_tokens=2000,
-        messages=[{"role": "user", "content": _PROMPT.format(
-            topic=topic_data["topic"],
-            topic_lower=topic_data["topic"].lower(),
-            angle=topic_data["angle"],
-            category=category,
-            category_words=category_words,
-            category_tag=category_tag,
-            channel_url=CHANNEL_URL,
-            duration_min=duration_min,
-            timestamp_block=_timestamp_block(duration_min),
-        )}],
-    )
-
-    text = r.content[0].text
-    title, description, tags = "", "", []
+    text = _llm.call(_PROMPT.format(
+        topic=topic_data["topic"],
+        topic_lower=topic_data["topic"].lower(),
+        angle=topic_data["angle"],
+        category=category,
+        category_words=category_words,
+        category_tag=category_tag,
+        channel_url=CHANNEL_URL,
+        duration_min=duration_min,
+        timestamp_block=_timestamp_block(duration_min),
+    ), max_tokens=2000)
+    title_a, title_b, description, tags = "", "", "", []
     lines = text.strip().split("\n")
     mode = None
     desc_lines = []
 
     for line in lines:
-        if line.startswith("TITLE:"):
-            title = line.replace("TITLE:", "").strip()[:100]
+        if line.startswith("TITLE_A:"):
+            title_a = line.replace("TITLE_A:", "").strip()[:100]
+            mode = "title"
+        elif line.startswith("TITLE_B:"):
+            title_b = line.replace("TITLE_B:", "").strip()[:100]
+            mode = "title"
+        elif line.startswith("TITLE:"):
+            # backward compat if model ignores new format
+            title_a = line.replace("TITLE:", "").strip()[:100]
             mode = "title"
         elif line.startswith("DESCRIPTION:"):
             mode = "description"
@@ -145,5 +145,30 @@ def generate_metadata(topic_data, duration_min=15):
 
     if not description:
         description = "\n".join(desc_lines).strip()
+    if not title_b:
+        title_b = title_a  # fallback: same title if model didn't produce B
 
-    return {"title": title, "description": description, "tags": tags}
+    return {"title": title_a, "title_a": title_a, "title_b": title_b, "description": description, "tags": tags}
+
+
+_ENGAGEMENT_QUESTION_PROMPT = """You write a single short comment for a psychology-essay YouTube video, \
+posted by the channel itself right after upload to invite replies. Added 2026-06-24 after performance \
+feedback: high-retention videos on sensitive topics (family estrangement, etc.) were getting zero \
+comments — likely because viewers feel vulnerable sharing a personal story unprompted.
+
+The comment must be LOW-STAKES: not "share your story" (too vulnerable, too open-ended), but a quick, \
+non-identifying multiple-choice-style question that's easy to answer in three words, e.g. "Which of \
+these resonated most — enmeshment or hypervigilance?" Pull the two concrete concepts/terms from the \
+angle given (the actual psychological mechanisms this specific video names), not generic ones.
+
+Given an archetype and its angle, return ONLY the comment text itself (one sentence, no quotes, no \
+preamble, under 20 words)."""
+
+
+def generate_engagement_question(topic_data):
+    text = _llm.call(
+        f"Archetype: {topic_data['topic']}\nAngle: {topic_data['angle']}",
+        system=_ENGAGEMENT_QUESTION_PROMPT,
+        max_tokens=100,
+    )
+    return text.strip('"')

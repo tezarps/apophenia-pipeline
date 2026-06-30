@@ -18,40 +18,29 @@ Pipeline:
 import json
 import re
 
-import anthropic
-from config import ANTHROPIC_API_KEY, HAIKU_MODEL
-
-client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+import agents.llm as _llm
 
 HIGHLIGHT_COLOR_ASS = "&H1CB8FF&"  # BGR hex for the same yellow/orange used in thumbnails
 
 _ANNOTATE_SYSTEM = """You annotate a psychology-essay video script for caption rendering. You do \
-NOT change any wording — only add two kinds of markers around EXISTING text, verbatim.
+NOT change any wording — only add a highlight marker around EXISTING text, verbatim.
 
-1. Wrap roughly 10-15% of words — the emotionally/conceptually load-bearing ones (not function \
+Wrap roughly 10-15% of words — the emotionally/conceptually load-bearing ones (not function \
 words like "the/a/and") — in double asterisks, e.g. **exhausted**. Spread these across the whole \
 script, a few per sentence at most, never two in a row.
 
-2. Find 2-4 short, already-existing sentences that work well as a quiet "let this sink in" \
-reflective beat (these should come from the wound section or the turning-point section of the \
-script, never the hook or the closing strategy), and wrap each ENTIRE sentence in [[BLACK]] and \
-[[/BLACK]], e.g. [[BLACK]]You learned to disappear before anyone could leave first.[[/BLACK]]. A \
-sentence can have both markers (highlighted words inside a [[BLACK]] sentence) if it naturally does.
+Do not use any other markers — no blackscreen/reflective-beat markers at all (removed 2026-06-24 \
+per explicit user direction: "jangan ada black frame sama sekali", the slideshow must keep showing \
+images throughout, never cut to black).
 
-Do not add, remove, or reorder any words. Output the full script text with only these markers added."""
+Do not add, remove, or reorder any words. Output the full script text with only the ** markers added."""
 
 
 def annotate_script(script_text):
     """Returns (clean_text, words) where `words` is a list of dicts:
     {"text": str, "highlight": bool, "blackscreen": bool}, in the same order
     the words will be spoken — this order MUST match what's sent to TTS."""
-    msg = client.messages.create(
-        model=HAIKU_MODEL,
-        max_tokens=8000,
-        system=_ANNOTATE_SYSTEM,
-        messages=[{"role": "user", "content": script_text}],
-    )
-    annotated = msg.content[0].text.strip()
+    annotated = _llm.call(script_text, system=_ANNOTATE_SYSTEM, max_tokens=8000)
 
     words = []
     clean_parts = []
