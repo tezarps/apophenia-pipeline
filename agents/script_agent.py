@@ -274,26 +274,23 @@ def generate_script(topic_data):
     hook_instruction = _HOOK_VARIANTS[variant_key]
 
     print(f"    Hook variant: {variant_key}")
-    print("    Drafting (Haiku)...")
-    draft = _call(HAIKU_MODEL, _DRAFT.format(
+    print("    Drafting...")
+    draft = _call(None, _DRAFT.format(
         topic=topic, angle=angle, category=category, hook_instruction=hook_instruction,
     ))
 
-    print("    Polishing (Sonnet)...")
-    polished = _call(SONNET_MODEL, _POLISH.format(draft=draft))
+    print("    Polishing...")
+    polished = _call(None, _POLISH.format(draft=draft))
 
-    print("    Auditing for leftover AI-speak (Haiku)...")
-    final = _call(HAIKU_MODEL, _AUDIT.format(script=polished), max_tokens=8000)
+    print("    Auditing for leftover AI-speak...")
+    final = _call(None, _AUDIT.format(script=polished), max_tokens=8000)
 
-    # Deterministic backstop: the audit pass above is itself an LLM call and
-    # isn't 100% reliable, so re-check with regex and do up to 2 rounds of
-    # sentence-scoped rewrites for anything that still slipped through.
     for round_num in range(2):
         bad_sentence = _find_banned_sentence(final)
         if not bad_sentence:
             break
         print(f"    Banned pattern survived audit pass — rewriting one sentence (round {round_num + 1})...")
-        rewritten = _call(HAIKU_MODEL, _REWRITE_SENTENCE.format(sentence=bad_sentence), max_tokens=300).strip()
+        rewritten = _call(None, _REWRITE_SENTENCE.format(sentence=bad_sentence), max_tokens=300).strip()
         final = final.replace(bad_sentence, rewritten, 1)
 
     word_count = len(final.split())
