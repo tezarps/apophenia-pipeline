@@ -3,11 +3,15 @@ import agents.llm as _llm
 CHANNEL_URL = "https://www.youtube.com/@heyapophenia"
 
 
-def _timestamp_block(duration_min):
-    """Maps the script's fixed 5-babak structure (see script_agent._DRAFT) to
-    rough proportional timestamps — wound (babak 2) and strategy/close (babak 5)
-    run longest per that prompt's own pacing note, so they get the biggest share."""
-    labels = ["The Hook", "The Wound", "The Science", "The Turn", "The Strategy"]
+def _timestamp_marks(duration_min):
+    """Returns just the time codes for the script's fixed 5-babak structure (see
+    script_agent._DRAFT) — proportional to each babak's typical share of runtime
+    (wound and strategy/close run longest per that prompt's own pacing note).
+
+    Labels are NOT generated here anymore. Generic template labels ("The Hook",
+    "The Wound", "The Science"...) were identical across every video regardless
+    of actual content — the LLM now writes a contextual title per mark based on
+    that specific script (see _PROMPT's TIMESTAMPS section)."""
     weights = [0.08, 0.32, 0.18, 0.14, 0.28]
     marks, acc = [], 0.0
     for w in weights:
@@ -20,7 +24,7 @@ def _timestamp_block(duration_min):
         mn, sec = divmod(rem, 60)
         return f"{h}:{mn:02d}:{sec:02d}" if h else f"{mn:02d}:{sec:02d}"
 
-    return "\n".join(f"{fmt(duration_min * m)} – {l}" for m, l in zip(marks, labels))
+    return [fmt(duration_min * m) for m in marks]
 
 _PROMPT = """You are an expert YouTube SEO strategist for a psychology insight essay channel \
 called "Apophenia" (style reference: the channel "Kee" — generic psychological archetypes, \
@@ -66,6 +70,28 @@ DESCRIPTION rules:
   psychological mechanism named in plain language → who it's for → subscribe CTA → disclosure
 - Mention the channel handles archetypes, never real people or diagnoses
 
+TIMESTAMPS rules (changed 2026-07-02 — labels were a fixed generic template
+"The Hook / The Wound / The Science / The Turn / The Strategy" reused verbatim
+on every single video regardless of content, telling the viewer nothing about
+THIS video specifically):
+- You are given the exact time codes below and the full script text
+- Write ONE short chapter title (2-5 words, Title Case, no colon) per time code —
+  each title must describe what is ACTUALLY said in that part of THIS script,
+  not a generic structural label
+- Example (for a script about the fake-confidence adult): "0:00 – Why You
+  Sound Confident but Say Sorry" / "0:35 – Where the Mask Started" / "3:10 –
+  The Real Mechanism: Learned Performance" / "6:40 – What the Mask Protects" /
+  "8:20 – Dropping the Performance" — specific to that video, never reused
+  wholesale on a different topic
+- Time codes to use (do not change these):
+{timestamp_marks}
+
+Script for this video (write timestamp titles based on what actually happens
+in each section, in this reading order):
+\"\"\"
+{script}
+\"\"\"
+
 TAGS rules:
 - 15 tags total
 - Mix: 3 ultra-broad ("psychology", "self awareness", "mental health"), 6 mid-tail ("attachment
@@ -88,7 +114,7 @@ DESCRIPTION:
 
 [1 sentence: who this is for]
 
-{timestamp_block}
+[Timestamp block: one "TIME – Contextual Title" line per time code given above, in order]
 
 More psychology breakdowns:
 ▶ Full Channel → {channel_url}
@@ -105,10 +131,11 @@ structure, and final editing are human-curated.
 TAGS: [15 tags comma-separated, most important first]"""
 
 
-def generate_metadata(topic_data, duration_min=15):
+def generate_metadata(topic_data, script, duration_min=15):
     category = topic_data["category"]
     category_words = category.replace("-", " ")
     category_tag = "".join(w.capitalize() for w in category.split("-"))
+    marks_str = "\n".join(_timestamp_marks(duration_min))
     text = _llm.call(_PROMPT.format(
         topic=topic_data["topic"],
         topic_lower=topic_data["topic"].lower(),
@@ -118,8 +145,9 @@ def generate_metadata(topic_data, duration_min=15):
         category_tag=category_tag,
         channel_url=CHANNEL_URL,
         duration_min=duration_min,
-        timestamp_block=_timestamp_block(duration_min),
-    ), max_tokens=2000)
+        timestamp_marks=marks_str,
+        script=script,
+    ), max_tokens=2400)
     title_a, title_b, description, tags = "", "", "", []
     lines = text.strip().split("\n")
     mode = None

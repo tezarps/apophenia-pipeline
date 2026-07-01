@@ -240,7 +240,7 @@ def run(audio_only=False):
         agent_start("herald", "Writing SEO title & description...")
         sb.run_update_agent(sb_run_id, "herald")
         duration_min = int(duration_sec / 60)
-        metadata = generate_metadata(topic, duration_min=duration_min)
+        metadata = generate_metadata(topic, script, duration_min=duration_min)
         meta_path = OUTPUT_DIR / "metadata" / f"{topic_id}.json"
         meta_path.parent.mkdir(exist_ok=True)
         import json as _json
