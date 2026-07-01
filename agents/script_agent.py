@@ -95,6 +95,18 @@ script but especially between babak 1 and 2: "That's what I want to talk about t
 sentence that announces what the video is about to do instead of just doing it. \
 The hook ends — babak 2 begins. No announcement needed.
 
+RETENTION-CRITICAL WINDOW — 0:05 to 0:40 (confirmed 2026-07-02 via real YouTube Studio audience-retention \
+data on "The Psychology of Adults Who Cut Off Their Family": AVD was above channel average, but a sharp \
+viewer drop-off happened specifically between second 5 and second 40 — NOT just the opening 1-2 sentences. \
+That drop lands right where the hook (babak 1) hands off into babak 2, meaning the actual failure point \
+was momentum loss during the HANDOFF, not the opening line itself). To fix this: babak 2's first 1-2 \
+sentences must open on the single sharpest, most concrete, most viscerally recognizable image or detail \
+of the formative scenario — not a general setup, not scene-setting throat-clearing, not "let's go back \
+to..." framing, not easing into the memory. Skip straight to the specific moment (a smell, a sentence \
+someone said, a posture, an exact small action) that carries the emotional charge. The reader should feel \
+the wound land within the first sentence of babak 2, with zero runway. Treat the whole 0:05-0:40 window as \
+one continuous held breath — the hook's tension must not slacken even slightly while babak 2 gets going.
+
 BABAK 2 — THE WOUND. Explore where this pattern was likely formed — a believable, generic formative \
 scenario (childhood home dynamic, an early relationship, a repeated small moment), written in second \
 person ("you"). Not a single traumatic event necessarily — often it's something that happened quietly, \
