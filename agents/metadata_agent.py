@@ -35,23 +35,26 @@ Duration: ~{duration_min} minutes
 
 SEO RULES — follow strictly:
 
-TITLE rules (changed 2026-06-22 — titles were testing too generic/flat, need real click-pull):
+TITLE rules (updated 2026-07-01 — switched to Psyphoria-formula style, proven on @Psyphoria7 at 785K subs):
 - 60-100 characters
-- Lead with "The Psychology of" or "The Psychology Of" followed by the archetype description —
-  this exact phrase is the channel's proven high-performing format, but the archetype description
-  itself must now be SPECIFIC and PUNCHY, not a flat clinical restatement — pull from the angle
-  field's sharpest, most personally-recognizable detail (reference good titles: "The Psychology of
-  People Who Go Quiet the Second a Room Fills Up", "The Psychology of People Who Apologize Before
-  Anyone Else Even Speaks" — specific, second-person-recognizable, curiosity-inducing; bad/too
-  generic: "The Psychology of the Emotionally Exhausted Adult")
-- Allowed and encouraged: a sharp behavioral hook, a "why you..." or "the real reason..." framing
-  worked into the archetype description itself, mild tension/curiosity gap — this IS the clickbait
-  lever, just without leaving the "The Psychology of" SEO anchor phrase
-- Still NO ALL CAPS, NO emojis, no real person's name, no false/misleading claims — the hook must
-  be something the video genuinely delivers on, not bait-and-switch
-- Naturally include the core searchable keyword from the category (e.g. "invisible", "people
-  pleasing", "avoidant") inside the title itself — SEO and clickbait both matter, don't sacrifice
-  one for the other
+- Use ONE of these three proven Psyphoria title formulas:
+    A) "[Bold psychological insight or behavior] – [Philosopher/Thinker]"
+       e.g. "The Mask You Forgot You Were Wearing – Carl Jung"
+       e.g. "The Silent Damage Caused by Your Ego – Carl Jung"
+    B) "How to [specific action] [meaningful result]"
+       e.g. "How to Stop Performing Confidence and Actually Feel It"
+       e.g. "How to Trick Your Brain Into Enjoying Hard Things"
+    C) "When You [action], [positive result]"
+       e.g. "When You Stop Apologizing, Everything Changes"
+       e.g. "When You Stop Caring So Much, Everything Falls Into Place"
+- Philosopher reference (formula A): pick the most relevant — Carl Jung, Stoics, Spinoza, Albert Camus,
+  Nietzsche, Viktor Frankl — only if it genuinely fits the angle; omit if it feels forced
+- TITLE_A and TITLE_B must use DIFFERENT formulas (e.g. A uses formula A, B uses formula B/C)
+- Sharp, personal, specific — pull from the angle field's most recognizable behavioral detail
+- NO "The Psychology of" prefix (retired) — NO ALL CAPS — NO emojis — NO real person's name in the
+  topic itself — NO false/misleading claims
+- Naturally work in the core searchable keyword from the category (e.g. "people pleasing", "fawn
+  response", "ego") inside the title for SEO — don't sacrifice searchability for cleverness
 
 DESCRIPTION rules:
 - First 125 characters are critical — shown in YouTube search snippets, must be a calm, specific
@@ -73,7 +76,7 @@ TAGS rules:
 Output EXACTLY this format, nothing else:
 
 TITLE_A: [your primary optimized title]
-TITLE_B: [alternate title — same "The Psychology of" anchor, different behavioral hook phrase; \
+TITLE_B: [alternate title — DIFFERENT Psyphoria formula from A (if A used formula A, use B or C); \
 still 60-100 characters, different curiosity angle from A, equally clickable]
 
 DESCRIPTION:
