@@ -1,49 +1,50 @@
-import base64
 import hashlib
 import json
 import re
-import struct
 import subprocess
 import shutil
-import time
-import requests
+
+import numpy as np
+import soundfile as sf
+
 from config import (
-    OUTPUT_DIR, ELEVENLABS_API_KEY, ELEVENLABS_MODEL, ELEVENLABS_OUTPUT_FORMAT,
-    ELEVENLABS_VOICE_ID, ELEVENLABS_VOICE_SETTINGS, FFMPEG_BIN, FFPROBE_BIN,
+    OUTPUT_DIR, FFMPEG_BIN, FFPROBE_BIN,
+    KOKORO_VOICE, KOKORO_SPEED, KOKORO_MODEL_PATH, KOKORO_VOICES_PATH,
 )
 
 SILENCE_MS = 450          # gap between ordinary script chunks
 
-# The closing CTA line (the one mentioning "Apophenia") sat right up against
-# the previous sentence with only the normal 450ms gap, so it read as more
-# content rather than a deliberate sign-off — flagged by user feedback
-# 2026-06-22. A longer pause right before it signals "this is the close" the
-# same way a real narrator would drop their pace before a sign-off line.
+# Longer pause right before the CTA sign-off line so it reads as a deliberate
+# close, not more content (user feedback 2026-06-22).
 CTA_GAP_MS = 1600
-MAX_VOLUME_RANGE_DB = 9  # if segments within a chunk differ more than this, re-roll the chunk
+MAX_VOLUME_RANGE_DB = 9   # re-roll chunk if level drift exceeds this
 QUALITY_RETRIES = 2
 
-# ElevenLabs' own docs: keep generations under 800-900 chars for expressive,
-# dynamic delivery — longer single generations flatten toward monotone. Same
-# value Narava settled on (see project memory project_narava_pipeline.md) —
-# chunking down further to ~1-2 sentences is safe and gives a silence gap
-# between most sentences instead of only every 4-6. Billing is per character
-# regardless of chunk count.
+# Sentence-level chunking — same value as before the Kokoro switch.
+# Per-chunk caching and the CTA-gap logic both depend on sentence boundaries,
+# independent of which TTS backend renders the audio.
 MAX_CHUNK_CHARS = 220
 
-_IS_PCM = ELEVENLABS_OUTPUT_FORMAT.startswith("pcm")
-_AUDIO_EXT = "wav" if _IS_PCM else "mp3"
-_AUDIO_CODEC = "pcm_s16le" if _IS_PCM else "libmp3lame"
-_CODEC_ARGS = ["-c:a", _AUDIO_CODEC] if _IS_PCM else ["-c:a", _AUDIO_CODEC, "-b:a", "192k"]
+_CHUNK_EXT = "wav"   # Kokoro's native output; chunks stored as WAV internally
+_OUT_EXT = "mp3"     # final merged file always mp3 for pipeline/scheduler compat
+
+_kokoro = None
+
+
+def _get_kokoro():
+    global _kokoro
+    if _kokoro is None:
+        from kokoro_onnx import Kokoro
+        _kokoro = Kokoro(KOKORO_MODEL_PATH, KOKORO_VOICES_PATH)
+    return _kokoro
 
 
 def _chunk_text(text, max_chars=MAX_CHUNK_CHARS):
     sentences = text.replace("\n\n", " ").replace("\n", " ").split(". ")
     chunks, current = [], ""
     for s in sentences:
-        # Force the closing "Apophenia" sign-off sentence to start its own
-        # chunk (instead of getting packed onto the previous sentence) so
-        # _gap_durations_ms can actually isolate it with a longer pause.
+        # Force the sign-off sentence onto its own chunk so _gap_durations_ms
+        # can insert the longer CTA pause before it.
         if "apophenia" in s.lower() and current:
             chunks.append(current.strip())
             current = ""
@@ -57,16 +58,6 @@ def _chunk_text(text, max_chars=MAX_CHUNK_CHARS):
     if current.strip():
         chunks.append(current.strip())
     return chunks
-
-
-def _pcm_to_wav(pcm_bytes, sample_rate=44100, channels=1, bits_per_sample=16):
-    byte_rate = sample_rate * channels * bits_per_sample // 8
-    block_align = channels * bits_per_sample // 8
-    data_size = len(pcm_bytes)
-    header = b"RIFF" + struct.pack("<I", 36 + data_size) + b"WAVE"
-    header += b"fmt " + struct.pack("<IHHIIHH", 16, 1, channels, sample_rate, byte_rate, block_align, bits_per_sample)
-    header += b"data" + struct.pack("<I", data_size)
-    return header + pcm_bytes
 
 
 def _audio_duration(path):
@@ -104,84 +95,27 @@ def _is_consistent(audio_path):
     return spread <= MAX_VOLUME_RANGE_DB, spread
 
 
-def _call_tts(text, voice_id, voice_settings, with_timestamps=False):
-    """Single API call. Returns (audio_bytes, alignment_or_None). audio_bytes
-    is a complete, playable file's bytes (WAV if ELEVENLABS_OUTPUT_FORMAT is
-    PCM, raw MP3 bytes otherwise)."""
-    path_suffix = "/with-timestamps" if with_timestamps else ""
-    resp = requests.post(
-        f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}{path_suffix}",
-        params={"output_format": ELEVENLABS_OUTPUT_FORMAT},
-        headers={"xi-api-key": ELEVENLABS_API_KEY, "Content-Type": "application/json"},
-        json={
-            "text": text,
-            "model_id": ELEVENLABS_MODEL,
-            "voice_settings": voice_settings,
-        },
-        timeout=120,
-    )
-    if resp.status_code != 200:
-        raise RuntimeError(f"{resp.status_code}: {resp.text[:300]}")
+def _synthesize_chunk(text, out_path, max_quality_retries=QUALITY_RETRIES):
+    """Generate one chunk via Kokoro (local, no network). Volume-drift
+    re-roll kept as a safety net even though Kokoro is near-deterministic."""
+    kokoro = _get_kokoro()
 
-    if with_timestamps:
-        data = resp.json()
-        audio_bytes = base64.b64decode(data["audio_base64"])
-        alignment = data.get("alignment")
-    else:
-        audio_bytes = resp.content
-        alignment = None
-
-    return (_pcm_to_wav(audio_bytes) if _IS_PCM else audio_bytes), alignment
-
-
-def _synthesize_chunk(text, out_path, voice_id, voice_settings, capture_timestamps=False,
-                       max_api_retries=5, max_quality_retries=QUALITY_RETRIES):
-    """Save the RAW chunk as-is — no per-chunk loudnorm. Loudness normalization
-    runs once on the full merged file instead; per-chunk normalization on
-    clips this short (under ITU-R BS.1770's reliable measurement window)
-    produced audible level jumps between chunks once stitched together."""
-    delays = [10, 30, 60, 120, 180]
-    api_attempt = 0
-    quality_attempt = 0
-    alignment = None
-
-    while True:
-        try:
-            audio_bytes, alignment = _call_tts(text, voice_id, voice_settings, with_timestamps=capture_timestamps)
-        except Exception as api_err:
-            err_text = str(api_err).lower()
-            if any(kw in err_text for kw in (
-                "quota", "credit", "insufficient", "payment",
-                "subscription_required", "not_allowed", "tier",
-            )):
-                raise RuntimeError(f"TTS quota/credit/plan error (not retrying): {api_err}")
-            wait = delays[min(api_attempt, len(delays) - 1)]
-            print(f"    API error attempt {api_attempt+1}/{max_api_retries}: {api_err} — wait {wait}s")
-            api_attempt += 1
-            if api_attempt >= max_api_retries:
-                raise RuntimeError(f"TTS API failed after {max_api_retries} attempts: {api_err}")
-            time.sleep(wait)
-            continue
-
-        out_path.write_bytes(audio_bytes)
-        if alignment is not None:
-            out_path.with_suffix(".json").write_text(json.dumps(alignment))
+    for attempt in range(max_quality_retries + 1):
+        samples, sample_rate = kokoro.create(
+            text, voice=KOKORO_VOICE, speed=KOKORO_SPEED, lang="en-us"
+        )
+        sf.write(str(out_path), samples, sample_rate)
 
         ok, spread = _is_consistent(out_path)
         if ok:
             return
-
-        quality_attempt += 1
-        if quality_attempt >= max_quality_retries:
-            print(f"    Volume drift {spread:.1f}dB persists after {max_quality_retries} re-rolls — accepting best take")
+        if attempt >= max_quality_retries:
+            print(f"    Volume drift {spread:.1f}dB persists — accepting best take")
             return
-        print(f"    Volume drift {spread:.1f}dB detected — re-rolling chunk ({quality_attempt}/{max_quality_retries})...")
+        print(f"    Volume drift {spread:.1f}dB — re-rolling ({attempt+1}/{max_quality_retries})...")
 
 
 def _gap_durations_ms(chunk_texts):
-    """Returns one silence duration (ms) to insert AFTER each chunk. Normally
-    SILENCE_MS, except the gap right before the CTA chunk (the one mentioning
-    "Apophenia") gets CTA_GAP_MS instead, so the sign-off reads as deliberate."""
     gaps = [SILENCE_MS] * len(chunk_texts)
     for i in range(1, len(chunk_texts)):
         if "apophenia" in chunk_texts[i].lower():
@@ -190,22 +124,26 @@ def _gap_durations_ms(chunk_texts):
 
 
 def _merge_with_ffmpeg(chunk_dir, out_path, chunk_texts=None):
-    chunks = sorted(chunk_dir.glob(f"[0-9][0-9][0-9][0-9].{_AUDIO_EXT}"))
+    """Concat WAV chunks + silence gaps, then loudnorm → mp3 final output."""
+    chunks = sorted(chunk_dir.glob(f"[0-9][0-9][0-9][0-9].{_CHUNK_EXT}"))
     gaps_ms = _gap_durations_ms(chunk_texts) if chunk_texts else [SILENCE_MS] * len(chunks)
+
+    # Silence generated at Kokoro's native 24kHz to match chunk sample rate.
+    kokoro_sr = 24000
 
     def _make_silence(ms, name):
         path = chunk_dir / name
         subprocess.run([
             FFMPEG_BIN, "-y", "-f", "lavfi",
-            "-i", "anullsrc=r=44100:cl=mono",
+            "-i", f"anullsrc=r={kokoro_sr}:cl=mono",
             "-t", f"{ms / 1000:.3f}",
-            *_CODEC_ARGS, str(path)
+            "-c:a", "pcm_s16le", str(path)
         ], capture_output=True, check=True)
         return path
 
     silence_paths = {}
     for ms in set(gaps_ms):
-        silence_paths[ms] = _make_silence(ms, f"silence_{ms}.{_AUDIO_EXT}")
+        silence_paths[ms] = _make_silence(ms, f"silence_{ms}.{_CHUNK_EXT}")
 
     concat_file = chunk_dir / "concat.txt"
     lines = []
@@ -214,111 +152,45 @@ def _merge_with_ffmpeg(chunk_dir, out_path, chunk_texts=None):
         lines.append(f"file '{silence_paths[gap_ms]}'")
     concat_file.write_text("\n".join(lines))
 
-    raw_merged = chunk_dir / f"merged_raw.{_AUDIO_EXT}"
+    raw_merged = chunk_dir / f"merged_raw.{_CHUNK_EXT}"
     subprocess.run([
         FFMPEG_BIN, "-y",
         "-f", "concat", "-safe", "0",
         "-i", str(concat_file),
-        *_CODEC_ARGS,
+        "-c:a", "pcm_s16le",
         str(raw_merged)
     ], capture_output=True, check=True)
 
-    # Single loudness normalization pass over the whole program — same reasoning
-    # as Narava: far more reliable than many independent per-chunk passes.
-    # Bumped -16 -> -14 LUFS (2026-06-24, user feedback: video was only
-    # audible with earphones). -14 LUFS matches YouTube's own normalization
-    # target, so playback no longer gets quietly attenuated relative to other
-    # videos — going louder than -14 would just get turned back down by
-    # YouTube anyway, so this is the ceiling worth targeting, not just "louder".
+    # Single loudnorm pass on the full program — same reasoning as Narava.
+    # -14 LUFS matches YouTube's target so playback isn't attenuated vs other videos.
     subprocess.run([
         FFMPEG_BIN, "-y", "-i", str(raw_merged),
         "-af", "loudnorm=I=-14:TP=-2.0:LRA=20",
-        *_CODEC_ARGS, str(out_path)
+        "-c:a", "libmp3lame", "-b:a", "192k",
+        str(out_path)
     ], capture_output=True, check=True)
 
 
-def _words_from_alignment(text, alignment):
-    """Splits one chunk's character-level alignment into word-level (text,
-    start, end), local to that chunk's own audio (0-based)."""
-    chars = alignment["characters"]
-    starts = alignment["character_start_times_seconds"]
-    ends = alignment["character_end_times_seconds"]
-    words = []
-    cur_text, cur_start, cur_end = "", None, None
-    for ch, s, e in zip(chars, starts, ends):
-        if ch.isspace():
-            if cur_text:
-                words.append({"text": cur_text, "start": cur_start, "end": cur_end})
-                cur_text, cur_start, cur_end = "", None, None
-            continue
-        if cur_start is None:
-            cur_start = s
-        cur_text += ch
-        cur_end = e
-    if cur_text:
-        words.append({"text": cur_text, "start": cur_start, "end": cur_end})
-    return words
-
-
-def _compute_word_timings(chunk_dir, chunks, highlight_words):
-    """Combines each chunk's local alignment + cumulative chunk/silence
-    offsets into one global word-timing list, then zips in the
-    highlight/blackscreen flags from caption_agent.annotate_script (same word
-    order — both derive from the exact same clean text)."""
-    gaps_ms = _gap_durations_ms(chunks)
-    offset = 0.0
-    all_words = []
-    for i, chunk_text in enumerate(chunks):
-        audio_path = chunk_dir / f"{i:04d}.{_AUDIO_EXT}"
-        align_path = audio_path.with_suffix(".json")
-        if align_path.exists():
-            alignment = json.loads(align_path.read_text())
-            for w in _words_from_alignment(chunk_text, alignment):
-                all_words.append({"text": w["text"], "start": w["start"] + offset, "end": w["end"] + offset})
-        offset += _audio_duration(audio_path) + gaps_ms[i] / 1000
-
-    n = min(len(all_words), len(highlight_words))
-    if len(all_words) != len(highlight_words):
-        print(f"    Warning: word count mismatch (audio={len(all_words)}, script={len(highlight_words)}) — captions truncated to {n}")
-    timings = []
-    for i in range(n):
-        timings.append({
-            "text": all_words[i]["text"],
-            "start": all_words[i]["start"],
-            "end": all_words[i]["end"],
-            "highlight": highlight_words[i]["highlight"],
-            "blackscreen": highlight_words[i]["blackscreen"],
-        })
-    return timings
-
-
 def generate_audio(script_text, topic_id, category=None, with_captions=False, highlight_words=None):
-    """If with_captions=True, returns (audio_path, word_timings) — requires
-    highlight_words from agents.caption_agent.annotate_script(), in the exact
-    same word order as script_text. Otherwise returns just audio_path.
-
-    The merged output (and word-timings JSON, if with_captions) persist across
-    runs — a retry after a later pipeline stage fails (e.g. the YouTube upload
-    step) must NOT re-pay for the full TTS render. Confirmed costly in
-    practice 2026-06-21: a thumbnail-permission failure after a successful
-    upload caused a full TTS re-render on retry before this cache existed."""
-    out_path = OUTPUT_DIR / "audio" / f"{topic_id}.{_AUDIO_EXT}"
+    """Returns audio_path if with_captions=False, or (audio_path, word_timings)
+    if with_captions=True. Kokoro doesn't produce word-level alignment, so
+    word_timings is always [] — the video assembly handles this gracefully
+    (even image slots, no reflective-beat blackscreens). Cache prevents
+    re-rendering on pipeline retries after later-stage failures."""
+    out_path = OUTPUT_DIR / "audio" / f"{topic_id}.{_OUT_EXT}"
     timings_path = OUTPUT_DIR / "audio" / f"{topic_id}_timings.json"
     if out_path.exists() and out_path.stat().st_size > 0:
         if with_captions and timings_path.exists():
-            print(f"    TTS: using cached audio + timings (no API call) → {out_path.name}")
+            print(f"    TTS: using cached audio + timings (no re-render) → {out_path.name}")
             return out_path, json.loads(timings_path.read_text())
         if not with_captions:
-            print(f"    TTS: using cached audio (no API call) → {out_path.name}")
+            print(f"    TTS: using cached audio (no re-render) → {out_path.name}")
             return out_path
-
-    voice_id, voice_settings = ELEVENLABS_VOICE_ID, ELEVENLABS_VOICE_SETTINGS
 
     chunks = _chunk_text(script_text)
     total_chars = sum(len(c) for c in chunks)
-    quality_label = "studio-quality PCM, no compression" if _IS_PCM else "mp3 192kbps (PCM needs ElevenLabs Pro tier)"
     print(f"    TTS: {len(chunks)} chunks, ~{total_chars:,} chars")
-    print(f"    Voice settings: {ELEVENLABS_MODEL}, {quality_label}")
+    print(f"    Voice: Kokoro {KOKORO_VOICE} (local, no API cost)")
 
     chunk_dir = OUTPUT_DIR / "audio" / f"chunks_{topic_id}"
     script_hash = hashlib.md5(script_text.encode()).hexdigest()[:8]
@@ -326,32 +198,31 @@ def generate_audio(script_text, topic_id, category=None, with_captions=False, hi
 
     if chunk_dir.exists() and hash_file.exists():
         if hash_file.read_text().strip() != script_hash:
-            print(f"    Script changed — clearing cached chunks")
+            print("    Script changed — clearing cached chunks")
             shutil.rmtree(chunk_dir)
 
     chunk_dir.mkdir(parents=True, exist_ok=True)
     hash_file.write_text(script_hash)
 
     for i, chunk in enumerate(chunks):
-        out = chunk_dir / f"{i:04d}.{_AUDIO_EXT}"
-        if out.exists() and out.stat().st_size > 0 and (not with_captions or out.with_suffix(".json").exists()):
+        out = chunk_dir / f"{i:04d}.{_CHUNK_EXT}"
+        if out.exists() and out.stat().st_size > 0:
             print(f"    TTS: {i+1}/{len(chunks)} (cached)")
             continue
-        _synthesize_chunk(chunk, out, voice_id, voice_settings, capture_timestamps=with_captions)
+        _synthesize_chunk(chunk, out)
         print(f"    TTS: {i+1}/{len(chunks)} done")
-        time.sleep(1)
-
-    word_timings = None
-    if with_captions:
-        word_timings = _compute_word_timings(chunk_dir, chunks, highlight_words)
 
     print("    Merging audio...")
     _merge_with_ffmpeg(chunk_dir, out_path, chunk_texts=chunks)
     shutil.rmtree(chunk_dir)
 
+    # Kokoro provides no word-level alignment — word_timings is empty.
+    # The video assembly falls back to even image slots; blackscreen beats
+    # are skipped. Can be revisited if a forced-aligner is added later.
+    word_timings = []
     if with_captions:
         timings_path.write_text(json.dumps(word_timings))
 
     mins = _audio_duration(out_path) / 60
-    print(f"    Audio: {mins:.0f} min → {out_path.name}")
+    print(f"    Audio: {mins:.1f} min → {out_path.name}")
     return (out_path, word_timings) if with_captions else out_path

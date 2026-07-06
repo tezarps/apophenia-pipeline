@@ -18,25 +18,33 @@ import agents.llm as _llm
 IMAGE_COUNT = 12  # fallback only — generate_images() is normally called with an explicit
                   # duration-derived count, see images_for_duration() below
 
-# Benchmark from analyzing the actual "Kee" reference channel via claude-watch scene-change
-# detection (2026-06-21): 80 detected shot changes over an 18-min/1081s video = ~13.5s average
-# shot duration. That's the right reference for THIS content (active-engagement essay) — NOT
-# "Pendongeng Tidur" (45s avg shot duration), which is sleep/ambient content deliberately paced
-# slower. The old fixed IMAGE_COUNT=12 + assembly_agent capping to 10 candidates meant a 9-min
-# video cycled through only 10 images ~5 times each — visibly repetitive, flagged by user
-# feedback on the first published video. See project memory project_apophenia.md.
-# Tightened 2026-06-22 (topic #4 onward) — images now change roughly every
-# sentence (see assembly_agent._sentence_slots), averaging ~5s/sentence, not
-# the old fixed 13.5s slide grid. A smaller _TARGET_SHOT_SECONDS means more
-# unique generated images per video, so the sentence-cadence cycle repeats
-# the same image less often.
-_TARGET_SHOT_SECONDS = 6.0
-_MIN_IMAGES, _MAX_IMAGES = 24, 60
+# Replaced 2026-07-06 with a 3-segment pacing model benchmarked directly off
+# @Psyphoria7 (785K subs, the channel this whole visual format is modeled on)
+# via claude-watch scene-change detection on "The Silent Damage Caused by Your
+# Ego" (30:44, 90 scenes detected): hook segment holds images 3-16s (~8s avg),
+# main content holds 28-31s per image (confirmed via manual frame diff — two
+# frames 30s apart were genuinely different paintings, not a pan/zoom), and
+# one energetic "dynamic point" burst runs 4-8s/image. The old flat
+# 6s/shot target (based on a different, faster-cut reference channel) needed
+# 50-60 images per video; this needs roughly half that for the same duration,
+# at both lower image-generation cost and a pacing that actually matches the
+# reference channel instead of a generic essay-video guess. See project
+# memory project_apophenia_retention_data.md for the full analysis.
+HOOK_SECONDS = 40          # matches script_agent's own confirmed 0:05-0:40 retention window
+HOOK_SHOT_SECONDS = 8
+DYNAMIC_SECONDS = 60       # one energetic burst, placed around the babak 3->4 reveal
+DYNAMIC_SHOT_SECONDS = 7
+MAIN_SHOT_SECONDS = 29
+_MIN_IMAGES, _MAX_IMAGES = 12, 40
 
 
 def images_for_duration(duration_sec):
-    ideal = round(duration_sec / _TARGET_SHOT_SECONDS)
-    return max(_MIN_IMAGES, min(_MAX_IMAGES, ideal))
+    hook_images = round(HOOK_SECONDS / HOOK_SHOT_SECONDS)
+    dynamic_images = round(DYNAMIC_SECONDS / DYNAMIC_SHOT_SECONDS)
+    main_seconds = max(0, duration_sec - HOOK_SECONDS - DYNAMIC_SECONDS)
+    main_images = round(main_seconds / MAIN_SHOT_SECONDS)
+    total = hook_images + main_images + dynamic_images
+    return max(_MIN_IMAGES, min(_MAX_IMAGES, total))
 
 # Rendering TREATMENT borrowed from "Pendongeng Tidur" — chiaroscuro composition, painterly
 # illustration, a small figure within its surroundings. The OBJECTS/SETTING are NOT borrowed

@@ -73,6 +73,47 @@ def _get_images(category, topic_slug=None, count=None):
     return [candidates[i % len(candidates)] for i in range(count)]
 
 
+def _paced_slots(duration, hook_sec=40, hook_shot_sec=8, dynamic_sec=60, dynamic_shot_sec=7, main_shot_sec=29):
+    """Duration-only fallback for when no word_timings exist (Kokoro doesn't
+    produce word-level alignment, unlike ElevenLabs' with-timestamps API —
+    see agents/tts_agent.py). Used instead of the naive fixed SLIDE_DURATION
+    grid so Kokoro-narrated videos still get the same 3-segment pacing as
+    agents/image_agent.images_for_duration(): a fast-cut hook (0:00-0:40,
+    ~8s/image), one energetic "dynamic point" burst placed at the babak 3->4
+    reveal (~60s, ~7s/image), and slow steady-state holds everywhere else
+    (~29s/image) — benchmarked off @Psyphoria7, see project memory
+    project_apophenia_retention_data.md. Mirrors word_timings-derived slots
+    exactly: a list of (start, end) tuples covering the full duration."""
+    slots = []
+    t = 0.0
+    hook_end = min(hook_sec, duration)
+    while t < hook_end:
+        end = min(t + hook_shot_sec, hook_end)
+        slots.append((t, end))
+        t = end
+
+    # Dynamic burst placed at the babak 3->4 reveal — roughly 60% through the
+    # remaining (post-hook) runtime, matching where Psyphoria's own energetic
+    # section landed proportionally (~55-65% through its 30:44 total).
+    remaining = max(0.0, duration - hook_end)
+    dynamic_start = hook_end + remaining * 0.6
+    dynamic_end = min(dynamic_start + dynamic_sec, duration)
+
+    while t < dynamic_start:
+        end = min(t + main_shot_sec, dynamic_start)
+        slots.append((t, end))
+        t = end
+    while t < dynamic_end:
+        end = min(t + dynamic_shot_sec, dynamic_end)
+        slots.append((t, end))
+        t = end
+    while t < duration:
+        end = min(t + main_shot_sec, duration)
+        slots.append((t, end))
+        t = end
+    return slots
+
+
 def _sentence_slots(word_timings, min_sec=MIN_SENTENCE_SEC, max_sec=MAX_SENTENCE_SEC):
     """Turns word_timings into (start, end) image slots, one per sentence —
     a sentence boundary is any word ending in . ! ? (possibly followed by a
@@ -210,7 +251,7 @@ def create_video(audio_path, category, topic_id, topic_slug=None, blackscreen_sp
         except subprocess.CalledProcessError:
             return False
 
-    sentence_slots = _sentence_slots(word_timings) if word_timings else []
+    sentence_slots = _sentence_slots(word_timings) if word_timings else _paced_slots(duration)
 
     black_clip = clips_dir / "black.mp4"
     if blackscreen_spans and not _clip_is_valid(black_clip):
