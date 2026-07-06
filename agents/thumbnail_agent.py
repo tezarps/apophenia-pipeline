@@ -28,7 +28,7 @@ import urllib.request as _urllib_req
 
 from PIL import Image, ImageDraw, ImageFont
 
-from config import DEEPSEEK_API_KEY, DEEPSEEK_MODEL, OPENROUTER_API_KEY, NANO_BANANA_MODEL, BASE_DIR
+from config import DEEPSEEK_API_KEY, DEEPSEEK_MODEL, BASE_DIR
 
 THUMBNAILS_DIR = BASE_DIR / "thumbnails"
 THUMBNAIL_FONT_PATH = BASE_DIR / "assets" / "fonts" / "BebasNeue-Regular.ttf"
@@ -223,33 +223,34 @@ def _generate_hook_variants(topic, angle, category=None):
     return json.loads(text[start:end + 1])
 
 
-def _call_nano_banana(prompt):
-    import base64
+def _call_nano_banana(prompt, retries=3):
+    """Generate a thumbnail scene via pollinations.ai (Flux, free, no API
+    key). Kept the original name so all call-sites are unchanged. Switched
+    from OpenRouter Nano Banana 2026-07-06 after OpenRouter credits ran out
+    — same swap as agents/image_agent.py's content-image generation."""
+    import time
+    import urllib.parse
     import urllib.request
 
-    url = "https://openrouter.ai/api/v1/chat/completions"
-    body = json.dumps({
-        "model": f"google/{NANO_BANANA_MODEL}",
-        "messages": [{"role": "user", "content": prompt}],
-        "max_tokens": 8192,
-        "include_reasoning": False,
-    }).encode()
-    req = urllib.request.Request(
-        url,
-        data=body,
-        headers={
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-        },
+    encoded = urllib.parse.quote(prompt)
+    seed = abs(hash(prompt)) % 2_000_000
+    url = (
+        f"https://image.pollinations.ai/prompt/{encoded}"
+        f"?width=1280&height=720&nologo=true&model=flux&seed={seed}"
     )
-    with urllib.request.urlopen(req, timeout=120) as resp:
-        data = json.loads(resp.read())
-    images = data.get("choices", [{}])[0].get("message", {}).get("images", [])
-    if not images:
-        raise RuntimeError(f"No image in OpenRouter response: {data}")
-    # data URL format: "data:image/jpeg;base64,<b64>"
-    b64 = images[0]["image_url"]["url"].split(",", 1)[1]
-    return base64.b64decode(b64)
+    for attempt in range(retries):
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+            with urllib.request.urlopen(req, timeout=120) as resp:
+                img_bytes = resp.read()
+            if len(img_bytes) < 5000:
+                raise RuntimeError(f"Response suspiciously small ({len(img_bytes)} bytes)")
+            return img_bytes
+        except Exception as e:
+            if attempt < retries - 1:
+                time.sleep(6 * (attempt + 1))
+                continue
+            raise RuntimeError(f"Pollinations failed after {retries} attempts: {e}")
 
 
 def _fit_cover(img, size):
