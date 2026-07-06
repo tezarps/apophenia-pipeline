@@ -32,8 +32,12 @@ TOKEN_FILE = BASE_DIR / "youtube_token.pickle"
 # af_heart / bm_george / am_echo (user decision 2026-07-06).
 KOKORO_VOICE = "bm_george"
 KOKORO_SPEED = 0.95          # near-normal essay pace
-KOKORO_MODEL_PATH = "/Users/admin/kokoro-models/kokoro-v1.0.onnx"
-KOKORO_VOICES_PATH = "/Users/admin/kokoro-models/voices-v1.0.bin"
+# Relative path (not the local machine's hardcoded /Users/admin/kokoro-models/)
+# so this also resolves on the GitHub Actions runner, which downloads these
+# same two files fresh each run — see .github/workflows/pipeline.yml.
+KOKORO_MODELS_DIR = BASE_DIR / "kokoro-models"
+KOKORO_MODEL_PATH = str(KOKORO_MODELS_DIR / "kokoro-v1.0.onnx")
+KOKORO_VOICES_PATH = str(KOKORO_MODELS_DIR / "voices-v1.0.bin")
 
 # ElevenLabs still used by agents/music_agent.py's Sound Generation API — not
 # retired, only the narration voice moved to Kokoro.

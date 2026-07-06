@@ -27,3 +27,5 @@ venv/
 
 # Local schedule/state cache
 schedule.json
+.vercel
+kokoro-models/
