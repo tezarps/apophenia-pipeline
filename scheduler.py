@@ -11,8 +11,6 @@ import supabase_io as sb
 from agents.script_agent import generate_script
 from agents.tts_agent import generate_audio
 from agents.assembly_agent import create_video, _audio_duration, OUTRO_TAIL_SEC
-from agents.image_agent import generate_images, images_for_duration
-from agents.thumbnail_agent import generate_thumbnails_psyphoria
 from agents.caption_agent import annotate_script, build_ass, blackscreen_spans as compute_blackscreen_spans
 from agents.metadata_agent import generate_metadata, generate_engagement_question
 from agents.music_agent import generate_topic_music
@@ -20,7 +18,7 @@ from agents.upload_agent import upload_video, upload_short, post_comment
 from agents.shorts_agent import generate_short
 from status_manager import (
     agent_start, agent_done, agent_error,
-    run_start, run_done, run_failed,
+    run_start, run_done, run_failed, run_paused,
 )
 from config import OUTPUT_DIR, IMAGES_DIR, BASE_DIR
 from telegram_notify import notify
@@ -39,36 +37,48 @@ BURN_IN_SUBTITLES = False
 ONE_OFF_WIB_TARGET = False
 
 
+class ImagesNotReadyError(Exception):
+    """Raised when a topic's content images (manually generated via Google
+    Flow, see feedback_apophenia_thumbnail_styles.md workflow) aren't yet in
+    Supabase Storage. This is expected/routine, not a bug — the pipeline
+    pauses cleanly (mark_topic_awaiting_images, run_paused) instead of
+    failing, so the next scheduled run picks the SAME topic back up without
+    reprocessing script/audio/metadata that's already cached."""
+
+
 def _has_local_images(local_dir):
     return local_dir.exists() and any(p.suffix.lower() in (".jpg", ".jpeg", ".png") for p in local_dir.glob("*"))
 
 
-def _ensure_local_images(category, slug, topic=None, angle=None, audio_path=None):
-    """Pull images down from Supabase Storage if not already on disk; generate
-    via Nano Banana 2 (agents/image_agent.py) if Supabase has none either, then
-    cache up so future re-renders don't pay for generation again.
-
-    Image count scales with actual audio duration (see images_for_duration) —
-    a fixed count regardless of length meant long videos cycled through the
-    same handful of images many times over, flagged as repetitive/boring by
-    user feedback on the first published video. See project memory
-    project_apophenia.md."""
+def _ensure_local_images(category, slug):
+    """Pull manually-generated (Google Flow) images down from Supabase
+    Storage if not already on disk. No auto-generation fallback — user
+    generates every image manually now (2026-07-06 decision, after an
+    auto-generated pollinations.ai set got uploaded ahead of the manual one
+    the user was mid-way through making). Raises ImagesNotReadyError if
+    images aren't in Supabase yet, which run() catches to pause cleanly
+    instead of failing."""
     local_dir = IMAGES_DIR / category.lower() / slug.lower()
     if _has_local_images(local_dir):
         return
-    print(f"    No local images for {category}/{slug} — pulling from Supabase Storage...")
+    print(f"    No local images for {category}/{slug} — checking Supabase Storage...")
     try:
         sb.download_topic_images(category, slug, local_dir)
     except FileNotFoundError:
-        print(f"    None in Supabase either — generating via Nano Banana 2...")
-        count = images_for_duration(_audio_duration(audio_path)) if audio_path else None
-        generate_images(topic, angle, category, slug, **({"count": count} if count else {}))
-        sb.upload_topic_images(category, slug, local_dir)
+        raise ImagesNotReadyError(
+            f"No manually-generated images yet for {category}/{slug} — "
+            "waiting for them to be uploaded to Supabase Storage."
+        )
 
 
 def _ensure_local_thumbnails(topic_data, slug):
-    """Same cache-then-generate pattern as images, but for the A/B thumbnail
-    pair (agents/thumbnail_agent.py)."""
+    """Same Supabase-then-local pattern as images, but for the A/B thumbnail
+    pair — non-blocking. Thumbnails are also manual now (Psyphoria 2 style)
+    but a missing thumbnail doesn't need to pause the whole topic the way a
+    missing content image does: upload_video() already handles
+    thumbnail_path=None gracefully (uploads with YouTube's default
+    thumbnail), and the custom one can be applied afterward via
+    yt.thumbnails().set() once it's ready — see the Topic #9 pattern."""
     category = topic_data["category"]
     local_dir = THUMBNAILS_DIR / category.lower() / slug.lower()
     if _has_local_images(local_dir):
@@ -79,8 +89,8 @@ def _ensure_local_thumbnails(topic_data, slug):
             return local_dir / "thumb_A.jpg", local_dir / "thumb_B.jpg"
     except Exception:
         pass
-    print(f"    No thumbnails cached — generating via thumbnail_agent (psyphoria)...")
-    return generate_thumbnails_psyphoria(topic_data)
+    print(f"    No thumbnails ready yet — uploading without a custom thumbnail for now.")
+    return None, None
 
 
 def _cleanup(topic_id, failed_stage):
@@ -218,7 +228,7 @@ def run(audio_only=False):
         print("\n[4/6] Theo — assembling video...")
         agent_start("architect", "Running FFmpeg...")
         sb.run_update_agent(sb_run_id, "architect")
-        _ensure_local_images(topic["category"], topic_slug, topic=topic["topic"], angle=topic.get("angle", ""), audio_path=audio_path)
+        _ensure_local_images(topic["category"], topic_slug)
         generate_topic_music(topic_id, topic["category"], target_duration_sec=_audio_duration(audio_path) + OUTRO_TAIL_SEC)
         spans = compute_blackscreen_spans(word_timings)
         subs_path = None
@@ -251,7 +261,10 @@ def run(audio_only=False):
         print(f"    Title B: {metadata['title_b']}")
 
         thumb_a, thumb_b = _ensure_local_thumbnails(topic, topic_slug)
-        print(f"    Thumbnail A: {thumb_a.name} | Thumbnail B: {thumb_b.name}")
+        if thumb_a:
+            print(f"    Thumbnail A: {thumb_a.name} | Thumbnail B: {thumb_b.name}")
+        else:
+            print("    No custom thumbnail yet — uploading with YouTube's default, apply later once ready.")
 
         current_agent = "messenger"
         print("\n[6/6] Kai — uploading to YouTube...")
@@ -277,10 +290,14 @@ def run(audio_only=False):
 
         # Thumbnail A/B self-test (sequential, see agents/thumbnail_agent.py and
         # ab_test_check.py — separate daily cron rotates A -> B and picks a winner).
-        sb.upload_thumbnail(topic["category"], topic_slug, "A", thumb_a)
-        sb.upload_thumbnail(topic["category"], topic_slug, "B", thumb_b)
-        sb.create_thumbnail_test(topic_id, video_id)
-        print(f"⚡ A/B test registered — ab_test_check.py will rotate thumbnails A/B automatically")
+        # Skipped when thumbnails aren't ready yet — apply manually later
+        # (same pattern as Topic #9: set thumb_A via yt.thumbnails().set(),
+        # then upload both + create_thumbnail_test once both exist).
+        if thumb_a:
+            sb.upload_thumbnail(topic["category"], topic_slug, "A", thumb_a)
+            sb.upload_thumbnail(topic["category"], topic_slug, "B", thumb_b)
+            sb.create_thumbnail_test(topic_id, video_id)
+            print(f"⚡ A/B test registered — ab_test_check.py will rotate thumbnails A/B automatically")
 
         # YouTube Short companion — cut from the just-finished main video,
         # scheduled to drop at the SAME publishAt so Shorts-feed traffic has
@@ -308,6 +325,19 @@ def run(audio_only=False):
             print(f"    Warning: Short generation/upload failed (main video still published fine): {e}")
 
         print()
+
+    except ImagesNotReadyError as e:
+        # Clean, expected pause — not a failure. Script/audio/metadata already
+        # generated this run stay cached in Supabase, so tomorrow's scheduled
+        # run resumes from architect onward instead of reprocessing anything.
+        # Exits 0 (not 1) so GitHub Actions shows this as a normal completed
+        # run, not a red failure — see project memory
+        # feedback_pipeline_no_autoloop.md.
+        print(f"\n⏸ Paused — {e}")
+        sb.mark_topic_awaiting_images(topic_id, str(e))
+        run_paused(topic_id, angle, e, started_at)
+        sb.run_paused(sb_run_id, e)
+        notify(f"⏸ Apophenia — paused, waiting on manual images\nTopic #{topic_id}: {topic['topic']}\nUpload images to Supabase, next scheduled run will pick it back up.")
 
     except Exception as e:
         agent_error(current_agent, e)

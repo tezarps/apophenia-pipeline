@@ -46,9 +46,14 @@ def _require_client() -> Client:
 
 def get_next_topic():
     db = _require_client()
-    # Retry failed topics before advancing to new pending ones — order by id
-    # ensures the lowest-numbered failed/pending topic is always attempted first.
-    res = db.table("topics").select("*").in_("status", ["pending", "failed"]).order("id").limit(1).execute()
+    # Retry failed/awaiting-images topics before advancing to new pending
+    # ones — order by id ensures the lowest-numbered one is always attempted
+    # first (see project memory feedback_pipeline_no_autoloop.md — one topic
+    # at a time, never skip ahead to a later topic while an earlier one is
+    # still unfinished). "awaiting_images" is a topic paused because its
+    # manually-generated (Google Flow) images weren't in Supabase Storage
+    # yet when the pipeline last tried it — retried daily, not abandoned.
+    res = db.table("topics").select("*").in_("status", ["pending", "failed", "awaiting_images"]).order("id").limit(1).execute()
     return res.data[0] if res.data else None
 
 
@@ -60,6 +65,18 @@ def mark_topic_done(topic_id, video_id=""):
 def mark_topic_failed(topic_id, reason=""):
     db = _require_client()
     db.table("topics").update({"status": "failed", "notes": str(reason)[:200]}).eq("id", topic_id).execute()
+
+
+def mark_topic_awaiting_images(topic_id, reason=""):
+    """Distinct from mark_topic_failed — this isn't an error, it's a topic
+    paused because its content images (or thumbnails) are manually generated
+    via Google Flow and weren't uploaded to Supabase Storage yet when this
+    run reached that stage. Script/audio/metadata already generated stay
+    cached, so the next run resumes from architect onward instead of
+    reprocessing everything — see project memory
+    feedback_pipeline_no_autoloop.md."""
+    db = _require_client()
+    db.table("topics").update({"status": "awaiting_images", "notes": str(reason)[:200]}).eq("id", topic_id).execute()
 
 
 def get_topic(topic_id):
@@ -122,6 +139,18 @@ def run_done(run_id):
         return
     db = _require_client()
     db.table("pipeline_runs").update({"status": "done", "finished_at": "now()"}).eq("id", run_id).execute()
+
+
+def run_paused(run_id, reason=""):
+    """Distinct from run_failed — a clean, expected stop (waiting on manually
+    generated images), not an error. Dashboard/notifications should treat
+    this differently from a real failure."""
+    if run_id is None:
+        return
+    db = _require_client()
+    db.table("pipeline_runs").update({
+        "status": "paused", "error": str(reason)[:500], "finished_at": "now()",
+    }).eq("id", run_id).execute()
 
 
 def run_failed(run_id, error):

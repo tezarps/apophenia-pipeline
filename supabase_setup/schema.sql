@@ -8,7 +8,7 @@ create table if not exists topics (
     category text not null,
     topic text not null,
     angle text not null,
-    status text not null default 'pending' check (status in ('pending', 'published', 'failed')),
+    status text not null default 'pending' check (status in ('pending', 'published', 'failed', 'awaiting_images')),
     video_id text default '',
     notes text default ''
 );
@@ -20,7 +20,7 @@ create table if not exists pipeline_runs (
     id bigserial primary key,
     topic_id bigint references topics(id),
     angle text,
-    status text not null default 'running' check (status in ('running', 'done', 'failed')),
+    status text not null default 'running' check (status in ('running', 'done', 'failed', 'paused')),
     current_agent text,
     error text,
     started_at timestamptz not null default now(),

@@ -116,3 +116,24 @@ def run_failed(topic_id, topic_angle, reason, started_at):
     })
     data["runs"] = data["runs"][:50]
     _write(data)
+
+
+def run_paused(topic_id, topic_angle, reason, started_at):
+    """Distinct from run_failed — waiting on manually-generated (Google Flow)
+    images/thumbnails, not an error. Script/audio/metadata already cached."""
+    data = _read()
+    data["current_run"] = None
+    started = datetime.fromisoformat(started_at)
+    duration = int((datetime.now() - started).total_seconds() / 60)
+    data.setdefault("runs", []).insert(0, {
+        "id": topic_id,
+        "topic": topic_angle,
+        "status": "awaiting_images",
+        "video_id": "",
+        "started_at": started_at,
+        "finished_at": datetime.now().isoformat(),
+        "duration_min": duration,
+        "error": str(reason)[:200],
+    })
+    data["runs"] = data["runs"][:50]
+    _write(data)

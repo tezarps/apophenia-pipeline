@@ -2,9 +2,13 @@ name: Apophenia Pipeline
 
 on:
   schedule:
-    # Tue/Fri 00:00 UTC = 07:00 WIB — matches PUBLISH_WEEKDAYS in agents/upload_agent.py
-    # (starting point, not locked — adjust once there's watch-time data)
-    - cron: "0 0 * * 2,5"
+    # Daily 00:00 UTC = 07:00 WIB, switched from Tue/Fri 2026-07-06 — pipeline
+    # runs fully in the cloud now, matches PUBLISH_WEEKDAYS (every day) in
+    # agents/upload_agent.py. If a topic's manual images aren't in Supabase
+    # Storage yet, scheduler.py pauses that topic cleanly (status
+    # "awaiting_images") instead of failing — this same daily trigger just
+    # picks it back up once they're ready, no separate re-trigger needed.
+    - cron: "0 0 * * *"
   workflow_dispatch: {}  # manual "Run workflow" button in the Actions tab, for testing
 
 jobs:

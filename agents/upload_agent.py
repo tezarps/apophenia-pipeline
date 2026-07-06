@@ -39,11 +39,10 @@ SCOPES = [
 # own YouTube Studio "when your viewers are on YouTube" heatmap data.
 PUBLISH_HOUR = 16  # 4 PM AU Eastern
 
-# 2x/week cadence, switched 2026-06-22 from Sun/Wed to Wed/Thu — 2026 studies
-# consistently flag Sunday as one of the weakest YouTube days, and mid-week
-# (esp. Wednesday) as strongest for educational/self-improvement content.
-# Python weekday(): Mon=0..Sun=6.
-PUBLISH_WEEKDAYS = {2, 3}  # Wednesday, Thursday
+# Switched to daily cadence 2026-07-06 — pipeline now runs fully in the cloud
+# (GitHub Actions) daily rather than the old 2x/week Wed/Thu schedule, same
+# publish hour every day. Python weekday(): Mon=0..Sun=6.
+PUBLISH_WEEKDAYS = {0, 1, 2, 3, 4, 5, 6}  # every day
 
 
 def _latest_scheduled_utc(yt=None):
