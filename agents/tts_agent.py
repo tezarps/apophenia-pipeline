@@ -6,6 +6,7 @@ import shutil
 
 import numpy as np
 import soundfile as sf
+from num2words import num2words
 
 from config import (
     OUTPUT_DIR, FFMPEG_BIN, FFPROBE_BIN,
@@ -95,10 +96,56 @@ def _is_consistent(audio_path):
     return spread <= MAX_VOLUME_RANGE_DB, spread
 
 
+_CURRENCY = {"$": "dollar", "€": "euro", "£": "pound"}
+
+
+def _normalize_numbers(text):
+    """Kokoro's phonemizer (misaki/espeak-ng) reads digit sequences one digit
+    at a time far more often than ElevenLabs' TTS did — "$150" or "2019"
+    coming out as "one five zero" or "two zero one nine" instead of natural
+    speech. Spelling numbers out as words before they reach Kokoro sidesteps
+    the phonemizer entirely for this case. Order matters: currency and
+    percent (digits + a trailing/leading symbol) must be matched before the
+    plain-integer pass, or the symbol-stripped digits would get consumed by
+    the plain pattern first."""
+
+    def _currency(m):
+        symbol, amount = m.group(1), m.group(2)
+        unit = _CURRENCY[symbol]
+        if "." in amount:
+            dollars, cents = amount.split(".")
+            words = num2words(int(dollars)) + f" {unit}" + ("s" if dollars != "1" else "")
+            if int(cents) > 0:
+                words += f" and {num2words(int(cents))} cents"
+            return words
+        n = int(amount)
+        return num2words(n) + f" {unit}" + ("s" if n != 1 else "")
+
+    def _percent(m):
+        amount = m.group(1)
+        n = float(amount) if "." in amount else int(amount)
+        return num2words(n) + " percent"
+
+    def _plain_number(m):
+        raw = m.group(0)
+        n = int(raw)
+        # 4-digit numbers in a year-like range read far more naturally as a
+        # year ("twenty nineteen") than a cardinal ("two thousand nineteen").
+        if len(raw) == 4 and 1000 <= n <= 2999:
+            return num2words(n, to="year")
+        return num2words(n)
+
+    text = re.sub(r"([$€£])(\d+(?:\.\d+)?)", _currency, text)
+    text = re.sub(r"(\d+(?:\.\d+)?)\s*%", _percent, text)
+    text = re.sub(r"\d+", _plain_number, text)
+    return text
+
+
 def _synthesize_chunk(text, out_path, max_quality_retries=QUALITY_RETRIES):
     """Generate one chunk via Kokoro (local, no network). Volume-drift
     re-roll kept as a safety net even though Kokoro is near-deterministic."""
     kokoro = _get_kokoro()
+    text = _normalize_numbers(text)
 
     for attempt in range(max_quality_retries + 1):
         samples, sample_rate = kokoro.create(
