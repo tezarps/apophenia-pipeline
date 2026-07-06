@@ -1,18 +1,17 @@
-"""Auto-generates the scene images a topic needs, via Nano Banana 2
-(Gemini 3.1 Flash Image). Reuses the same GEMINI_IMAGE_API_KEY / GCP project
-as narava-pipeline on purpose — see project memory project_apophenia.md.
-Called from scheduler.py only when a topic has no images locally and none in
-Supabase Storage yet.
+"""Auto-generates the scene images a topic needs via pollinations.ai (Flux model,
+free, no API key). Switched from Nano Banana 2 (OpenRouter/Gemini Flash Image)
+2026-07-06 after OpenRouter credits ran out. Called from scheduler.py only when
+a topic has no images locally and none in Supabase Storage yet.
 """
-import base64
 import io
 import json
 import time
+import urllib.parse
 import urllib.request
 import urllib.error
 
 from PIL import Image
-from config import OPENROUTER_API_KEY, NANO_BANANA_MODEL, IMAGES_DIR
+from config import IMAGES_DIR
 import agents.llm as _llm
 
 IMAGE_COUNT = 12  # fallback only — generate_images() is normally called with an explicit
@@ -101,31 +100,34 @@ def _generate_scene_prompts(topic, angle, n=IMAGE_COUNT):
 
 
 def _call_nano_banana(prompt, retries=3):
-    url = "https://openrouter.ai/api/v1/chat/completions"
-    body = json.dumps({
-        "model": f"google/{NANO_BANANA_MODEL}",
-        "messages": [{"role": "user", "content": prompt + _STYLE_SUFFIX}],
-        "max_tokens": 8192,
-        "include_reasoning": False,
-    }).encode()
+    """Generate an image via pollinations.ai (Flux, free, no API key).
+    Kept the original name so all call-sites are unchanged."""
+    styled = (
+        prompt
+        + ", vintage comic painterly illustration, warm amber-gold light, deep indigo shadows, "
+        "dreamlike full-bleed wide cinematic shot, no borders, no white margins, no text"
+    )
+    encoded = urllib.parse.quote(styled)
+    # Seed derived from prompt so the same scene always re-generates the same
+    # image on retries/cache-misses — deterministic across runs.
+    seed = abs(hash(prompt)) % 2_000_000
+    url = (
+        f"https://image.pollinations.ai/prompt/{encoded}"
+        f"?width=1920&height=1080&nologo=true&model=flux&seed={seed}"
+    )
     for attempt in range(retries):
         try:
-            req = urllib.request.Request(url, data=body, headers={
-                "Content-Type": "application/json",
-                "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-            })
+            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
             with urllib.request.urlopen(req, timeout=120) as resp:
-                data = json.loads(resp.read())
-            images = data.get("choices", [{}])[0].get("message", {}).get("images", [])
-            if not images:
-                raise RuntimeError(f"No image in OpenRouter response: {data}")
-            b64 = images[0]["image_url"]["url"].split(",", 1)[1]
-            return base64.b64decode(b64)
+                img_bytes = resp.read()
+            if len(img_bytes) < 5000:
+                raise RuntimeError(f"Response suspiciously small ({len(img_bytes)} bytes)")
+            return img_bytes
         except Exception as e:
             if attempt < retries - 1:
-                time.sleep(5 * (attempt + 1))
+                time.sleep(6 * (attempt + 1))
                 continue
-            raise RuntimeError(f"Nano Banana failed after {retries} attempts: {e}")
+            raise RuntimeError(f"Pollinations failed after {retries} attempts: {e}")
 
 
 # Deterministic backstop for the _STYLE_SUFFIX's "no white border" instruction
@@ -186,4 +188,6 @@ def generate_images(topic, angle, category, slug, count=IMAGE_COUNT):
         out_path.write_bytes(img_bytes)
         paths.append(out_path)
         print(f"    image {i}/{len(scenes)}: {scene_prompt[:70]}...")
+        if i < len(scenes):
+            time.sleep(4)  # pollinations rate-limit buffer between requests
     return paths
