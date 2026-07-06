@@ -28,9 +28,14 @@ TOPICS_FILE = BASE_DIR / "topics" / "archetype_topics.csv"
 TOKEN_FILE = BASE_DIR / "youtube_token.pickle"
 
 # Switched narration voice from ElevenLabs to Kokoro (local, free, no API key)
-# 2026-07-06 — ElevenLabs credits ran out. bm_george selected after auditioning
-# af_heart / bm_george / am_echo (user decision 2026-07-06).
-KOKORO_VOICE = "bm_george"
+# 2026-07-06 — ElevenLabs credits ran out. bm_george was set here briefly but
+# that's Narava's voice (separate project/channel) — mixed up during the same
+# audition session. Apophenia's voice is bm_fable (closest match to the
+# retired ElevenLabs voice "Hayes M" — calm, warm, professional British male,
+# middle-aged), confirmed after auditioning bm_george / bm_fable / bm_daniel /
+# bm_lewis. See project memory feedback_kokoro_voice_mapping.md — do not
+# reuse bm_george here, that's reserved for Narava.
+KOKORO_VOICE = "bm_fable"
 KOKORO_SPEED = 0.95          # near-normal essay pace
 # Relative path (not the local machine's hardcoded /Users/admin/kokoro-models/)
 # so this also resolves on the GitHub Actions runner, which downloads these

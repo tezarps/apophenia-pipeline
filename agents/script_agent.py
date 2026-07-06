@@ -209,8 +209,16 @@ trailing one (with "..." where a real pause would land) for something more uncer
 a question mark where the voice would genuinely lift. This script gets read aloud by TTS, so the \
 punctuation IS the performance direction — use it deliberately, not decoratively.
 
+LENGTH — do not shrink the script overall. Your output word count must stay within 10% of the \
+draft's word count (if the draft is short, that's a separate problem — this pass fixes VOICE, not \
+length). "Tighten pacing" below means cutting a sentence that purely restates a point already made \
+with nothing new in it — it does NOT mean trimming for brevity in general, and it is not license to \
+compress the script shorter than the draft. If you rewrite a sentence to be more direct, its \
+replacement can be shorter OR longer than the original — match whatever length the specific, real-human \
+version of that sentence actually needs, not an artificial minimum.
+
 Other rules:
-1. Tighten pacing — cut any sentence that restates something already said.
+1. Tighten pacing — cut ONLY a sentence that purely restates something already said, adding nothing new.
 2. Make sure the psychological term introduced in babak 3 has one clear, plain-language sentence \
 defining it the first time it's used — a viewer with zero psych background should follow it.
 3. Make sure the ending explicitly echoes the opening hook's exact image or A-vs-B contrast — this \
@@ -274,8 +282,41 @@ Sentence:
 Output ONLY the rewritten sentence, nothing else."""
 
 
+_EXPAND = """This YouTube psychology-essay script came in shorter than needed ({word_count} words; \
+target is 2,200-3,000). Expand it to hit that target WITHOUT changing its structure, hook, ending, or \
+any claim already made — you're deepening what's already there, not padding or restating.
+
+Where to add length: babak 2 (the wound) and babak 5 (the strategy + close) should usually be the \
+longest sections — add more lived, concrete detail to the formative scenario in babak 2 (another \
+specific beat in the BUT/THEREFORE chain), and/or a second concrete practical step in babak 5 if only \
+one is currently there. Only touch babak 3 (the science) if the mechanism explanation feels rushed — \
+add a second plain-language angle on the same mechanism, not a second unrelated mechanism.
+
+Do NOT: add filler sentences that restate a point already made, add generic "here's why this matters" \
+padding, or change the tone, POV, or ending. Every added sentence must carry new concrete content.
+
+Script:
+{script}
+
+Output the full expanded script, nothing else."""
+
+
 def _call(model, prompt, max_tokens=8000):
     return _llm.call(prompt, max_tokens=max_tokens)
+
+
+_MIN_TARGET_WORDS = 1800  # floor before an automatic expansion pass kicks in — target is 2,200-3,000;
+                          # anything under this reliably plays under 8 minutes at TTS narration pace
+
+
+def _ensure_length(script, max_expand_attempts=2):
+    for attempt in range(max_expand_attempts):
+        word_count = len(script.split())
+        if word_count >= _MIN_TARGET_WORDS:
+            return script
+        print(f"    Script short ({word_count} words) — expanding (attempt {attempt + 1}/{max_expand_attempts})...")
+        script = _call(None, _EXPAND.format(word_count=word_count, script=script), max_tokens=8000)
+    return script
 
 
 def generate_script(topic_data):
@@ -290,12 +331,14 @@ def generate_script(topic_data):
     draft = _call(None, _DRAFT.format(
         topic=topic, angle=angle, category=category, hook_instruction=hook_instruction,
     ))
+    draft = _ensure_length(draft)
 
     print("    Polishing...")
     polished = _call(None, _POLISH.format(draft=draft))
 
     print("    Auditing for leftover AI-speak...")
     final = _call(None, _AUDIT.format(script=polished), max_tokens=8000)
+    final = _ensure_length(final)
 
     for round_num in range(2):
         bad_sentence = _find_banned_sentence(final)
