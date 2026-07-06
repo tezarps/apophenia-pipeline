@@ -4,15 +4,20 @@ import socket
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
-# Force IPv4 — upload.googleapis.com resolves to IPv6 first but IPv6 is broken
-# on some networks (including the primary dev machine). curl falls back to IPv4
-# automatically; Python/httplib2 does not. Confirmed root cause 2026-06-24.
+# Prefer IPv4 but keep IPv6 as a fallback — some networks (including the
+# primary dev machine on 2026-06-24) have broken IPv6 routing, so Google's
+# APIs resolving IPv6-first caused hangs/failures there. But that flipped on
+# this same machine 2026-07-06 (IPv6 worked, IPv4 was unreachable) — a hard
+# IPv4-only filter broke connectivity entirely in that direction since it
+# discarded IPv6 outright, leaving no fallback for socket.create_connection's
+# normal try-each-address-in-order behavior to use. Reordering (not filtering)
+# keeps that fallback intact regardless of which family is actually broken on
+# a given network.
 _orig_getaddrinfo = socket.getaddrinfo
-def _ipv4_only(host, port, *args, **kwargs):
+def _prefer_ipv4(host, port, *args, **kwargs):
     results = _orig_getaddrinfo(host, port, *args, **kwargs)
-    ipv4 = [r for r in results if r[0] == socket.AF_INET]
-    return ipv4 if ipv4 else results
-socket.getaddrinfo = _ipv4_only
+    return sorted(results, key=lambda r: 0 if r[0] == socket.AF_INET else 1)
+socket.getaddrinfo = _prefer_ipv4
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
