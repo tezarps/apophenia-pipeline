@@ -15,6 +15,12 @@ jobs:
   run-pipeline:
     runs-on: ubuntu-latest
     timeout-minutes: 180
+    permissions:
+      contents: write  # status_manager.py commits+pushes pipeline_status.json after
+                        # every stage for the live dashboard (content-empire-hub) —
+                        # the default GITHUB_TOKEN is read-only, which silently broke
+                        # every push attempt until this was added (same bug found and
+                        # fixed in narava-pipeline 2026-07-09).
     steps:
       - uses: actions/checkout@v4
 
