@@ -4,58 +4,128 @@
       "name": "Maya",
       "icon": "🔮",
       "role": "Picks the next archetype",
-      "status": "done",
-      "detail": "Topic #4: The Person Who Feels Invisible in Groups",
-      "updated_at": "2026-06-22T23:19:46.422494",
-      "payload": {
-        "id": 4,
-        "category": "invisibility",
-        "topic": "The Person Who Feels Invisible in Groups",
-        "angle": "Why You Go Quiet the Moment a Room Fills Up"
-      }
+      "status": "idle",
+      "detail": "",
+      "updated_at": "2026-07-10T23:33:42.228436"
     },
     "scribe": {
       "name": "Jordan",
       "icon": "📜",
       "role": "Writes the 5-babak script",
-      "status": "done",
-      "detail": "1,317 words (cached)",
-      "updated_at": "2026-06-22T23:22:16.929487"
+      "status": "idle",
+      "detail": "",
+      "updated_at": "2026-07-10T23:33:42.228447"
     },
     "voice": {
       "name": "Aria",
       "icon": "🎙️",
       "role": "Narrates the essay",
-      "status": "done",
-      "detail": "Audio ready: 4.mp3",
-      "updated_at": "2026-06-22T23:23:22.779681"
+      "status": "idle",
+      "detail": "",
+      "updated_at": "2026-07-10T23:33:42.228452"
     },
     "architect": {
       "name": "Theo",
       "icon": "🏛️",
       "role": "Assembles the final video",
-      "status": "done",
-      "detail": "Video ready: 162MB (6 reflective beat(s))",
-      "updated_at": "2026-06-22T23:36:55.510015"
+      "status": "idle",
+      "detail": "",
+      "updated_at": "2026-07-10T23:33:42.228456"
     },
     "herald": {
       "name": "Priya",
       "icon": "📯",
       "role": "Crafts title, metadata & thumbnails",
-      "status": "done",
-      "detail": "The Psychology of People Who Disappear the Moment a Room Fil",
-      "updated_at": "2026-06-22T23:37:01.252893"
+      "status": "idle",
+      "detail": "",
+      "updated_at": "2026-07-10T23:33:42.228461"
     },
     "messenger": {
       "name": "Kai",
       "icon": "⚡",
       "role": "Uploads to YouTube",
-      "status": "done",
-      "detail": "youtube.com/watch?v=hrvfHZ-t0Tw",
-      "updated_at": "2026-06-22T23:38:18.875277"
+      "status": "idle",
+      "detail": "",
+      "updated_at": "2026-07-10T23:33:42.228465"
     }
   },
   "runs": [
+    {
+      "id": 10,
+      "topic": "Why You Become Whoever the Room Needs You to Be",
+      "status": "published",
+      "video_id": "RtaldGletpA",
+      "started_at": "2026-07-07T01:51:15.099744",
+      "finished_at": "2026-07-07T02:06:16.048831",
+      "duration_min": 15
+    },
+    {
+      "id": 10,
+      "topic": "Why You Become Whoever the Room Needs You to Be",
+      "status": "awaiting_images",
+      "video_id": "",
+      "started_at": "2026-07-07T00:34:37.250188",
+      "finished_at": "2026-07-07T00:59:34.555507",
+      "duration_min": 24,
+      "error": "No manually-generated images yet for self-abandonment/the_person_who_disappears_in_relationships — waiting for them to be uploaded to Supabase Storage."
+    },
+    {
+      "id": 9,
+      "topic": "Why You Can't Relax Until You Know Everyone's Mood",
+      "status": "published",
+      "video_id": "lJElfJfC7UE",
+      "started_at": "2026-07-06T13:54:57.864179",
+      "finished_at": "2026-07-06T14:02:16.906971",
+      "duration_min": 7
+    },
+    {
+      "id": 9,
+      "topic": "Why You Can't Relax Until You Know Everyone's Mood",
+      "status": "failed",
+      "video_id": "",
+      "started_at": "2026-07-06T13:27:30.703833",
+      "finished_at": "2026-07-06T13:53:18.598508",
+      "duration_min": 25,
+      "error": "HTTP Error 402: Payment Required"
+    },
+    {
+      "id": 9,
+      "topic": "Why You Can't Relax Until You Know Everyone's Mood",
+      "status": "failed",
+      "video_id": "",
+      "started_at": "2026-07-06T13:22:51.763036",
+      "finished_at": "2026-07-06T13:24:07.730729",
+      "duration_min": 1,
+      "error": "Nano Banana failed after 3 attempts: HTTP Error 402: Payment Required"
+    },
+    {
+      "id": 7,
+      "topic": "Why Every Yes Costs You a Piece of Yourself",
+      "status": "failed",
+      "video_id": "",
+      "started_at": "2026-06-24T19:48:57.537943",
+      "finished_at": "2026-06-24T21:36:52.332049",
+      "duration_min": 107,
+      "error": "[Errno 32] Broken pipe"
+    },
+    {
+      "id": 7,
+      "topic": "Why Every Yes Costs You a Piece of Yourself",
+      "status": "published",
+      "video_id": "a8W4AGmymSY",
+      "started_at": "2026-06-24T19:14:34.666750",
+      "finished_at": "2026-06-24T19:41:50.016689",
+      "duration_min": 27
+    },
+    {
+      "id": 6,
+      "topic": "Why Being Fine Is Your Most Exhausting Performance",
+      "status": "published",
+      "video_id": "DR1AiuNZcAM",
+      "started_at": "2026-06-23T23:45:04.456742",
+      "finished_at": "2026-06-24T00:22:36.496993",
+      "duration_min": 37
+    },
     {
       "id": 4,
       "topic": "Why You Go Quiet the Moment a Room Fills Up",
@@ -143,5 +213,10 @@
       "error": "{'statusCode': 404, 'error': Bucket not found, 'message': Bucket not found}"
     }
   ],
-  "current_run": null
+  "current_run": {
+    "topic_id": 11,
+    "topic": "Why You Take Care of Everyone Except Yourself",
+    "started_at": "2026-07-10T23:33:42.228386",
+    "status": "running"
+  }
 }
