@@ -266,6 +266,28 @@ def get_metadata(topic_id):
         return None
 
 
+def upload_image_prompts(topic_id, agent_instruction: str, scenes: list):
+    """Saves the manual-generation package (Google Flow agent instruction +
+    numbered scene list) for a topic paused on missing images, so the
+    dashboard can display a ready-to-copy prompt set instead of the user
+    waiting on a fresh chat reply each time — see project memory
+    feedback_pipeline_no_autoloop.md (manual image generation workflow)."""
+    db = _require_client()
+    payload = {"agent_instruction": agent_instruction, "scenes": scenes}
+    data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+    db.storage.from_(SCRIPTS_BUCKET).upload(f"{topic_id}_image_prompts.json", data, {"upsert": "true"})
+
+
+def get_image_prompts(topic_id):
+    """Return {"agent_instruction": str, "scenes": [str, ...]}, or None if not found."""
+    try:
+        db = _require_client()
+        data = db.storage.from_(SCRIPTS_BUCKET).download(f"{topic_id}_image_prompts.json")
+        return json.loads(data.decode("utf-8"))
+    except Exception:
+        return None
+
+
 def list_recent_runs(limit=20):
     """Return recent pipeline_runs joined with topic names, newest first."""
     db = _require_client()

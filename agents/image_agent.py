@@ -99,6 +99,36 @@ def _generate_scene_prompts(topic, angle, n=IMAGE_COUNT):
     return scenes[:n]
 
 
+# Human-facing instruction pasted once into Google Flow's "agent instruction"
+# field before generating a topic's scene images manually — same style rules
+# as _PROMPTS_SYSTEM above, phrased for a human copy-paste workflow instead
+# of an LLM system prompt. See project memory feedback_pipeline_no_autoloop.md.
+MANUAL_AGENT_INSTRUCTION = (
+    "You write visual scene illustrations for a psychology-essay YouTube channel (Apophenia). "
+    "Style: vintage-comic painterly illustration, visible halftone-dot grain texture, gouache and "
+    "ink rendering, bold colorful palette — warm amber and golden-orange light against deep "
+    "indigo-navy shadow, vivid and saturated, slightly surreal dreamlike quality. Small human "
+    "figure within symbolic surroundings, modern/timeless clothing, cinematic wide shot. "
+    "Metaphorical and symbolic, never literal.\n\n"
+    "STRICT RULES: No text, no watermark, no real/identifiable person. Full-bleed edge-to-edge, "
+    "ZERO white border, ZERO margin, ZERO comic-panel frame. Wide cinematic shot, not a close-up "
+    "on a face.\n\n"
+    "Generate one image per scene description, in English."
+)
+
+
+def generate_manual_prompt_package(topic, angle, duration_sec):
+    """Generates the full copy-paste package for manual (Google Flow) scene
+    generation: the fixed agent instruction + a numbered scene list sized to
+    the topic's actual audio duration via images_for_duration(). Does not
+    write any files — caller (scheduler.py) uploads the result to Supabase
+    so the dashboard can display it. Costs one DeepSeek call (cents, not a
+    concern) — see agents/llm.py."""
+    n = images_for_duration(duration_sec)
+    scenes = _generate_scene_prompts(topic, angle, n)
+    return MANUAL_AGENT_INSTRUCTION, scenes
+
+
 def _call_nano_banana(prompt, retries=3):
     """Generate an image via pollinations.ai (Flux, free, no API key).
     Kept the original name so all call-sites are unchanged."""

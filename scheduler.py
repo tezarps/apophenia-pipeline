@@ -11,6 +11,7 @@ import supabase_io as sb
 from agents.script_agent import generate_script
 from agents.tts_agent import generate_audio
 from agents.assembly_agent import create_video, _audio_duration, OUTRO_TAIL_SEC
+from agents.image_agent import generate_manual_prompt_package
 from agents.caption_agent import annotate_script, build_ass, blackscreen_spans as compute_blackscreen_spans
 from agents.metadata_agent import generate_metadata, generate_engagement_question
 from agents.music_agent import generate_topic_music
@@ -337,7 +338,22 @@ def run(audio_only=False):
         sb.mark_topic_awaiting_images(topic_id, str(e))
         run_paused(topic_id, angle, e, started_at)
         sb.run_paused(sb_run_id, e)
-        notify(f"⏸ Apophenia — paused, waiting on manual images\nTopic #{topic_id}: {topic['topic']}\nUpload images to Supabase, next scheduled run will pick it back up.")
+
+        # Generate the manual-image prompt package once per topic (skip if
+        # already uploaded from a prior paused day) so the dashboard has a
+        # ready-to-copy prompt set the moment it pauses — user no longer
+        # needs to ask for it in chat each time. One cheap DeepSeek call.
+        try:
+            if sb.get_image_prompts(topic_id) is None:
+                local_audio = OUTPUT_DIR / "audio" / f"{topic_id}.mp3"
+                duration_sec = _audio_duration(local_audio)
+                instruction, scenes = generate_manual_prompt_package(topic["topic"], angle, duration_sec)
+                sb.upload_image_prompts(topic_id, instruction, scenes)
+                print(f"    Generated {len(scenes)} manual scene prompts → dashboard")
+        except Exception as prompt_err:
+            print(f"    Warning: prompt package generation skipped: {prompt_err}")
+
+        notify(f"⏸ Apophenia — paused, waiting on manual images\nTopic #{topic_id}: {topic['topic']}\nCheck the dashboard for the scene prompts, then upload images to Supabase — next scheduled run will pick it back up.")
 
     except Exception as e:
         agent_error(current_agent, e)

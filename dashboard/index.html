@@ -189,6 +189,8 @@
   #agent-modal-close { background: var(--card-hi); color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 4px 10px; font-size: 13px; cursor: pointer; }
   #agent-modal-body { overflow-y: auto; flex: 1; }
   .script-pre { white-space: pre-wrap; word-break: break-word; font-size: 13px; line-height: 1.75; color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif; }
+  .copy-btn { background: var(--card-hi); color: var(--text); border: 1px solid var(--border); border-radius: 6px; padding: 3px 10px; font-size: 11px; cursor: pointer; }
+  .copy-btn:hover { background: var(--border); }
   .info-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
   .info-row:last-child { border-bottom: none; }
   .info-label { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
@@ -469,6 +471,16 @@
 
   function esc(s) { return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
 
+  function copyPromptBlock(btn) {
+    const pre = btn.closest("div").nextElementSibling;
+    const text = pre.textContent;
+    navigator.clipboard.writeText(text).then(() => {
+      const original = btn.textContent;
+      btn.textContent = "Copied!";
+      setTimeout(() => { btn.textContent = original; }, 1500);
+    });
+  }
+
   async function openAgentModal(key, topicId) {
     const a = AGENTS[key] || { name: key };
     document.getElementById("agent-modal-title").textContent = a.name + (topicId ? " — Topic #" + topicId : "");
@@ -509,10 +521,37 @@
       return;
     }
 
+    if (key === "architect") {
+      if (!topicId) { body.innerHTML = '<div style="color:var(--muted);font-size:13px;">Topic ID tidak tersedia.</div>'; return; }
+      try {
+        const { data, error } = await db.storage.from("apophenia-scripts").download(`${topicId}_image_prompts.json`);
+        if (error || !data) throw error || new Error("Not found");
+        const p = JSON.parse(await data.text());
+        const scenesBlock = "Generate " + p.scenes.length + " different images, one at a time, based on the following scene list. "
+          + "Each image must follow the style defined in your instructions exactly. Do not skip any scene, do not repeat a setting. Here is the list:\n\n"
+          + p.scenes.map((s, i) => `Scene ${i+1}: ${s}`).join("\n\n");
+        body.innerHTML = `
+          <div style="font-size:12px;color:var(--muted);margin-bottom:10px;">Copy ke Google Flow — Agent Instruction dulu, lalu Scene List.</div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;">Agent Instruction</div>
+            <button class="copy-btn" onclick="copyPromptBlock(this)">Copy</button>
+          </div>
+          <pre class="script-pre" style="font-size:12px;max-height:140px;">${esc(p.agent_instruction)}</pre>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin:14px 0 6px;">
+            <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;">Scene List (${p.scenes.length})</div>
+            <button class="copy-btn" onclick="copyPromptBlock(this)">Copy</button>
+          </div>
+          <pre class="script-pre" style="font-size:12px;">${esc(scenesBlock)}</pre>`;
+      } catch(e) {
+        body.innerHTML = `<div style="color:var(--muted);font-size:13px;">Prompt belum tersedia — pipeline belum sampai (atau belum pause) di step Architect.</div>`;
+      }
+      return;
+    }
+
     // Static info for other agents
     const staticInfo = {
       oracle:    [["Tugasnya", "Pilih topik berikutnya dari antrian Supabase"], ["Output", "topic_id + angle"]],
-      voice:     [["Model TTS", "gemini-3.1-flash-tts-preview"], ["Voice", "Achird"], ["Chunk", "1800 chars"], ["Loudnorm", "-16 LUFS, TP -1.5"]],
+      voice:     [["Model TTS", "Kokoro (bm_george, lokal)"], ["Voice", "bm_george"], ["Chunk", "220 karakter"], ["Loudnorm", "-14 LUFS, TP -2.0"]],
       architect: [["Resolusi", "1920×1080"], ["FPS", "25"], ["Images", "~30–60 scene unik"], ["Zoom", "Ken Burns ±3%"], ["BGM", "20% volume"]],
       messenger: [["Platform", "YouTube"], ["Schedule", "Selasa & Jumat 07:00 WIB"], ["Short", "Auto-cut dari video utama"]],
     };
