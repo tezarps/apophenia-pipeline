@@ -4,9 +4,15 @@
       "name": "Maya",
       "icon": "🔮",
       "role": "Picks the next archetype",
-      "status": "idle",
-      "detail": "",
-      "updated_at": "2026-07-10T23:33:42.228436"
+      "status": "done",
+      "detail": "Topic #11: The Adult Who Was the Family's Therapist as a Kid",
+      "updated_at": "2026-07-10T23:33:54.057866",
+      "payload": {
+        "id": 11,
+        "category": "parentification",
+        "topic": "The Adult Who Was the Family's Therapist as a Kid",
+        "angle": "Why You Take Care of Everyone Except Yourself"
+      }
     },
     "scribe": {
       "name": "Jordan",
