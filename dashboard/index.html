@@ -138,6 +138,7 @@
   .status-published, .status-done { background: rgba(95,216,150,0.15); color: var(--green); }
   .status-failed { background: rgba(242,105,122,0.15); color: var(--red); }
   .status-pending { background: rgba(140,137,171,0.15); color: var(--muted); }
+  .status-paused, .status-awaiting_images { background: rgba(240,180,80,0.15); color: #f0b450; }
 
   .row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); gap: 12px; }
   .row:last-child { border-bottom: none; }
@@ -449,6 +450,7 @@
       let state = "idle", detail = "";
       if (runStatus === "failed" && i === currentIdx) { state = "error"; detail = "Gagal di sini"; }
       else if (i < currentIdx || (runStatus === "done")) { state = "done"; }
+      else if (i === currentIdx && runStatus === "paused") { state = "running"; detail = "Klik — menunggu gambar manual"; }
       else if (i === currentIdx) { state = "running"; detail = "Sedang berjalan..."; }
       const iconName = state === "done" ? "check" : state === "error" ? "x" : a.icon;
       const clickable = CLICKABLE.includes(key);
@@ -560,7 +562,19 @@
   }
 
   async function loadCurrentRun() {
-    const { data } = await db.from("pipeline_runs").select("*").eq("status", "running").order("started_at", { ascending: false }).limit(1);
+    // "running" takes priority, but a "paused" run (waiting on manually
+    // generated images — see agents/image_agent.py's manual workflow) is
+    // just as much the "current thing happening" from the user's
+    // perspective, and needs the same clickable stepper so the Architect
+    // step's prompt package (scheduler.py's ImagesNotReadyError handler)
+    // is reachable without digging into run history.
+    let { data } = await db.from("pipeline_runs").select("*").eq("status", "running").order("started_at", { ascending: false }).limit(1);
+    let isPaused = false;
+    if (!data || data.length === 0) {
+      const paused = await db.from("pipeline_runs").select("*").eq("status", "paused").order("started_at", { ascending: false }).limit(1);
+      data = paused.data;
+      isPaused = true;
+    }
     const el = document.getElementById("current-run");
     const liveDot = document.getElementById("live-dot");
     const subtitle = document.getElementById("subtitle-text");
@@ -570,18 +584,24 @@
       el.innerHTML = `<div class="idle-banner">Tidak ada run yang sedang berjalan<div class="next-run">Next run: ${nextCronLabel()}</div></div>`;
       return;
     }
-    liveDot.classList.remove("off");
-    subtitle.textContent = "Pipeline monitor — 1 run aktif";
     const r = data[0];
+    if (isPaused) {
+      liveDot.classList.add("off");
+      subtitle.textContent = "Pipeline monitor — menunggu gambar manual";
+    } else {
+      liveDot.classList.remove("off");
+      subtitle.textContent = "Pipeline monitor — 1 run aktif";
+    }
     el.innerHTML = `
       <div class="row" style="border-bottom:none; padding-top:0; margin-bottom:14px;">
         <div class="row-text">
           <div class="row-title">Topic #${r.topic_id}</div>
           <div class="row-sub" title="${esc(r.angle) || ""}">${esc(r.angle) || ""} · mulai ${timeAgo(r.started_at)}</div>
         </div>
-        <span class="status-badge status-running">RUNNING</span>
+        <span class="status-badge ${isPaused ? "status-paused" : "status-running"}">${isPaused ? "MENUNGGU GAMBAR" : "RUNNING"}</span>
       </div>
-      <div class="stepper">${renderStepper(r.current_agent, r.status, r.topic_id)}</div>`;
+      ${isPaused ? `<div style="font-size:12px;color:var(--muted);margin-bottom:10px;">Klik step <strong>Architect</strong> di bawah untuk lihat prompt gambar yang siap di-copy ke Google Flow.</div>` : ""}
+      <div class="stepper">${renderStepper(isPaused ? "architect" : r.current_agent, r.status, r.topic_id)}</div>`;
   }
 
   async function loadAbTests() {
