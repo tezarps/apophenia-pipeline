@@ -29,6 +29,12 @@ from agents.playlist_agent import add_video_to_playlist
 SCOPES = [
     "https://www.googleapis.com/auth/youtube",
     "https://www.googleapis.com/auth/yt-analytics.readonly",
+    # Posting the engagement comment (post_comment(), see project memory)
+    # needs this specifically — "youtube" scope alone isn't enough for
+    # commentThreads.insert, confirmed 2026-07-11 (Topic #11 upload
+    # succeeded but the comment post failed with "insufficient
+    # authentication scopes" using only the two scopes above).
+    "https://www.googleapis.com/auth/youtube.force-ssl",
 ]
 
 # Switched 2026-06-23 from 3 PM ET (US) to 4 PM Australian Eastern — target
