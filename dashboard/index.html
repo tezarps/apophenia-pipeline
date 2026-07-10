@@ -562,23 +562,25 @@
   }
 
   async function loadCurrentRun() {
-    // "running" takes priority, but a "paused" run (waiting on manually
-    // generated images — see agents/image_agent.py's manual workflow) is
-    // just as much the "current thing happening" from the user's
-    // perspective, and needs the same clickable stepper so the Architect
-    // step's prompt package (scheduler.py's ImagesNotReadyError handler)
-    // is reachable without digging into run history.
-    let { data } = await db.from("pipeline_runs").select("*").eq("status", "running").order("started_at", { ascending: false }).limit(1);
-    let isPaused = false;
-    if (!data || data.length === 0) {
-      const paused = await db.from("pipeline_runs").select("*").eq("status", "paused").order("started_at", { ascending: false }).limit(1);
-      data = paused.data;
-      isPaused = true;
-    }
+    // Fetch the single MOST RECENT run overall (no status filter) — a
+    // "paused" run (waiting on manually generated images — see
+    // agents/image_agent.py's manual workflow) deserves the same clickable
+    // stepper as "running" so the Architect step's prompt package
+    // (scheduler.py's ImagesNotReadyError handler) is reachable without
+    // digging into run history. But it must be the LATEST run for that
+    // topic — filtering status='paused' directly (without checking recency
+    // against other statuses) showed a stale paused banner even after a
+    // later run for the same topic had since failed or succeeded elsewhere
+    // in the pipeline (confirmed 2026-07-11: Topic #11 showed "stuck at
+    // Architect" in this banner after a later run actually got all the way
+    // to Messenger and failed there instead).
+    const { data } = await db.from("pipeline_runs").select("*").order("started_at", { ascending: false }).limit(1);
+    const isPaused = data && data.length > 0 && data[0].status === "paused";
+    const isRunning = data && data.length > 0 && data[0].status === "running";
     const el = document.getElementById("current-run");
     const liveDot = document.getElementById("live-dot");
     const subtitle = document.getElementById("subtitle-text");
-    if (!data || data.length === 0) {
+    if (!data || data.length === 0 || !(isPaused || isRunning)) {
       liveDot.classList.add("off");
       subtitle.textContent = "Pipeline monitor — idle";
       el.innerHTML = `<div class="idle-banner">Tidak ada run yang sedang berjalan<div class="next-run">Next run: ${nextCronLabel()}</div></div>`;

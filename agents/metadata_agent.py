@@ -131,11 +131,27 @@ structure, and final editing are human-curated.
 TAGS: [15 tags comma-separated, most important first]"""
 
 
-def generate_metadata(topic_data, script, duration_min=15):
+def generate_metadata(topic_data, script, duration_min=15, retries=3):
     category = topic_data["category"]
     category_words = category.replace("-", " ")
     category_tag = "".join(w.capitalize() for w in category.split("-"))
     marks_str = "\n".join(_timestamp_marks(duration_min))
+    for attempt in range(retries):
+        result = _generate_metadata_once(
+            topic_data, script, duration_min, category, category_words, category_tag, marks_str,
+        )
+        if result["title_a"]:
+            return result
+        print(f"    Metadata came back with an empty title (attempt {attempt+1}/{retries}) — retrying...")
+    # Confirmed 2026-07-10: an empty LLM response (no TITLE_A: line at all)
+    # parsed silently into blank title/description/tags with no exception —
+    # the pipeline then uploaded to YouTube with a blank title before this
+    # was caught. Failing loud here lets scheduler.py's normal retry-next-run
+    # behavior kick in instead of publishing a titleless video.
+    raise RuntimeError(f"generate_metadata: title_a still empty after {retries} attempts")
+
+
+def _generate_metadata_once(topic_data, script, duration_min, category, category_words, category_tag, marks_str):
     text = _llm.call(_PROMPT.format(
         topic=topic_data["topic"],
         topic_lower=topic_data["topic"].lower(),
