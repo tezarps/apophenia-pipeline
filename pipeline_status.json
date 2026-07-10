@@ -57,6 +57,16 @@
   },
   "runs": [
     {
+      "id": 11,
+      "topic": "Why You Take Care of Everyone Except Yourself",
+      "status": "failed",
+      "video_id": "",
+      "started_at": "2026-07-10T23:33:42.225372",
+      "finished_at": "2026-07-11T00:36:55.333337",
+      "duration_min": 63,
+      "error": "('invalid_grant: Token has been expired or revoked.', {'error': 'invalid_grant', 'error_description': 'Token has been expired or revoked.'})"
+    },
+    {
       "id": 10,
       "topic": "Why You Become Whoever the Room Needs You to Be",
       "status": "published",
@@ -219,10 +229,5 @@
       "error": "{'statusCode': 404, 'error': Bucket not found, 'message': Bucket not found}"
     }
   ],
-  "current_run": {
-    "topic_id": 11,
-    "topic": "Why You Take Care of Everyone Except Yourself",
-    "started_at": "2026-07-10T23:33:42.228386",
-    "status": "running"
-  }
+  "current_run": null
 }
