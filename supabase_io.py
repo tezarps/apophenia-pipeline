@@ -288,6 +288,25 @@ def get_image_prompts(topic_id):
         return None
 
 
+def upload_thumbnail_prompts(topic_id, package: dict):
+    """Saves the manual thumbnail-generation package (agent instruction +
+    hook A/B + prompt A/B) — same pattern as upload_image_prompts() but for
+    the Psyphoria 2 thumbnail pair instead of content scenes."""
+    db = _require_client()
+    data = json.dumps(package, ensure_ascii=False).encode("utf-8")
+    db.storage.from_(SCRIPTS_BUCKET).upload(f"{topic_id}_thumbnail_prompts.json", data, {"upsert": "true"})
+
+
+def get_thumbnail_prompts(topic_id):
+    """Return {"agent_instruction","hook_a","hook_b","prompt_a","prompt_b"}, or None if not found."""
+    try:
+        db = _require_client()
+        data = db.storage.from_(SCRIPTS_BUCKET).download(f"{topic_id}_thumbnail_prompts.json")
+        return json.loads(data.decode("utf-8"))
+    except Exception:
+        return None
+
+
 def list_recent_runs(limit=20):
     """Return recent pipeline_runs joined with topic names, newest first."""
     db = _require_client()

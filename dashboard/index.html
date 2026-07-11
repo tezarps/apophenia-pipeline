@@ -190,8 +190,13 @@
   #agent-modal-close { background: var(--card-hi); color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 4px 10px; font-size: 13px; cursor: pointer; }
   #agent-modal-body { overflow-y: auto; flex: 1; }
   .script-pre { white-space: pre-wrap; word-break: break-word; font-size: 13px; line-height: 1.75; color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif; }
-  .copy-btn { background: var(--card-hi); color: var(--text); border: 1px solid var(--border); border-radius: 6px; padding: 3px 10px; font-size: 11px; cursor: pointer; }
+  .copy-btn { background: var(--card-hi); color: var(--text); border: 1px solid var(--border); border-radius: 6px; padding: 3px 10px; font-size: 11px; cursor: pointer; flex-shrink: 0; }
   .copy-btn:hover { background: var(--border); }
+  .prompt-block-header { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 6px; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+  .prompt-tabs { display: flex; gap: 6px; margin-bottom: 14px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+  .prompt-tab { background: none; border: 1px solid var(--border); color: var(--muted); border-radius: 8px; padding: 6px 14px; font-size: 12px; font-weight: 600; cursor: pointer; }
+  .prompt-tab.active { background: var(--card-hi); color: var(--text); border-color: var(--green, #5fd896); }
+  .prompt-tab:hover:not(.active) { background: var(--card-hi); }
   .info-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
   .info-row:last-child { border-bottom: none; }
   .info-label { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
@@ -483,6 +488,15 @@
     });
   }
 
+  function switchPromptTab(btn, tab) {
+    btn.parentElement.querySelectorAll(".prompt-tab").forEach(t => t.classList.remove("active"));
+    btn.classList.add("active");
+    const modalBody = btn.closest("#agent-modal-body");
+    modalBody.querySelectorAll("[data-pane]").forEach(p => {
+      p.style.display = p.dataset.pane === tab ? "block" : "none";
+    });
+  }
+
   async function openAgentModal(key, topicId) {
     const a = AGENTS[key] || { name: key };
     document.getElementById("agent-modal-title").textContent = a.name + (topicId ? " — Topic #" + topicId : "");
@@ -525,28 +539,65 @@
 
     if (key === "architect") {
       if (!topicId) { body.innerHTML = '<div style="color:var(--muted);font-size:13px;">Topic ID tidak tersedia.</div>'; return; }
-      try {
-        const { data, error } = await db.storage.from("apophenia-scripts").download(`${topicId}_image_prompts.json`);
-        if (error || !data) throw error || new Error("Not found");
-        const p = JSON.parse(await data.text());
-        const scenesBlock = "Generate " + p.scenes.length + " different images, one at a time, based on the following scene list. "
-          + "Each image must follow the style defined in your instructions exactly. Do not skip any scene, do not repeat a setting. Here is the list:\n\n"
-          + p.scenes.map((s, i) => `Scene ${i+1}: ${s}`).join("\n\n");
-        body.innerHTML = `
-          <div style="font-size:12px;color:var(--muted);margin-bottom:10px;">Copy ke Google Flow — Agent Instruction dulu, lalu Scene List.</div>
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-            <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;">Agent Instruction</div>
-            <button class="copy-btn" onclick="copyPromptBlock(this)">Copy</button>
-          </div>
-          <pre class="script-pre" style="font-size:12px;max-height:140px;">${esc(p.agent_instruction)}</pre>
-          <div style="display:flex;justify-content:space-between;align-items:center;margin:14px 0 6px;">
-            <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;">Scene List (${p.scenes.length})</div>
-            <button class="copy-btn" onclick="copyPromptBlock(this)">Copy</button>
-          </div>
-          <pre class="script-pre" style="font-size:12px;">${esc(scenesBlock)}</pre>`;
-      } catch(e) {
+
+      const [imgRes, thumbRes] = await Promise.all([
+        db.storage.from("apophenia-scripts").download(`${topicId}_image_prompts.json`),
+        db.storage.from("apophenia-scripts").download(`${topicId}_thumbnail_prompts.json`),
+      ]);
+      const imgData = (!imgRes.error && imgRes.data) ? JSON.parse(await imgRes.data.text()) : null;
+      const thumbData = (!thumbRes.error && thumbRes.data) ? JSON.parse(await thumbRes.data.text()) : null;
+
+      if (!imgData && !thumbData) {
         body.innerHTML = `<div style="color:var(--muted);font-size:13px;">Prompt belum tersedia — pipeline belum sampai (atau belum pause) di step Architect.</div>`;
+        return;
       }
+
+      const scenesBlock = imgData ? (
+        "Generate " + imgData.scenes.length + " different images, one at a time, based on the following scene list. "
+        + "Each image must follow the style defined in your instructions exactly. Do not skip any scene, do not repeat a setting. Here is the list:\n\n"
+        + imgData.scenes.map((s, i) => `Scene ${i+1}: ${s}`).join("\n\n")
+      ) : "";
+
+      body.innerHTML = `
+        <div class="prompt-tabs">
+          <button class="prompt-tab active" data-tab="content" onclick="switchPromptTab(this,'content')">Gambar Konten${imgData ? ` (${imgData.scenes.length})` : ""}</button>
+          <button class="prompt-tab" data-tab="thumb" onclick="switchPromptTab(this,'thumb')">Thumbnail</button>
+        </div>
+
+        <div data-pane="content" style="display:block;">
+          ${imgData ? `
+            <div class="prompt-block-header">
+              <span>AGENT INSTRUCTION</span>
+              <button class="copy-btn" onclick="copyPromptBlock(this)">Copy</button>
+            </div>
+            <pre class="script-pre" style="font-size:12px;max-height:140px;overflow-y:auto;">${esc(imgData.agent_instruction)}</pre>
+            <div class="prompt-block-header" style="margin-top:14px;">
+              <span>SCENE LIST (${imgData.scenes.length})</span>
+              <button class="copy-btn" onclick="copyPromptBlock(this)">Copy</button>
+            </div>
+            <pre class="script-pre" style="font-size:12px;">${esc(scenesBlock)}</pre>
+          ` : `<div style="color:var(--muted);font-size:13px;padding:16px 0;">Prompt gambar konten belum tersedia.</div>`}
+        </div>
+
+        <div data-pane="thumb" style="display:none;">
+          ${thumbData ? `
+            <div class="prompt-block-header">
+              <span>AGENT INSTRUCTION</span>
+              <button class="copy-btn" onclick="copyPromptBlock(this)">Copy</button>
+            </div>
+            <pre class="script-pre" style="font-size:12px;max-height:140px;overflow-y:auto;">${esc(thumbData.agent_instruction)}</pre>
+            <div class="prompt-block-header" style="margin-top:14px;">
+              <span>PROMPT A — Watercolor · Hook: "${esc(thumbData.hook_a)}"</span>
+              <button class="copy-btn" onclick="copyPromptBlock(this)">Copy</button>
+            </div>
+            <pre class="script-pre" style="font-size:12px;">${esc(thumbData.prompt_a)}</pre>
+            <div class="prompt-block-header" style="margin-top:14px;">
+              <span>PROMPT B — Comic Vintage · Hook: "${esc(thumbData.hook_b)}"</span>
+              <button class="copy-btn" onclick="copyPromptBlock(this)">Copy</button>
+            </div>
+            <pre class="script-pre" style="font-size:12px;">${esc(thumbData.prompt_b)}</pre>
+          ` : `<div style="color:var(--muted);font-size:13px;padding:16px 0;">Prompt thumbnail belum tersedia.</div>`}
+        </div>`;
       return;
     }
 

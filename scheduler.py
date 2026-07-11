@@ -12,6 +12,7 @@ from agents.script_agent import generate_script
 from agents.tts_agent import generate_audio
 from agents.assembly_agent import create_video, _audio_duration, OUTRO_TAIL_SEC
 from agents.image_agent import generate_manual_prompt_package
+from agents.thumbnail_agent import generate_manual_thumbnail_prompt_package
 from agents.caption_agent import annotate_script, build_ass, blackscreen_spans as compute_blackscreen_spans
 from agents.metadata_agent import generate_metadata, generate_engagement_question
 from agents.music_agent import generate_topic_music
@@ -352,6 +353,18 @@ def run(audio_only=False):
                 print(f"    Generated {len(scenes)} manual scene prompts → dashboard")
         except Exception as prompt_err:
             print(f"    Warning: prompt package generation skipped: {prompt_err}")
+
+        # Same idea for the thumbnail A/B pair (Psyphoria 2 style) — the
+        # dashboard's Architect modal previously only showed content-image
+        # prompts, leaving thumbnails to be typed out fresh in chat every
+        # time (user feedback 2026-07-11).
+        try:
+            if sb.get_thumbnail_prompts(topic_id) is None:
+                thumb_package = generate_manual_thumbnail_prompt_package(topic)
+                sb.upload_thumbnail_prompts(topic_id, thumb_package)
+                print("    Generated thumbnail A/B prompts → dashboard")
+        except Exception as thumb_prompt_err:
+            print(f"    Warning: thumbnail prompt package generation skipped: {thumb_prompt_err}")
 
         notify(f"⏸ Apophenia — paused, waiting on manual images\nTopic #{topic_id}: {topic['topic']}\nCheck the dashboard for the scene prompts, then upload images to Supabase — next scheduled run will pick it back up.")
 

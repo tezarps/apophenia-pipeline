@@ -462,21 +462,30 @@ Return ONLY the prompt text, no labels, no preamble."""
 
 _SCENE_PSY_PAIR_SYSTEM = """\
 You are a visual prompt writer for an AI image generator.
-Given a psychology topic and TWO hook texts, write TWO scene prompts — A in watercolor style, B in comic vintage style.
+Given a psychology topic and TWO hook texts, write TWO close-up portrait prompts — A in watercolor style, B in comic vintage style.
+
+CRITICAL — ONE figure only in each image, simple/plain background. No crowd, no busy scene, no
+other people. The entire emotional story must be told through this one figure's face and expression
+alone, not a narrative scene — confirmed by testing 2026-07-06: complex multi-figure scenes failed as
+thumbnails, single close-up portraits worked.
+
+CRITICAL — the face itself must feel a little "off" in a genuine fine-art way, not a normal symmetric
+attractive AI-generated face: asymmetric features (one eye subtly higher/wider than the other, uneven
+proportions), an unnervingly direct or hollow stare, a tilted head — never a normal calm smile.
 
 PROMPT A (watercolor/gouache):
 Bold gouache and watercolor illustration, visible wet brushstrokes, rich saturated color, painterly texture, slightly dreamlike.
-Warm light against cool shadow. Objects and figures fully visible and clearly rendered — NOT ghostly, NOT transparent washes.
+Warm light against cool shadow. Face fully visible and clearly rendered — NOT ghostly, NOT transparent washes.
 
 PROMPT B (vintage comic halftone):
 Vintage-comic illustration with visible halftone-dot texture, gouache and ink, bold vivid saturated palette, sharp contrast.
 Slightly surreal and graphic. Background color fills edge-to-edge.
 
 Both prompts must follow these rules:
-- Close-up portrait or half-body. Figure fills most of the frame. Strong emotional expression readable on the face.
+- Close-up portrait, ONE figure only, head and shoulders, filling most of the frame.
 - 2-3 dominant vivid contrasting colors. Full bleed edge-to-edge — ZERO white border, ZERO frame, ZERO vignette.
-- Scene visually reinforces its hook text — the image is a metaphor FOR the text, not a generic archetype illustration.
-- Two DIFFERENT scene concepts (different setting, symbol, or situation) — not the same scene restated in two styles.
+- The asymmetric/unusual expression should visually reinforce its hook text — not a generic archetype illustration.
+- Two DIFFERENT expressions/details (not the same face restated in two styles).
 - No text in the image, no logos, no real/identifiable person, no grimace or contorted face.
 
 Return ONLY JSON: {"a": "...", "b": "..."}
@@ -570,3 +579,59 @@ def generate_thumbnails_psyphoria(topic_data):
     print(f"  A (watercolor): {path_a}")
     print(f"  B (comic):      {path_b}")
     return path_a, path_b
+
+
+# Human-facing instruction pasted once into Google Flow's "agent instruction"
+# field before generating a topic's thumbnail scenes manually — phrased for
+# copy-paste instead of an LLM system prompt. Mirrors _SCENE_PSY_PAIR_SYSTEM's
+# rules (single figure, asymmetric/unusual face, Psyphoria 2 watercolor+comic)
+# but without the JSON-output instruction, since a human is reading it.
+MANUAL_THUMBNAIL_AGENT_INSTRUCTION = (
+    "You are a visual artist generating a YouTube thumbnail portrait for a psychology channel "
+    "(Apophenia). This must look like a REAL, SLIGHTLY UNUSUAL fine-art painting — not a normal, "
+    "symmetric, conventionally attractive AI-generated face. The face must feel a little \"off,\" "
+    "in a genuine fine-art way: asymmetric features (one eye subtly higher/wider than the other), "
+    "an unnervingly direct or hollow stare, a tilted head — never a normal calm smile.\n\n"
+    "STYLE A (watercolor): Bold gouache and watercolor illustration, visible wet brushstrokes, "
+    "warm amber light against cool shadow.\n"
+    "STYLE B (comic vintage): Vintage-comic illustration with visible halftone-dot texture, bold "
+    "vivid saturated palette.\n\n"
+    "COMPOSITION: Close-up portrait, ONE figure only, head and shoulders, filling most of the "
+    "1280x720 frame. Background simple — flat color field or muted setting, nothing busy.\n\n"
+    "STRICT RULES: ZERO text, ZERO white border/frame/vignette, no real/identifiable person.\n\n"
+    "Generate the image in English, following the exact scene description."
+)
+
+
+def generate_manual_thumbnail_prompt_package(topic_data):
+    """Generates the full copy-paste package for manual (Google Flow)
+    thumbnail generation: the fixed agent instruction + two labeled A/B
+    prompts (watercolor + comic vintage) with imperative-command hook text.
+    Does not call any image API — caller (scheduler.py) uploads the result
+    to Supabase so the dashboard can display it. Two DeepSeek calls (cents,
+    not a concern)."""
+    topic = topic_data["topic"]
+    angle = topic_data["angle"]
+    category = topic_data["category"]
+
+    hooks = json.loads(_call_claude(
+        _HOOK_SHORT_SYSTEM,
+        f"Archetype: {topic}\nAngle: {angle}",
+        max_tokens=80,
+    ))
+    raw = _call_claude(
+        _SCENE_PSY_PAIR_SYSTEM,
+        f"Topic: {topic}\nAngle: {angle}\nCategory: {category}\nHook A: {hooks['a']}\nHook B: {hooks['b']}",
+        max_tokens=600,
+    )
+    clean = raw.replace("```json", "").replace("```", "").strip()
+    s, e = clean.find("{"), clean.rfind("}")
+    scenes = json.loads(clean[s:e + 1])
+
+    return {
+        "agent_instruction": MANUAL_THUMBNAIL_AGENT_INSTRUCTION,
+        "hook_a": hooks["a"],
+        "hook_b": hooks["b"],
+        "prompt_a": scenes["a"],
+        "prompt_b": scenes["b"],
+    }
