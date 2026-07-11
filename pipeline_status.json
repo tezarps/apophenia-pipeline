@@ -4,9 +4,15 @@
       "name": "Maya",
       "icon": "🔮",
       "role": "Picks the next archetype",
-      "status": "idle",
-      "detail": "",
-      "updated_at": "2026-07-11T01:58:14.245010"
+      "status": "done",
+      "detail": "Topic #12: The Emotionally Numb Achiever",
+      "updated_at": "2026-07-11T01:58:16.918564",
+      "payload": {
+        "id": 12,
+        "category": "emotional-numbness",
+        "topic": "The Emotionally Numb Achiever",
+        "angle": "Why Success Never Quite Reaches the Part of You That's Tired"
+      }
     },
     "scribe": {
       "name": "Jordan",
