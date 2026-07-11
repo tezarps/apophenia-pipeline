@@ -307,22 +307,29 @@ def run(audio_only=False):
         # best-effort extra: a failure here must never undo the main upload.
         try:
             current_agent = "messenger"
-            print("\n    Cutting YouTube Short...")
-            short_path = generate_short(video_path, word_timings, topic_id)
-            short_id = upload_short(short_path, metadata, video_id, publish_at_utc)
-            notify(f"🩳 Apophenia Short — youtube.com/shorts/{short_id} (-> {video_id})")
+            if not word_timings:
+                # Kokoro (our TTS since ElevenLabs was dropped) never returns
+                # word-level timing data, and the Short's karaoke-style
+                # captions need it — cutting a Short without it either hangs
+                # or produces a captionless clip, so skip cleanly instead.
+                print("\n    Skipping YouTube Short — no word_timings (Kokoro doesn't produce them).")
+            else:
+                print("\n    Cutting YouTube Short...")
+                short_path = generate_short(video_path, word_timings, topic_id)
+                short_id = upload_short(short_path, metadata, video_id, publish_at_utc)
+                notify(f"🩳 Apophenia Short — youtube.com/shorts/{short_id} (-> {video_id})")
 
-            # Stashed in Supabase Storage so the webapp dashboard can offer a
-            # manual-download button for posting the same cut to TikTok —
-            # the pipeline can run on a GitHub Actions runner where this
-            # local output/shorts/ file never reaches the user's own machine.
-            sb.upload_short(topic_id, short_path, {
-                "title": metadata["title"],
-                "short_youtube_id": short_id,
-                "parent_video_id": video_id,
-                "publish_at_utc": publish_at_utc,
-                "category": topic["category"],
-            })
+                # Stashed in Supabase Storage so the webapp dashboard can offer a
+                # manual-download button for posting the same cut to TikTok —
+                # the pipeline can run on a GitHub Actions runner where this
+                # local output/shorts/ file never reaches the user's own machine.
+                sb.upload_short(topic_id, short_path, {
+                    "title": metadata["title"],
+                    "short_youtube_id": short_id,
+                    "parent_video_id": video_id,
+                    "publish_at_utc": publish_at_utc,
+                    "category": topic["category"],
+                })
         except Exception as e:
             print(f"    Warning: Short generation/upload failed (main video still published fine): {e}")
 
