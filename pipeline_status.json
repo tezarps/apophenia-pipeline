@@ -34,9 +34,9 @@
       "name": "Theo",
       "icon": "🏛️",
       "role": "Assembles the final video",
-      "status": "running",
-      "detail": "Running FFmpeg...",
-      "updated_at": "2026-07-11T02:05:42.435799"
+      "status": "error",
+      "detail": "401 Client Error: Unauthorized for url: https://api.elevenlabs.io/v1/sound-generation",
+      "updated_at": "2026-07-11T02:08:27.725593"
     },
     "herald": {
       "name": "Priya",
