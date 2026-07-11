@@ -151,9 +151,18 @@ def _make_ken_burns_clip(img_path, out_path, seconds=SLIDE_DURATION):
     zoompan rounds the crop window to whole pixels every frame; with too
     little headroom between the pre-scaled source and the 1920x1080 output,
     that window barely moves frame-to-frame and the rounding shows up as
-    visible stair-step shake. Pre-scaling the source far beyond what the
-    zoom range needs gives the rounding enough room to land on a different
-    pixel every frame, which is what actually reads as smooth.
+    visible stair-step shake. Pre-scaling the source beyond what the zoom
+    range needs gives the rounding enough room to land on a different pixel
+    every frame, which is what actually reads as smooth.
+
+    Lowered from 7680x4320 (8K, 4x the 1080p output) to 3840x2160 (4K, 2x
+    the output) 2026-07-11 — inherited un-requested from narava-pipeline's
+    original scaffold (present since Apophenia's very first commit, no
+    documented reason for 8K specifically) and was making video assembly
+    take 1.5-2+ hours per topic once the duration-scaled pacing model
+    started needing dozens of Ken Burns clips per video. 2x supersampling
+    is still well above the "visible stair-step" threshold this comment
+    describes, just without paying for pixels the 1080p output can't use.
     """
     d = max(1, round(seconds * FPS))
     t = f"min(on,{d-1})/{d-1}"
@@ -162,7 +171,7 @@ def _make_ken_burns_clip(img_path, out_path, seconds=SLIDE_DURATION):
     z_max = 1990 / 1920
     z = f"1+{z_max - 1:.7f}*{ease}"
 
-    pre_w, pre_h = 7680, 4320
+    pre_w, pre_h = 3840, 2160
 
     vf_parts = [
         f"scale={pre_w}:{pre_h}:force_original_aspect_ratio=increase",
