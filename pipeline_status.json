@@ -59,6 +59,15 @@
     {
       "id": 12,
       "topic": "Why Success Never Quite Reaches the Part of You That's Tired",
+      "status": "published",
+      "video_id": "3SNMsO_Nx5c",
+      "started_at": "2026-07-11T14:45:41.851282",
+      "finished_at": "2026-07-11T15:40:02.600788",
+      "duration_min": 54
+    },
+    {
+      "id": 12,
+      "topic": "Why Success Never Quite Reaches the Part of You That's Tired",
       "status": "failed",
       "video_id": "",
       "started_at": "2026-07-11T01:58:14.244753",
@@ -239,10 +248,5 @@
       "error": "{'statusCode': 404, 'error': Bucket not found, 'message': Bucket not found}"
     }
   ],
-  "current_run": {
-    "topic_id": 12,
-    "topic": "Why Success Never Quite Reaches the Part of You That's Tired",
-    "started_at": "2026-07-11T14:45:41.856741",
-    "status": "running"
-  }
+  "current_run": null
 }
