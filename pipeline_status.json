@@ -4,55 +4,49 @@
       "name": "Maya",
       "icon": "🔮",
       "role": "Picks the next archetype",
-      "status": "done",
-      "detail": "Topic #11: The Adult Who Was the Family's Therapist as a Kid",
-      "updated_at": "2026-07-10T23:33:54.057866",
-      "payload": {
-        "id": 11,
-        "category": "parentification",
-        "topic": "The Adult Who Was the Family's Therapist as a Kid",
-        "angle": "Why You Take Care of Everyone Except Yourself"
-      }
+      "status": "idle",
+      "detail": "",
+      "updated_at": "2026-07-11T01:58:14.245010"
     },
     "scribe": {
       "name": "Jordan",
       "icon": "📜",
       "role": "Writes the 5-babak script",
-      "status": "done",
-      "detail": "2,128 words (cached in Supabase)",
-      "updated_at": "2026-07-10T23:34:08.640840"
+      "status": "idle",
+      "detail": "",
+      "updated_at": "2026-07-11T01:58:14.245015"
     },
     "voice": {
       "name": "Aria",
       "icon": "🎙️",
       "role": "Narrates the essay",
-      "status": "done",
-      "detail": "Audio ready: 11.mp3",
-      "updated_at": "2026-07-11T00:13:20.202176"
+      "status": "idle",
+      "detail": "",
+      "updated_at": "2026-07-11T01:58:14.245018"
     },
     "architect": {
       "name": "Theo",
       "icon": "🏛️",
       "role": "Assembles the final video",
-      "status": "done",
-      "detail": "Video ready: 256MB (0 reflective beat(s))",
-      "updated_at": "2026-07-11T00:36:28.812929"
+      "status": "idle",
+      "detail": "",
+      "updated_at": "2026-07-11T01:58:14.245021"
     },
     "herald": {
       "name": "Priya",
       "icon": "📯",
       "role": "Crafts title, metadata & thumbnails",
-      "status": "done",
+      "status": "idle",
       "detail": "",
-      "updated_at": "2026-07-11T00:36:43.846389"
+      "updated_at": "2026-07-11T01:58:14.245023"
     },
     "messenger": {
       "name": "Kai",
       "icon": "⚡",
       "role": "Uploads to YouTube",
-      "status": "error",
-      "detail": "('invalid_grant: Token has been expired or revoked.', {'error': 'invalid_grant', 'error_description': 'Token has been ex",
-      "updated_at": "2026-07-11T00:36:51.783021"
+      "status": "idle",
+      "detail": "",
+      "updated_at": "2026-07-11T01:58:14.245026"
     }
   },
   "runs": [
@@ -229,5 +223,10 @@
       "error": "{'statusCode': 404, 'error': Bucket not found, 'message': Bucket not found}"
     }
   ],
-  "current_run": null
+  "current_run": {
+    "topic_id": 12,
+    "topic": "Why Success Never Quite Reaches the Part of You That's Tired",
+    "started_at": "2026-07-11T01:58:14.245004",
+    "status": "running"
+  }
 }
