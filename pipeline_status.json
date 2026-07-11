@@ -4,39 +4,33 @@
       "name": "Maya",
       "icon": "🔮",
       "role": "Picks the next archetype",
-      "status": "done",
-      "detail": "Topic #12: The Emotionally Numb Achiever",
-      "updated_at": "2026-07-11T01:58:16.918564",
-      "payload": {
-        "id": 12,
-        "category": "emotional-numbness",
-        "topic": "The Emotionally Numb Achiever",
-        "angle": "Why Success Never Quite Reaches the Part of You That's Tired"
-      }
+      "status": "idle",
+      "detail": "",
+      "updated_at": "2026-07-11T14:45:41.856778"
     },
     "scribe": {
       "name": "Jordan",
       "icon": "📜",
       "role": "Writes the 5-babak script",
-      "status": "done",
-      "detail": "1,979 words written",
-      "updated_at": "2026-07-11T01:59:31.043748"
+      "status": "idle",
+      "detail": "",
+      "updated_at": "2026-07-11T14:45:41.856787"
     },
     "voice": {
       "name": "Aria",
       "icon": "🎙️",
       "role": "Narrates the essay",
-      "status": "done",
-      "detail": "Audio ready: 12.mp3",
-      "updated_at": "2026-07-11T02:05:41.105294"
+      "status": "idle",
+      "detail": "",
+      "updated_at": "2026-07-11T14:45:41.856793"
     },
     "architect": {
       "name": "Theo",
       "icon": "🏛️",
       "role": "Assembles the final video",
-      "status": "error",
-      "detail": "401 Client Error: Unauthorized for url: https://api.elevenlabs.io/v1/sound-generation",
-      "updated_at": "2026-07-11T02:08:27.725593"
+      "status": "idle",
+      "detail": "",
+      "updated_at": "2026-07-11T14:45:41.856797"
     },
     "herald": {
       "name": "Priya",
@@ -44,7 +38,7 @@
       "role": "Crafts title, metadata & thumbnails",
       "status": "idle",
       "detail": "",
-      "updated_at": "2026-07-11T01:58:14.245023"
+      "updated_at": "2026-07-11T14:45:41.856803"
     },
     "messenger": {
       "name": "Kai",
@@ -52,7 +46,7 @@
       "role": "Uploads to YouTube",
       "status": "idle",
       "detail": "",
-      "updated_at": "2026-07-11T01:58:14.245026"
+      "updated_at": "2026-07-11T14:45:41.856809"
     }
   },
   "runs": [
@@ -239,5 +233,10 @@
       "error": "{'statusCode': 404, 'error': Bucket not found, 'message': Bucket not found}"
     }
   ],
-  "current_run": null
+  "current_run": {
+    "topic_id": 12,
+    "topic": "Why Success Never Quite Reaches the Part of You That's Tired",
+    "started_at": "2026-07-11T14:45:41.856741",
+    "status": "running"
+  }
 }
