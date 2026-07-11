@@ -9,6 +9,10 @@ output/
 *.mp4
 *.mp3
 *.wav
+# Exception: the shared ambient music bed IS a required input (not disposable
+# output) — agents/music_agent.py loops/trims it on the GitHub Actions
+# runner, which starts from a fresh checkout with nothing else cached.
+!assets/shared_ambient.mp3
 
 # Local image/thumbnail assets — large binaries, not meant to live in git history.
 images/
