@@ -50,9 +50,9 @@
       "name": "Kai",
       "icon": "⚡",
       "role": "Uploads to YouTube",
-      "status": "running",
-      "detail": "Uploading...",
-      "updated_at": "2026-07-11T15:37:49.524914"
+      "status": "done",
+      "detail": "youtube.com/watch?v=3SNMsO_Nx5c",
+      "updated_at": "2026-07-11T15:39:26.962297"
     }
   },
   "runs": [
