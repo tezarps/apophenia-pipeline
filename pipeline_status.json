@@ -57,6 +57,16 @@
   },
   "runs": [
     {
+      "id": 12,
+      "topic": "Why Success Never Quite Reaches the Part of You That's Tired",
+      "status": "failed",
+      "video_id": "",
+      "started_at": "2026-07-11T01:58:14.244753",
+      "finished_at": "2026-07-11T02:08:29.616385",
+      "duration_min": 10,
+      "error": "401 Client Error: Unauthorized for url: https://api.elevenlabs.io/v1/sound-generation"
+    },
+    {
       "id": 11,
       "topic": "Why You Take Care of Everyone Except Yourself",
       "status": "failed",
@@ -229,10 +239,5 @@
       "error": "{'statusCode': 404, 'error': Bucket not found, 'message': Bucket not found}"
     }
   ],
-  "current_run": {
-    "topic_id": 12,
-    "topic": "Why Success Never Quite Reaches the Part of You That's Tired",
-    "started_at": "2026-07-11T01:58:14.245004",
-    "status": "running"
-  }
+  "current_run": null
 }
