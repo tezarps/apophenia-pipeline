@@ -470,8 +470,20 @@ alone, not a narrative scene — confirmed by testing 2026-07-06: complex multi-
 thumbnails, single close-up portraits worked.
 
 CRITICAL — the face itself must feel a little "off" in a genuine fine-art way, not a normal symmetric
-attractive AI-generated face: asymmetric features (one eye subtly higher/wider than the other, uneven
-proportions), an unnervingly direct or hollow stare, a tilted head — never a normal calm smile.
+attractive AI-generated face. But DO NOT default to the same "one eye higher, head tilted, hollow
+stare" combo every time — confirmed 2026-07-13: reusing that exact phrasing on every topic produced
+visually identical thumbnails (same tilt, same blank expression) regardless of what the video was
+about. Instead, pick ONE off-kilter trait and ONE pose/gaze direction that actually fit THIS topic's
+specific emotional content, varying them from the obvious default:
+- Off-kilter trait (pick ONE, don't stack all of them): uneven eye height/width, one eyebrow raised
+  higher than the other, an eye slightly more closed than the other, pupils not quite aligned, a
+  mouth held crooked or asymmetric, skin tone or lighting split unevenly across the face.
+- Gaze/pose (pick ONE, vary it — not always a head tilt): direct and unblinking, looking just past
+  the camera, eyes closed or half-lidded, chin lowered with eyes up, head turned to a near-profile,
+  looking sharply to one side.
+- Expression must be SPECIFIC to the topic's emotional content (e.g. forced composure, suppressed
+  irritation, brittle calm, quiet dread, numb blankness) — not a generic "hollow stare" reused
+  wordlessly across every topic.
 
 PROMPT A (watercolor/gouache):
 Bold gouache and watercolor illustration, visible wet brushstrokes, rich saturated color, painterly texture, slightly dreamlike.
@@ -484,8 +496,10 @@ Slightly surreal and graphic. Background color fills edge-to-edge.
 Both prompts must follow these rules:
 - Close-up portrait, ONE figure only, head and shoulders, filling most of the frame.
 - 2-3 dominant vivid contrasting colors. Full bleed edge-to-edge — ZERO white border, ZERO frame, ZERO vignette.
-- The asymmetric/unusual expression should visually reinforce its hook text — not a generic archetype illustration.
-- Two DIFFERENT expressions/details (not the same face restated in two styles).
+- The off-kilter trait, pose, and expression should visually reinforce its hook text and this
+  specific topic — not a generic archetype illustration reusable on any video.
+- A and B must differ in off-kilter trait, pose, AND expression from each other — not the same face
+  restated in two styles.
 - No text in the image, no logos, no real/identifiable person, no grimace or contorted face.
 
 Return ONLY JSON: {"a": "...", "b": "..."}
@@ -589,9 +603,11 @@ def generate_thumbnails_psyphoria(topic_data):
 MANUAL_THUMBNAIL_AGENT_INSTRUCTION = (
     "You are a visual artist generating a YouTube thumbnail portrait for a psychology channel "
     "(Apophenia). This must look like a REAL, SLIGHTLY UNUSUAL fine-art painting — not a normal, "
-    "symmetric, conventionally attractive AI-generated face. The face must feel a little \"off,\" "
-    "in a genuine fine-art way: asymmetric features (one eye subtly higher/wider than the other), "
-    "an unnervingly direct or hollow stare, a tilted head — never a normal calm smile.\n\n"
+    "symmetric, conventionally attractive AI-generated face. Follow the specific off-kilter trait, "
+    "gaze/pose, and expression described in the scene prompt below exactly as written — do not "
+    "default to a generic tilted-head-plus-hollow-stare look; each scene prompt below already "
+    "specifies a different trait and expression on purpose, so the thumbnails read as distinct "
+    "from each other, not the same face reused.\n\n"
     "STYLE A (watercolor): Bold gouache and watercolor illustration, visible wet brushstrokes, "
     "warm amber light against cool shadow.\n"
     "STYLE B (comic vintage): Vintage-comic illustration with visible halftone-dot texture, bold "
