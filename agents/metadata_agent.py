@@ -39,21 +39,21 @@ Duration: ~{duration_min} minutes
 
 SEO RULES — follow strictly:
 
-TITLE rules (updated 2026-07-01 — switched to Psyphoria-formula style, proven on @Psyphoria7 at 785K subs):
+TITLE rules (updated 2026-07-13 — dropped the philosopher-attribution formula: it read as a fake
+quote falsely attributed to a real historical figure, not just a stylistic flourish; removed rather
+than softened):
 - 60-100 characters
-- Use ONE of these three proven Psyphoria title formulas:
-    A) "[Bold psychological insight or behavior] – [Philosopher/Thinker]"
-       e.g. "The Mask You Forgot You Were Wearing – Carl Jung"
-       e.g. "The Silent Damage Caused by Your Ego – Carl Jung"
+- Use ONE of these two proven Psyphoria title formulas:
     B) "How to [specific action] [meaningful result]"
        e.g. "How to Stop Performing Confidence and Actually Feel It"
        e.g. "How to Trick Your Brain Into Enjoying Hard Things"
     C) "When You [action], [positive result]"
        e.g. "When You Stop Apologizing, Everything Changes"
        e.g. "When You Stop Caring So Much, Everything Falls Into Place"
-- Philosopher reference (formula A): pick the most relevant — Carl Jung, Stoics, Spinoza, Albert Camus,
-  Nietzsche, Viktor Frankl — only if it genuinely fits the angle; omit if it feels forced
-- TITLE_A and TITLE_B must use DIFFERENT formulas (e.g. A uses formula A, B uses formula B/C)
+- NEVER attribute any part of the title to a real person's name (no philosopher, thinker, or public
+  figure name-drop, "– [Name]" suffix, or implied quote) — the archetype and angle must carry the
+  title on their own
+- TITLE_A and TITLE_B must use DIFFERENT formulas (one uses B, the other uses C)
 - Sharp, personal, specific — pull from the angle field's most recognizable behavioral detail
 - NO "The Psychology of" prefix (retired) — NO ALL CAPS — NO emojis — NO real person's name in the
   topic itself — NO false/misleading claims
@@ -102,7 +102,7 @@ TAGS rules:
 Output EXACTLY this format, nothing else:
 
 TITLE_A: [your primary optimized title]
-TITLE_B: [alternate title — DIFFERENT Psyphoria formula from A (if A used formula A, use B or C); \
+TITLE_B: [alternate title — the OTHER formula from A (if A used formula B, use C, and vice versa); \
 still 60-100 characters, different curiosity angle from A, equally clickable]
 
 DESCRIPTION:
