@@ -550,6 +550,93 @@ def _compose_psyphoria(scene_bytes, hook_text, out_path):
     canvas.save(out_path, "JPEG", quality=95)
 
 
+def _fit_cover_top(img, size, top_bias=0.10):
+    """Cover-fit, but anchor the crop toward the top instead of centering
+    vertically — keeps the eyes/upper face in the frame's top third so they
+    stay visible above the giant text block in _compose_bold_overlay()."""
+    tw, th = size
+    scale = max(tw / img.width, th / img.height)
+    new_w, new_h = int(img.width * scale) + 1, int(img.height * scale) + 1
+    img = img.resize((new_w, new_h), Image.LANCZOS)
+    x0 = (new_w - tw) // 2
+    y0 = int((new_h - th) * top_bias)
+    return img.crop((x0, y0, x0 + tw, y0 + th))
+
+
+def _compose_bold_overlay(scene_bytes, hook_text, out_path):
+    """Bold clickbait-style overlay: giant black-stroked text filling roughly
+    70% of the frame height, laid directly over a full-bleed close-up face
+    (no solid band) — the classic high-CTR formula (huge text, expressive
+    eyes visible above it). Added 2026-07-15 after the softer Psyphoria
+    top-band style (small ~30%-height band, restrained expressions) drew
+    only 215 total views / 6 subs across the first 12 videos; the channel
+    needed punchier, more provocative thumbnails, not just punchier titles."""
+    scene = Image.open(io.BytesIO(scene_bytes)).convert("RGB")
+    canvas = _fit_cover_top(scene, THUMB_SIZE, top_bias=0.06).convert("RGBA")
+
+    # Darken the lower portion so the stroked text stays legible over any
+    # background color/brightness, without hiding the face behind a solid
+    # panel the way the old top-band style did.
+    overlay = Image.new("RGBA", THUMB_SIZE, (0, 0, 0, 0))
+    odraw = ImageDraw.Draw(overlay)
+    grad_top = int(THUMB_SIZE[1] * 0.24)
+    for y in range(grad_top, THUMB_SIZE[1]):
+        t = (y - grad_top) / (THUMB_SIZE[1] - grad_top)
+        alpha = int(160 * min(1.0, t * 1.6))
+        odraw.line([(0, y), (THUMB_SIZE[0], y)], fill=(0, 0, 0, alpha))
+    canvas = Image.alpha_composite(canvas, overlay).convert("RGB")
+
+    # Split the hook into 2-3 roughly even lines depending on word count.
+    words = hook_text.upper().split()
+    n = len(words)
+    if n <= 3:
+        chunks = [words]
+    elif n <= 5:
+        mid = (n + 1) // 2
+        chunks = [words[:mid], words[mid:]]
+    else:
+        third = (n + 2) // 3
+        chunks = [words[i:i + third] for i in range(0, n, third)]
+    lines = [" ".join(c) for c in chunks if c]
+
+    # bbox must include stroke_width — the outline extends past the glyph's
+    # plain bbox, and omitting it here previously undercounted line height
+    # enough that the last line's stroke rendered past the canvas edge.
+    max_w = int(THUMB_SIZE[0] * 0.94)
+    target_h = int(THUMB_SIZE[1] * 0.70)
+    bottom_margin = 30
+    font_size = 260
+    font, line_hs, total_h, stroke_w = None, [], 0, 6
+    while font_size > 40:
+        stroke_w = max(6, font_size // 14)
+        font = ImageFont.truetype(str(THUMBNAIL_FONT_PATH), font_size)
+        line_hs = []
+        fits = True
+        for line in lines:
+            bbox = font.getbbox(line, stroke_width=stroke_w)
+            w, h = bbox[2] - bbox[0], bbox[3] - bbox[1]
+            line_hs.append(h)
+            if w > max_w:
+                fits = False
+        gap = int(font_size * 0.30)
+        total_h = sum(line_hs) + gap * (len(lines) - 1)
+        if fits and total_h <= target_h:
+            break
+        font_size -= 6
+
+    draw = ImageDraw.Draw(canvas)
+    gap = int(font_size * 0.30)
+    y = THUMB_SIZE[1] - total_h - bottom_margin
+    for i, line in enumerate(lines):
+        bbox = font.getbbox(line, stroke_width=stroke_w)
+        w = bbox[2] - bbox[0]
+        x = (THUMB_SIZE[0] - w) // 2
+        draw.text((x, y), line, font=font, fill=(255, 214, 0), stroke_width=stroke_w, stroke_fill=(0, 0, 0))
+        y += line_hs[i] + gap
+
+    canvas.save(out_path, "JPEG", quality=95)
+
+
 def generate_thumbnails_psyphoria(topic_data):
     """Psyphoria layout (solid black top band + full image below) with two art styles:
     A = watercolor/gouache, B = vintage comic halftone. Each variant gets its own
