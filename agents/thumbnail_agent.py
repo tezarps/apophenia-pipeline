@@ -899,56 +899,73 @@ art style EXACTLY: bold, iconic, POSTER-SIMPLE symbolic fine-art painting — th
 card art, classic album-cover surrealism. NOT a comic illustration, NOT a close-up shocked face, and
 CRITICALLY NOT a moody cinematic concept-art render of a detailed interior scene.
 
-TWO rejected attempts so far, both confirmed "far off"/"masih jelek" by the user — study why:
+THREE rejected attempts so far, all confirmed "far off"/"masih jelek"/"not even close" by the user —
+study why each one failed:
 1. A person sitting at a desk in a detailed dark room with a doorway, furniture, and a crowd of
    background figures — busy, desaturated, movie-still environment. WRONG.
 2. A meditating human silhouette with a glowing neon-blue "tree" of tiny speech-bubble/chat-icon
-   glyphs branching from its head, on a flat red background. The flat red background was correct,
-   but the glowing UI/app icons (speech bubbles, notification glyphs, wifi-style signal lines) made
-   it read as a tech-blog infographic or a wellness-app ad — cute and clean, not unsettling or
-   painterly. WRONG.
+   glyphs branching from its head, on a flat red background. The flat background was correct, but
+   the glowing UI/app icons made it read as a tech-blog infographic — cute and clean, not
+   unsettling or painterly. WRONG.
+3. A vintage telephone receiver tied with a ribbon around a severed ear, and a giant photoreal eye
+   with a mirror-ball iris — both technically well-rendered, but they read as glossy PRODUCT
+   PHOTOGRAPHY or stock macro photography (an object shot dead-center on a clean studio backdrop,
+   like a perfume/jewelry ad), not a painting. They also had NO FIGURE — just an isolated object or
+   body part, disconnected from any sense of a person's presence. WRONG.
 
-The reference's actual symbols are always TANGIBLE, PAINTABLE things — real animals, body parts,
-objects, furniture-as-single-prop, fabric, natural elements — rendered with visible oil-paint
-brushwork and texture. NEVER glowing digital icons, UI glyphs, app symbols, neon line-art, or
-anything that reads as a screen graphic or infographic. If the topic involves technology, represent
-it through a tangible surreal substitution (a hand made of shattered glass, a face replaced by a
-smooth blank mirror, a body wrapped in tangled telephone cord) — a painted OBJECT, not a rendered
-ICON.
+THE CRITICAL FIX: the reference ALWAYS centers a FIGURE — a full or partial human body, or a
+strongly figurative subject (a skeleton, a person-shaped silhouette) — placed within a simple,
+evocative space (an empty landscape, an open sky, a plain room suggestion), not an isolated
+close-up of a disembodied object or body part floating on a studio-clean backdrop. The figure gives
+the image scale, presence, and narrative — a small or partial figure within a big simple space
+reads as lonely/vulnerable/human; an isolated object alone reads as a product ad. If a symbolic
+object is used (a phone, a mirror), a FIGURE must still be present, interacting with it or nearby —
+never the object alone as the sole subject.
+
+RENDERING: visible, LOOSE painterly oil-paint brushwork — imperfect edges, visible strokes, some
+texture and grain. NEVER glossy, photoreal, airbrushed, or CGI-smooth — that reads as a digital
+render or product photo, not a painting.
+
+The reference's symbols are always TANGIBLE things — a real animal, a human body/figure, an object
+a figure is holding or near, fabric, natural elements. NEVER glowing digital icons, UI glyphs, app
+symbols, or neon line-art. If the topic involves technology, represent it through a tangible surreal
+substitution involving the FIGURE itself (a person's head replaced by a screen-shaped void, a figure
+embracing a mirror instead of another person) — not a disconnected prop shot.
 
 The mood must be UNCANNY and QUIETLY DISTURBING — a viewer should feel a little unsettled, like
-they've glimpsed an uncomfortable truth about themselves — never cute, whimsical, cozy, or like a
-wellness/self-care ad. Confirmed real examples of the reference style:
-- A person's head replaced entirely by a white dove in flight, plain flat ocean-blue background,
-  nothing else in frame — for a theme about hidden identity/emotional freedom.
-- A lone figure seen from behind, sitting in ONE bright red armchair, on a flat pale beige/tan
-  ground with a plain sky — no room, no furniture, no other objects — for a theme about solitude.
-- A skeletal hand on one half of the frame against a plain dark starfield, a living hand on the
-  other half against a plain bright field of red/green flowers — a clean vertical split, two flat
-  backgrounds, nothing photorealistic — for a theme about choice/transformation.
-- A decorative flat red-and-gold textile pattern filling the background, a skeleton figure posed on
-  top of it — flat pattern, not a 3D room — for a theme about a truth being unavoidable.
+they've glimpsed an uncomfortable truth about themselves — never cute, whimsical, or like a
+wellness/self-care ad, and never a slick commercial product shot. Confirmed real examples of the
+reference style:
+- A person's head replaced entirely by a white dove in flight, formal dark suit still visible on
+  the body, plain flat ocean-blue background — for a theme about hidden identity/emotional freedom.
+- A lone figure seen from behind, small within the frame, sitting in ONE bright red armchair, on a
+  flat pale beige/tan ground with a plain sky stretching around them — for a theme about solitude.
+- A skeletal hand reaching from one half of the frame against a plain dark starfield, a living hand
+  reaching from the other half against a plain bright field of flowers — two arms/hands implying two
+  figures just out of frame — for a theme about choice/transformation.
+- A skeleton figure posed sitting on a decorative flat red-and-gold textile pattern — for a theme
+  about an unavoidable truth.
 
-RULES FOR THE BACKGROUND: FLAT and SIMPLE only — one solid color, a plain gradient sky/ground, a
-flat decorative pattern, or a stark empty landscape. NEVER a detailed interior room, furniture as
-set-dressing, doorways, crowds, or environmental storytelling.
+RULES FOR THE BACKGROUND: FLAT and SIMPLE only — one solid color, a plain gradient sky/ground, or a
+flat decorative pattern. NEVER a detailed interior room, furniture as set-dressing, doorways,
+crowds, or environmental storytelling.
 
-Given a psychology topic/angle, invent ONE such symbol using a real, tangible, paintable subject —
-a single clear visual metaphor a viewer can read in half a second, rendered with visible brushwork
-in a bold, saturated, classical-poster oil-painting style (2-4 vivid dominant colors, strong flat
-color blocking, dramatic but CLEAN lighting — not murky or desaturated), full bleed edge-to-edge.
+Given a psychology topic/angle, invent ONE such symbolic scene CENTERED ON A FIGURE — a single clear
+visual metaphor a viewer can read in half a second, rendered with loose visible oil-paint brushwork
+in a bold, saturated, classical-poster style (2-4 vivid dominant colors, strong flat color blocking,
+dramatic but CLEAN lighting — not murky or desaturated), full bleed edge-to-edge.
 
 Write TWO variants (A and B) — different symbolic metaphors for the same topic, both equally strong,
 so they can be A/B tested against each other.
 
 Both must follow these rules:
-- ONE clear symbolic image using a TANGIBLE painted subject (body, animal, object, fabric, natural
-  element) — NEVER a glowing digital icon, UI glyph, app symbol, or neon line-art element.
+- MUST include a full or partial human (or human-shaped/figurative) body — never an isolated object
+  or body part alone as the sole subject with no figure present.
 - FLAT/SIMPLE background only (solid color, plain gradient, or flat pattern) — no rooms, no
   furniture, no crowds, no busy environments.
-- Mood is uncanny/quietly disturbing, not cute or wellness-ad friendly.
-- Bold, saturated, classical-poster painterly rendering with visible brush texture — not comic, not
-  cartoon, not a dark/muted cinematic photorealistic render, not clean flat vector graphics.
+- Mood is uncanny/quietly disturbing, not cute, wellness-ad, or product-photography-clean.
+- Loose, visible oil-paint brushwork with texture — NOT glossy/photoreal/airbrushed/CGI-smooth, not
+  comic, not cartoon, not flat vector graphics.
 - 2-4 vivid dominant colors, clean strong contrast (not murky/desaturated).
 - Full bleed edge-to-edge — ZERO text, ZERO white border, ZERO frame, ZERO vignette.
 - No real/identifiable person, no gore.
@@ -962,29 +979,43 @@ MANUAL_THUMBNAIL_AGENT_INSTRUCTION_ARTISTIC = (
     "card art, classic album-cover surrealism. This is NOT a comic illustration, NOT a close-up "
     "shocked face, and CRITICALLY NOT a moody cinematic concept-art render of a detailed interior "
     "scene.\n\n"
-    "TWO earlier attempts were rejected by the user as 'far off' / 'masih jelek' — learn from both: "
-    "(1) a person at a desk in a detailed dark room with a doorway and background crowd — too busy, "
-    "too desaturated, reads as a movie still; (2) a meditating figure with glowing neon-blue chat-"
-    "bubble icons branching from its head on a flat red background — the flat background was right, "
-    "but the glowing UI/app icons made it read as a tech-blog infographic or wellness-app ad, not a "
-    "painting.\n\n"
-    "The symbol must ALWAYS be a TANGIBLE, PAINTABLE thing — a real animal, body part, object, "
-    "fabric, or natural element rendered with visible oil-paint brushwork — NEVER a glowing digital "
-    "icon, UI glyph, app symbol, notification bubble, or neon line-art element. If the scene "
-    "involves technology, represent it through a tangible surreal substitution (e.g. a face "
-    "replaced by a smooth blank mirror, a hand made of shattered glass) — a painted OBJECT, never a "
-    "rendered ICON — posed against a flat plain background.\n\n"
+    "THREE earlier attempts were rejected by the user as 'far off' / 'masih jelek' / 'not even "
+    "close' — learn from all three: (1) a person at a desk in a detailed dark room with a doorway "
+    "and background crowd — too busy, too desaturated, reads as a movie still; (2) a meditating "
+    "figure with glowing neon-blue chat-bubble icons branching from its head on a flat red "
+    "background — the flat background was right, but the glowing UI/app icons made it read as a "
+    "tech-blog infographic; (3) a vintage telephone receiver tied to a severed ear with a ribbon, "
+    "and a giant photoreal eye with a mirror-ball iris — both technically well-rendered but read as "
+    "glossy PRODUCT PHOTOGRAPHY (an object shot on a clean studio backdrop, like a perfume ad), and "
+    "critically had NO FIGURE — just an isolated object floating alone.\n\n"
+    "THE CRITICAL FIX: the reference ALWAYS centers a FIGURE — a full or partial human body, or a "
+    "strongly figurative subject (a skeleton, a person-shaped silhouette) — placed within a simple "
+    "evocative space, never an isolated close-up of a disembodied object or body part on a clean "
+    "studio backdrop. A small or partial figure within a big simple space reads as human and "
+    "vulnerable; an object alone reads as a product ad. If a symbolic object is used (a phone, a "
+    "mirror), a FIGURE must still be present, holding it or near it — never the object alone.\n\n"
+    "RENDERING: visible, LOOSE painterly oil-paint brushwork — imperfect edges, visible strokes, "
+    "some texture and grain. NEVER glossy, photoreal, airbrushed, or CGI-smooth — that reads as a "
+    "digital render or product photo, not a painting.\n\n"
+    "The symbol must ALWAYS be a TANGIBLE thing involving the figure — a real animal, the human "
+    "body itself, an object the figure holds or is near, fabric, natural elements — NEVER a glowing "
+    "digital icon, UI glyph, app symbol, notification bubble, or neon line-art element. If the "
+    "scene involves technology, represent it through a tangible surreal substitution involving the "
+    "figure itself (e.g. a person's head replaced by a smooth blank mirror, a figure embracing a "
+    "mirror instead of another person) — never a disconnected prop shot with no figure.\n\n"
     "MOOD: uncanny and quietly disturbing — the viewer should feel a little unsettled, like they've "
-    "glimpsed an uncomfortable truth about themselves. Never cute, whimsical, cozy, or like a "
-    "wellness/self-care ad.\n\n"
+    "glimpsed an uncomfortable truth about themselves. Never cute, whimsical, cozy, a wellness/"
+    "self-care ad, or a slick commercial product shot.\n\n"
     "BACKGROUND RULE: the background must be FLAT and SIMPLE — one solid color, a plain gradient "
     "sky/ground, or a flat decorative pattern. NEVER a detailed room, NEVER furniture, NEVER a "
     "crowd of background figures, NEVER environmental storytelling.\n\n"
     "COLOR: bold, saturated, classical-poster color blocking (2-4 vivid dominant colors) with "
-    "clean, dramatic but CLEAR lighting and visible brush texture — not murky, muted, or "
-    "desaturated 'cinematic' tones, and not flat clean vector/digital graphics either.\n\n"
-    "The image should express the psychological idea through ONE powerful visual metaphor a viewer "
-    "reads instantly, not a literal narrative scene.\n\n"
+    "clean, dramatic but CLEAR lighting and visible loose brush texture — not murky, muted, or "
+    "desaturated 'cinematic' tones, not glossy/photoreal, and not flat clean vector/digital "
+    "graphics either.\n\n"
+    "The image should express the psychological idea through ONE powerful visual metaphor centered "
+    "on a figure, a viewer reads instantly — not a literal narrative scene, and not an isolated "
+    "product shot.\n\n"
     "COMPOSITION: The image fills the full 1280x720 frame edge-to-edge. Keep the main subject "
     "roughly centered vertically in the LOWER 80% of the frame — a solid-color text band will be "
     "added across the TOP of the image afterward, so avoid putting essential visual details in "
