@@ -550,6 +550,60 @@ def _compose_psyphoria(scene_bytes, hook_text, out_path):
     canvas.save(out_path, "JPEG", quality=95)
 
 
+ACCENT_RED = (222, 40, 40)
+
+def _compose_psyphoria_duotone(scene_bytes, hook_text, highlight_words, out_path):
+    """Same black-top-band / full-image-below layout as _compose_psyphoria(),
+    but Title Case (not all-caps) with one or two punch words rendered in
+    ACCENT_RED against the rest in white — matches the reference channel
+    style (2026-07-15 pivot: 'Nothing Owns You', 'You Need Solitude', one
+    red word per line, real painterly/symbolic art instead of comic
+    close-up faces). highlight_words: set of word strings (case-insensitive)
+    to render red; the rest render white."""
+    words = hook_text.split()
+    highlight_set = {w.lower().strip(".,!?") for w in highlight_words}
+
+    font_size = 165
+    font = ImageFont.truetype(str(THUMBNAIL_FONT_PATH), font_size)
+    full_bbox = font.getbbox(hook_text)
+    full_w = full_bbox[2] - full_bbox[0]
+    max_w = int(THUMB_SIZE[0] * 0.92)
+    if full_w > max_w:
+        font_size = int(font_size * max_w / full_w)
+        font = ImageFont.truetype(str(THUMBNAIL_FONT_PATH), font_size)
+        full_bbox = font.getbbox(hook_text)
+        full_w = full_bbox[2] - full_bbox[0]
+    text_h = full_bbox[3] - full_bbox[1]
+
+    pad_v = 28
+    band_h = pad_v + text_h + pad_v
+    img_h = THUMB_SIZE[1] - band_h
+
+    scene = Image.open(io.BytesIO(scene_bytes)).convert("RGB")
+    scale = max(THUMB_SIZE[0] / scene.width, img_h / scene.height)
+    new_w, new_h = int(scene.width * scale) + 1, int(scene.height * scale) + 1
+    scene = scene.resize((new_w, new_h), Image.LANCZOS)
+    x0 = (new_w - THUMB_SIZE[0]) // 2
+    y0 = (new_h - img_h) // 2
+    scene = scene.crop((x0, y0, x0 + THUMB_SIZE[0], y0 + img_h))
+
+    canvas = Image.new("RGB", THUMB_SIZE, (0, 0, 0))
+    canvas.paste(scene, (0, band_h))
+
+    draw = ImageDraw.Draw(canvas)
+    space_w = font.getbbox(" ")[2] - font.getbbox(" ")[0]
+    space_w = space_w or int(font_size * 0.28)
+    x = (THUMB_SIZE[0] - full_w) // 2
+    y = pad_v - full_bbox[1]
+    for word in words:
+        color = ACCENT_RED if word.lower().strip(".,!?") in highlight_set else (255, 255, 255)
+        draw.text((x, y), word, font=font, fill=color)
+        w_bbox = font.getbbox(word)
+        x += (w_bbox[2] - w_bbox[0]) + space_w
+
+    canvas.save(out_path, "JPEG", quality=95)
+
+
 def _fit_cover_top(img, size, top_bias=0.10):
     """Cover-fit, but anchor the crop toward the top instead of centering
     vertically — keeps the eyes/upper face in the frame's top third so they
@@ -817,6 +871,121 @@ def generate_manual_thumbnail_prompt_package_clickbait(topic_data):
         "agent_instruction": MANUAL_THUMBNAIL_AGENT_INSTRUCTION_CLICKBAIT,
         "hook_a": hooks["a"],
         "hook_b": hooks["b"],
+        "prompt_a": scenes["a"],
+        "prompt_b": scenes["b"],
+    }
+
+
+_HOOK_DUOTONE_SYSTEM = """\
+You are a YouTube thumbnail copywriter for a psychology channel, matching a reference channel's
+proven duotone-text style. Each thumbnail hook is a short punchy phrase (3-4 words, Title Case, no
+ALL CAPS) with exactly ONE or TWO words meant to be rendered in red for emphasis — the rest render
+white. The red word(s) should be the single most emotionally charged/punchy word in the phrase.
+
+Confirmed real examples from the reference style (red word(s) marked with ** here ONLY to illustrate
+which word gets highlighted — the ** markers themselves are NOT part of the real thumbnail text):
+"Nothing **Owns** You" | "You Need **Solitude**" | "Heal. **Then** Watch." | "**Break** The Illusion"
+| "They **Never** Forget" | "You're Still **Blind**"
+
+Given the video's title and angle, write ONE such hook phrase that captures its core idea — it does
+not need to reuse the title's exact words, but must capture the same core provocative idea.
+The "hook" field must be PLAIN TEXT ONLY — no asterisks, no markdown, no markup of any kind.
+Return ONLY JSON: {"hook": "...", "highlight": ["word1"]}
+("highlight" is a list of the exact word(s) from "hook" to render red — usually just one word.)"""
+
+_SCENE_ARTISTIC_SYSTEM = """\
+You are a visual prompt writer for an AI image generator, matching a reference channel's thumbnail
+art style: real classical/symbolic fine-art painting — think Magritte-style surrealism, memento mori
+symbolism, dramatic single-subject religious/renaissance painting — NOT a comic illustration, NOT a
+close-up shocked face. The image should express the psychological idea through ONE powerful visual
+metaphor or symbolic scene, not literally show an expression.
+
+Confirmed real examples of the reference style:
+- A person's head replaced/obscured by a white dove in flight, formal dark suit, ocean backdrop
+  (Magritte reference) — for a theme about hidden identity/emotional freedom.
+- A lone figure seen from behind, sitting in a single red armchair in an empty pale landscape —
+  for a theme about needing solitude.
+- A skeletal hand reaching among cosmic void on one side, a living hand reaching into blooming
+  flowers on the other — for a theme about choice/mortality/transformation.
+- Two eyes emerging from an abstract red-and-black painted texture around a ghostly embracing
+  couple — for a theme about a painful truth being seen.
+
+Given a psychology topic/angle, invent ONE such symbolic scene — a single clear visual metaphor a
+viewer can read in half a second, painted in a realistic/classical oil-painting style with rich but
+limited color palette (2-4 dominant colors), dramatic lighting, full bleed edge-to-edge.
+
+Write TWO variants (A and B) — different symbolic metaphors for the same topic, both equally strong,
+so they can be A/B tested against each other.
+
+Both must follow these rules:
+- ONE clear symbolic image/metaphor, not a busy or literal scene.
+- Realistic/classical painterly rendering (oil painting, renaissance/symbolist style) — not comic,
+  not cartoon, not photographic.
+- 2-4 dominant colors, dramatic lighting and contrast.
+- Full bleed edge-to-edge — ZERO text, ZERO white border, ZERO frame, ZERO vignette.
+- No real/identifiable person, no gore.
+
+Return ONLY JSON: {"a": "...", "b": "..."}
+Nothing else."""
+
+MANUAL_THUMBNAIL_AGENT_INSTRUCTION_ARTISTIC = (
+    "You are a visual artist generating a YouTube thumbnail image for a psychology channel "
+    "(Apophenia), in a classical/symbolic fine-art painting style — think Magritte-style "
+    "surrealism, memento mori symbolism, dramatic single-subject renaissance-style painting. "
+    "This is NOT a comic illustration and NOT a close-up shocked face — it must express the "
+    "psychological idea through ONE powerful visual metaphor a viewer reads instantly, painted "
+    "realistically with rich but limited color and dramatic lighting.\n\n"
+    "COMPOSITION: The image fills the full 1280x720 frame edge-to-edge. Keep the main subject "
+    "roughly centered vertically in the LOWER 80% of the frame — a solid-color text band will be "
+    "added across the TOP of the image afterward, so avoid putting essential visual details in "
+    "the very top strip.\n\n"
+    "STRICT RULES: ZERO text, ZERO white border/frame/vignette, no real/identifiable person, no gore.\n\n"
+    "Generate the image in English, following the exact scene description."
+)
+
+
+def generate_manual_thumbnail_prompt_package_artistic(topic_data):
+    """Copy-paste-for-Google-Flow package for the duotone Psyphoria style (see
+    _compose_psyphoria_duotone): classical/symbolic fine-art scenes instead of
+    close-up faces, hook phrase with a marked red-highlight word instead of an
+    all-caps imperative command. Added 2026-07-15 — reference channel
+    screenshot showed this style performing well (1.6K-3.9K views/video) vs
+    Apophenia's own 215 total views across 12 videos."""
+    topic = topic_data["topic"]
+    angle = topic_data["angle"]
+    category = topic_data["category"]
+
+    def _clean_hook(h):
+        h["hook"] = h["hook"].replace("**", "").replace("*", "").strip()
+        h["highlight"] = [w.replace("**", "").replace("*", "").strip() for w in h["highlight"]]
+        return h
+
+    hook_a = _clean_hook(json.loads(_call_claude(
+        _HOOK_DUOTONE_SYSTEM,
+        f"Title/Topic: {topic}\nAngle: {angle}",
+        max_tokens=100,
+    )))
+    hook_b = _clean_hook(json.loads(_call_claude(
+        _HOOK_DUOTONE_SYSTEM,
+        f"Title/Topic: {topic}\nAngle: {angle}\n(Write a DIFFERENT hook phrase than a typical "
+        f"first attempt — a different angle on the same idea.)",
+        max_tokens=100,
+    )))
+    raw = _call_claude(
+        _SCENE_ARTISTIC_SYSTEM,
+        f"Topic: {topic}\nAngle: {angle}\nCategory: {category}\nHook A: {hook_a['hook']}\nHook B: {hook_b['hook']}",
+        max_tokens=600,
+    )
+    clean = raw.replace("```json", "").replace("```", "").strip()
+    s, e = clean.find("{"), clean.rfind("}")
+    scenes = json.loads(clean[s:e + 1])
+
+    return {
+        "agent_instruction": MANUAL_THUMBNAIL_AGENT_INSTRUCTION_ARTISTIC,
+        "hook_a": hook_a["hook"],
+        "highlight_a": hook_a["highlight"],
+        "hook_b": hook_b["hook"],
+        "highlight_b": hook_b["highlight"],
         "prompt_a": scenes["a"],
         "prompt_b": scenes["b"],
     }
