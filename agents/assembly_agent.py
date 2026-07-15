@@ -242,7 +242,7 @@ def _slot_is_blackscreen(slot_start, slot_end, blackscreen_spans):
     return overlap >= slot_dur * 0.5
 
 
-def create_video(audio_path, category, topic_id, topic_slug=None, blackscreen_spans=None, subtitles_path=None, word_timings=None):
+def create_video(audio_path, category, topic_id, topic_slug=None, blackscreen_spans=None, subtitles_path=None, word_timings=None, single_image=True):
     images = _get_images(category, topic_slug)
     out_path = OUTPUT_DIR / "video" / f"{topic_id}.mp4"
     out_path.parent.mkdir(parents=True, exist_ok=True)
@@ -260,18 +260,29 @@ def create_video(audio_path, category, topic_id, topic_slug=None, blackscreen_sp
         except subprocess.CalledProcessError:
             return False
 
-    sentence_slots = _sentence_slots(word_timings) if word_timings else _paced_slots(duration)
-
-    black_clip = clips_dir / "black.mp4"
-    if blackscreen_spans and not _clip_is_valid(black_clip):
-        _make_black_clip(black_clip)
-
     outro_clip = clips_dir / "outro.mp4"
     if not (outro_clip.exists() and outro_clip.stat().st_size > 0):
         _make_freeze_clip(images[-1], outro_clip, OUTRO_TAIL_SEC)
 
+    black_clip = clips_dir / "black.mp4"
+    if not single_image and blackscreen_spans and not _clip_is_valid(black_clip):
+        _make_black_clip(black_clip)
+
     concat_lines = []
-    if sentence_slots:
+    if single_image:
+        # Audio-first pivot, 2026-07-15: one hero image for the whole video
+        # instead of a multi-image slideshow — captions (now a solid color
+        # block, see caption_agent._ass_header) carry the visual interest,
+        # and the audience is explicitly people who want to LISTEN, not
+        # watch a changing slideshow. A single very-slow Ken Burns zoom
+        # (same mechanism, full-duration) avoids a completely dead static
+        # frame while staying visually calm. Only the first generated image
+        # is used — see agents/image_agent.generate_single_content_image_prompt().
+        main_clip = clips_dir / "main.mp4"
+        if not _clip_is_valid(main_clip, min_dur=duration):
+            _make_ken_burns_clip(images[0], main_clip, seconds=duration)
+        concat_lines.append(f"file '{main_clip.resolve()}'")
+    elif (sentence_slots := (_sentence_slots(word_timings) if word_timings else _paced_slots(duration))):
         # One image per sentence (see _sentence_slots) instead of a fixed
         # time grid — requested 2026-06-22 (topic #4 onward) so the visuals
         # turn over with the script's own rhythm and don't sit still long

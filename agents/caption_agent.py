@@ -100,6 +100,14 @@ def _ass_header():
     # libass matches by family, not filename. Confirm with:
     #   fc-scan --format '%{family}\n' assets/fonts/Lato-Regular.ttf
     # before the first real render.
+    #
+    # BorderStyle=3 (opaque box) with Outline=0/Shadow=0 renders a solid
+    # color block behind each word instead of the old stroke+drop-shadow
+    # look — 2026-07-15 pivot to single-image/audio-first videos, where the
+    # caption block is now the primary visual element, not a text overlay on
+    # top of a busy slideshow. Don't add outline/shadow back once there's a
+    # solid block; they're redundant on a flat-color background and just
+    # muddy the edges.
     return """[Script Info]
 ScriptType: v4.00+
 PlayResX: 1920
@@ -108,8 +116,8 @@ WrapStyle: 0
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Word,Lato,84,&H00FFFFFF,&H000000FF,&H00000000,&H80000000,1,0,0,0,100,100,0,0,1,4,2,2,80,80,80,1
-Style: WordHi,Lato,84,""" + HIGHLIGHT_COLOR_ASS + """,&H000000FF,&H00000000,&H80000000,1,0,0,0,100,100,0,0,1,4,2,2,80,80,80,1
+Style: Word,Lato,84,&H00FFFFFF,&H000000FF,&H00000000,&H00000000,1,0,0,0,100,100,0,0,3,0,0,2,80,80,80,1
+Style: WordHi,Lato,84,""" + HIGHLIGHT_COLOR_ASS + """,&H000000FF,&H00000000,&H00000000,1,0,0,0,100,100,0,0,3,0,0,2,80,80,80,1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text

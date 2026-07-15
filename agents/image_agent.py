@@ -117,6 +117,75 @@ MANUAL_AGENT_INSTRUCTION = (
 )
 
 
+_SINGLE_CONTENT_SCENE_SYSTEM = """\
+You are a visual prompt writer for an AI image generator, writing the ONE hero image that plays
+behind an entire audio-first psychology-essay video (2026-07-15 pivot: single static/slow-zoom
+image instead of a multi-image slideshow, since the audience wants to LISTEN, not watch a changing
+visual). This image has to hold a viewer's attention as a backdrop for 10-20+ minutes, so it must be
+a single strong, evocative symbolic scene — not busy, not gimmicky, not something that gets boring
+or distracting on a long hold.
+
+Match the channel's established art style exactly: bold, iconic, POSTER-SIMPLE symbolic fine-art
+painting — think Magritte, tarot card art, classic album-cover surrealism. NOT a comic illustration,
+NOT a literal narrative scene, NOT a busy detailed interior room.
+
+RULES:
+- MUST include a full or partial human (or human-shaped/figurative) body as the central subject —
+  never an isolated object alone with no figure.
+- The symbol must be a TANGIBLE, PAINTABLE thing (a real animal, the human body itself, an object
+  the figure holds or is near, fabric, natural elements) — NEVER a glowing digital icon, UI glyph,
+  or app symbol.
+- Background FLAT and SIMPLE — one solid color, a plain gradient sky/ground, or a flat decorative
+  pattern. NEVER a detailed room, furniture, crowds, or environmental storytelling.
+- Rendered with visible, LOOSE oil-paint brushwork — NOT glossy, photoreal, or CGI-smooth.
+- Mood: uncanny, quietly resonant, atmospheric — not cute, not a wellness ad, not a jump-scare.
+- 2-4 vivid dominant colors, clean dramatic lighting and contrast.
+- Keep the BOTTOM ~30% of the frame relatively simple/uncluttered (plain background, no critical
+  detail) — a solid-color caption block will sit there for the entire video, so nothing important
+  in the scene should be hidden behind it.
+- Full bleed edge-to-edge — ZERO text, ZERO white border, ZERO frame, ZERO vignette.
+- No real/identifiable person, no gore.
+
+Given a psychological archetype and its angle, write ONE such scene — a single clear visual metaphor
+for this specific pattern, described in 3-5 vivid sentences (setting, figure, symbolic object,
+light, color).
+Return ONLY the prompt text, no labels, no preamble, no JSON."""
+
+MANUAL_SINGLE_IMAGE_AGENT_INSTRUCTION = (
+    "You are a visual artist generating the single hero image for a psychology-essay YouTube video "
+    "(Apophenia), in a bold, iconic, POSTER-SIMPLE symbolic fine-art style — think Magritte, tarot "
+    "card art, classic album-cover surrealism. This ONE image plays for the entire video (10-20+ "
+    "minutes), so it must be a strong, evocative symbolic scene that doesn't get boring or "
+    "distracting on a long hold — not a comic illustration, not a busy literal scene.\n\n"
+    "COMPOSITION: MUST include a full or partial human (or human-shaped) figure as the central "
+    "subject, holding or near ONE tangible symbolic object (never a glowing digital icon or app "
+    "symbol). Background FLAT and SIMPLE — one solid color, plain gradient, or flat pattern — "
+    "never a detailed room, furniture, or crowd. Keep the BOTTOM ~30% of the 1920x1080 frame "
+    "relatively simple/uncluttered — a solid-color caption block will sit there for the whole "
+    "video.\n\n"
+    "RENDERING: visible, loose oil-paint brushwork — not glossy, photoreal, or CGI-smooth. Mood: "
+    "uncanny, quietly resonant, atmospheric. 2-4 vivid dominant colors, clean dramatic lighting.\n\n"
+    "STRICT RULES: ZERO text, ZERO white border/frame/vignette, no real/identifiable person, no gore.\n\n"
+    "Generate the image in English, following the exact scene description."
+)
+
+
+def generate_single_content_image_prompt(topic, angle, category):
+    """Generates ONE hero-image prompt for the audio-first/single-image video
+    format (see agents/assembly_agent.create_video single_image=True) —
+    2026-07-15 pivot away from the many-scenes-per-video slideshow, matching
+    the same Psyphoria symbolic art style as the thumbnails (thumbnail_agent
+    generate_manual_thumbnail_prompt_package_artistic) for a consistent
+    channel identity. Does not call any image API — caller (scheduler.py)
+    uploads the result to Supabase so the dashboard can display it."""
+    prompt = _llm.call(
+        f"Archetype: {topic}\nAngle: {angle}\nCategory: {category}",
+        system=_SINGLE_CONTENT_SCENE_SYSTEM,
+        max_tokens=400,
+    )
+    return MANUAL_SINGLE_IMAGE_AGENT_INSTRUCTION, prompt.strip()
+
+
 def generate_manual_prompt_package(topic, angle, duration_sec):
     """Generates the full copy-paste package for manual (Google Flow) scene
     generation: the fixed agent instruction + a numbered scene list sized to

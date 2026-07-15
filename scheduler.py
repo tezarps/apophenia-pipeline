@@ -11,7 +11,7 @@ import supabase_io as sb
 from agents.script_agent import generate_script
 from agents.tts_agent import generate_audio
 from agents.assembly_agent import create_video, _audio_duration, OUTRO_TAIL_SEC
-from agents.image_agent import generate_manual_prompt_package
+from agents.image_agent import generate_single_content_image_prompt
 from agents.thumbnail_agent import generate_manual_thumbnail_prompt_package_artistic as generate_manual_thumbnail_prompt_package
 from agents.caption_agent import annotate_script, build_ass, blackscreen_spans as compute_blackscreen_spans
 from agents.metadata_agent import generate_metadata, generate_engagement_question
@@ -28,9 +28,11 @@ from telegram_notify import notify
 THUMBNAILS_DIR = BASE_DIR / "thumbnails"
 
 # Burned-in word-by-word captions paused 2026-06-22 pending a visual-quality
-# pass (full-bleed images, no comic-panel framing) — flip back to True once
-# that's approved. While off, videos rely on YouTube's own auto-captions.
-BURN_IN_SUBTITLES = False
+# pass, re-enabled 2026-07-15 as part of the audio-first/single-image pivot —
+# with only one static hero image per video, the caption block (now a solid
+# color block, see caption_agent._ass_header) is the primary visual element
+# carrying the video, not an overlay on a changing slideshow.
+BURN_IN_SUBTITLES = True
 
 # One-off publish override used 2026-06-22 for same-day urgent publishes —
 # left on accidentally caused two videos (Topic #1 and #3) to both land on
@@ -351,13 +353,15 @@ def run(audio_only=False):
         # already uploaded from a prior paused day) so the dashboard has a
         # ready-to-copy prompt set the moment it pauses — user no longer
         # needs to ask for it in chat each time. One cheap DeepSeek call.
+        # Single scene now (2026-07-15 audio-first pivot: one hero image per
+        # video instead of a duration-scaled slideshow) — still stored as a
+        # one-item list so the existing dashboard rendering (which iterates
+        # `scenes`) doesn't need to change.
         try:
             if sb.get_image_prompts(topic_id) is None:
-                local_audio = OUTPUT_DIR / "audio" / f"{topic_id}.mp3"
-                duration_sec = _audio_duration(local_audio)
-                instruction, scenes = generate_manual_prompt_package(topic["topic"], angle, duration_sec)
-                sb.upload_image_prompts(topic_id, instruction, scenes)
-                print(f"    Generated {len(scenes)} manual scene prompts → dashboard")
+                instruction, scene = generate_single_content_image_prompt(topic["topic"], angle, topic["category"])
+                sb.upload_image_prompts(topic_id, instruction, [scene])
+                print("    Generated 1 hero-image prompt → dashboard")
         except Exception as prompt_err:
             print(f"    Warning: prompt package generation skipped: {prompt_err}")
 
