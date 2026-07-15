@@ -12,7 +12,7 @@ from agents.script_agent import generate_script
 from agents.tts_agent import generate_audio
 from agents.assembly_agent import create_video, _audio_duration, OUTRO_TAIL_SEC
 from agents.image_agent import generate_manual_prompt_package
-from agents.thumbnail_agent import generate_manual_thumbnail_prompt_package
+from agents.thumbnail_agent import generate_manual_thumbnail_prompt_package_clickbait as generate_manual_thumbnail_prompt_package
 from agents.caption_agent import annotate_script, build_ass, blackscreen_spans as compute_blackscreen_spans
 from agents.metadata_agent import generate_metadata, generate_engagement_question
 from agents.music_agent import generate_topic_music

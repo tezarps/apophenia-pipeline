@@ -738,3 +738,85 @@ def generate_manual_thumbnail_prompt_package(topic_data):
         "prompt_a": scenes["a"],
         "prompt_b": scenes["b"],
     }
+
+
+_SCENE_CLICKBAIT_SYSTEM = """\
+You are a visual prompt writer for an AI image generator.
+Given a psychology topic and TWO hook texts, write TWO extreme close-up face prompts — A and B —
+for high-CTR clickbait-style YouTube thumbnails. This is a deliberate style shift away from calm/
+restrained portraits (those underperformed — 215 total views across 12 videos) toward a punchier,
+more provocative look.
+
+CRITICAL — the expression must be a SHOCKED, ALARMED, or INTENSELY PROVOKED reaction, not a subtle
+"off" or hollow look:
+- Eyes wide open, whites visible above/below the iris, eyebrows raised high in alarm — OR —
+- Eyes narrowed and furious, jaw clenched, an intense confrontational glare directly at the camera.
+Pick whichever reads more truthfully as the topic's emotional core, but it must be a BIG, legible,
+unmistakable reaction a viewer catches in half a second, not a quiet/ambiguous mood.
+
+CRITICAL — ONE figure only, extreme close-up (face fills nearly the entire frame, cropped tight —
+tighter than a normal portrait, more forehead-to-chin than head-and-shoulders). Simple blurred or
+solid-color background, nothing busy — all visual weight is the face and its reaction.
+
+PROMPT A: vivid, high-contrast digital illustration / comic-style rendering, punchy saturated colors,
+dramatic directional lighting (hard shadow on one side).
+PROMPT B: gritty semi-realistic painted style, desaturated except for one accent color, harsh
+top-down or side lighting that carves out the alarmed expression.
+
+Both prompts must follow these rules:
+- Extreme close-up, ONE figure, face fills the frame edge-to-edge.
+- The expression must visually match its hook text's emotional charge exactly (e.g. a hook about
+  danger/fear -> genuine alarm; a hook about anger/injustice -> genuine confrontation).
+- 2-3 dominant high-contrast colors. Full bleed edge-to-edge — ZERO white border, ZERO frame, ZERO vignette.
+- A and B must have DIFFERENT specific expressions (not the same shock restated in two styles).
+- No text in the image, no logos, no real/identifiable person, no gore, no cartoonish exaggeration
+  (this is dramatic, not silly).
+
+Return ONLY JSON: {"a": "...", "b": "..."}
+Nothing else."""
+
+MANUAL_THUMBNAIL_AGENT_INSTRUCTION_CLICKBAIT = (
+    "You are a visual artist generating a YouTube thumbnail face shot for a psychology channel "
+    "(Apophenia), in a high-CTR clickbait style — think MrBeast-adjacent reaction thumbnails, not "
+    "a calm fine-art portrait. This must read as a big, unmistakable emotional reaction (shock, "
+    "alarm, or intense confrontation) that a viewer catches instantly while scrolling.\n\n"
+    "COMPOSITION: EXTREME close-up, ONE figure only, face fills almost the entire 1280x720 frame "
+    "(tighter crop than a normal headshot — forehead to chin). Keep the eyes and upper face inside "
+    "the top ~35% of the frame since a large bold text block will be added underneath afterward — "
+    "don't compose anything important (eyes, key expression detail) below the vertical middle of "
+    "the image. Background simple, blurred, or a flat color — no busy scene.\n\n"
+    "STRICT RULES: ZERO text, ZERO white border/frame/vignette, no real/identifiable person, no gore.\n\n"
+    "Generate the image in English, following the exact scene description."
+)
+
+
+def generate_manual_thumbnail_prompt_package_clickbait(topic_data):
+    """Same copy-paste-for-Google-Flow pattern as generate_manual_thumbnail_prompt_package(),
+    but for the bold clickbait overlay style (see _compose_bold_overlay) — extreme close-up,
+    shocked/confrontational expression, eyes kept in the top third so the giant text block added
+    afterward doesn't cover them. Added 2026-07-15 alongside the title/thumbnail strategy pivot."""
+    topic = topic_data["topic"]
+    angle = topic_data["angle"]
+    category = topic_data["category"]
+
+    hooks = json.loads(_call_claude(
+        _HOOK_SHORT_SYSTEM,
+        f"Archetype: {topic}\nAngle: {angle}",
+        max_tokens=80,
+    ))
+    raw = _call_claude(
+        _SCENE_CLICKBAIT_SYSTEM,
+        f"Topic: {topic}\nAngle: {angle}\nCategory: {category}\nHook A: {hooks['a']}\nHook B: {hooks['b']}",
+        max_tokens=600,
+    )
+    clean = raw.replace("```json", "").replace("```", "").strip()
+    s, e = clean.find("{"), clean.rfind("}")
+    scenes = json.loads(clean[s:e + 1])
+
+    return {
+        "agent_instruction": MANUAL_THUMBNAIL_AGENT_INSTRUCTION_CLICKBAIT,
+        "hook_a": hooks["a"],
+        "hook_b": hooks["b"],
+        "prompt_a": scenes["a"],
+        "prompt_b": scenes["b"],
+    }
