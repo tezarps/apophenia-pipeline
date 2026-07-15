@@ -897,13 +897,28 @@ _SCENE_ARTISTIC_SYSTEM = """\
 You are a visual prompt writer for an AI image generator, matching a reference channel's thumbnail
 art style EXACTLY: bold, iconic, POSTER-SIMPLE symbolic fine-art painting — think Magritte, tarot
 card art, classic album-cover surrealism. NOT a comic illustration, NOT a close-up shocked face, and
-CRITICALLY NOT a moody cinematic concept-art render of a detailed interior scene. A first, failed
-attempt at this style produced a person sitting at a desk in a detailed dark room with a doorway,
-furniture, and a crowd of background figures — REJECTED, described as "far off" from the reference:
-that kind of busy, desaturated, movie-still environment is exactly what NOT to do.
+CRITICALLY NOT a moody cinematic concept-art render of a detailed interior scene.
 
-Confirmed real examples of the reference style (study the COMPOSITION SIMPLICITY and COLOR BOLDNESS,
-not just the subject matter):
+TWO rejected attempts so far, both confirmed "far off"/"masih jelek" by the user — study why:
+1. A person sitting at a desk in a detailed dark room with a doorway, furniture, and a crowd of
+   background figures — busy, desaturated, movie-still environment. WRONG.
+2. A meditating human silhouette with a glowing neon-blue "tree" of tiny speech-bubble/chat-icon
+   glyphs branching from its head, on a flat red background. The flat red background was correct,
+   but the glowing UI/app icons (speech bubbles, notification glyphs, wifi-style signal lines) made
+   it read as a tech-blog infographic or a wellness-app ad — cute and clean, not unsettling or
+   painterly. WRONG.
+
+The reference's actual symbols are always TANGIBLE, PAINTABLE things — real animals, body parts,
+objects, furniture-as-single-prop, fabric, natural elements — rendered with visible oil-paint
+brushwork and texture. NEVER glowing digital icons, UI glyphs, app symbols, neon line-art, or
+anything that reads as a screen graphic or infographic. If the topic involves technology, represent
+it through a tangible surreal substitution (a hand made of shattered glass, a face replaced by a
+smooth blank mirror, a body wrapped in tangled telephone cord) — a painted OBJECT, not a rendered
+ICON.
+
+The mood must be UNCANNY and QUIETLY DISTURBING — a viewer should feel a little unsettled, like
+they've glimpsed an uncomfortable truth about themselves — never cute, whimsical, cozy, or like a
+wellness/self-care ad. Confirmed real examples of the reference style:
 - A person's head replaced entirely by a white dove in flight, plain flat ocean-blue background,
   nothing else in frame — for a theme about hidden identity/emotional freedom.
 - A lone figure seen from behind, sitting in ONE bright red armchair, on a flat pale beige/tan
@@ -914,27 +929,26 @@ not just the subject matter):
 - A decorative flat red-and-gold textile pattern filling the background, a skeleton figure posed on
   top of it — flat pattern, not a 3D room — for a theme about a truth being unavoidable.
 
-RULES FOR THE BACKGROUND (the most common failure point): the background must be FLAT and SIMPLE —
-one solid color, a plain gradient sky/ground, a flat decorative pattern, or a stark empty landscape.
-NEVER a detailed interior room, NEVER furniture (desks, chairs as set-dressing, doorways), NEVER a
-crowd or group of background figures, NEVER environmental storytelling. If the topic involves a
-person and technology/screen, do NOT paint a realistic desk-and-monitor scene — instead find a
-SURREAL SUBSTITUTION (the screen's glow replacing their face, their reflection made of static, etc.)
-posed against a flat plain background, the same way the dove replaces the head in the reference.
+RULES FOR THE BACKGROUND: FLAT and SIMPLE only — one solid color, a plain gradient sky/ground, a
+flat decorative pattern, or a stark empty landscape. NEVER a detailed interior room, furniture as
+set-dressing, doorways, crowds, or environmental storytelling.
 
-Given a psychology topic/angle, invent ONE such symbol — a single clear visual metaphor a viewer can
-read in half a second, painted in a bold, saturated, classical-poster oil-painting style (2-4 vivid
-dominant colors, strong flat color blocking, dramatic but CLEAN lighting — not murky or desaturated),
-full bleed edge-to-edge.
+Given a psychology topic/angle, invent ONE such symbol using a real, tangible, paintable subject —
+a single clear visual metaphor a viewer can read in half a second, rendered with visible brushwork
+in a bold, saturated, classical-poster oil-painting style (2-4 vivid dominant colors, strong flat
+color blocking, dramatic but CLEAN lighting — not murky or desaturated), full bleed edge-to-edge.
 
 Write TWO variants (A and B) — different symbolic metaphors for the same topic, both equally strong,
 so they can be A/B tested against each other.
 
 Both must follow these rules:
-- ONE clear symbolic image, FLAT/SIMPLE background only (solid color, plain gradient, or flat
-  pattern) — no rooms, no furniture, no crowds, no busy environments.
-- Bold, saturated, classical-poster painterly rendering — not comic, not cartoon, not a dark/muted
-  cinematic photorealistic render.
+- ONE clear symbolic image using a TANGIBLE painted subject (body, animal, object, fabric, natural
+  element) — NEVER a glowing digital icon, UI glyph, app symbol, or neon line-art element.
+- FLAT/SIMPLE background only (solid color, plain gradient, or flat pattern) — no rooms, no
+  furniture, no crowds, no busy environments.
+- Mood is uncanny/quietly disturbing, not cute or wellness-ad friendly.
+- Bold, saturated, classical-poster painterly rendering with visible brush texture — not comic, not
+  cartoon, not a dark/muted cinematic photorealistic render, not clean flat vector graphics.
 - 2-4 vivid dominant colors, clean strong contrast (not murky/desaturated).
 - Full bleed edge-to-edge — ZERO text, ZERO white border, ZERO frame, ZERO vignette.
 - No real/identifiable person, no gore.
@@ -947,17 +961,28 @@ MANUAL_THUMBNAIL_AGENT_INSTRUCTION_ARTISTIC = (
     "(Apophenia), in a bold, iconic, POSTER-SIMPLE symbolic fine-art style — think Magritte, tarot "
     "card art, classic album-cover surrealism. This is NOT a comic illustration, NOT a close-up "
     "shocked face, and CRITICALLY NOT a moody cinematic concept-art render of a detailed interior "
-    "scene (desks, doorways, furniture, background crowds) — a first attempt in that direction was "
-    "rejected as 'far off' from the intended look.\n\n"
-    "BACKGROUND RULE (the most common failure point): the background must be FLAT and SIMPLE — one "
-    "solid color, a plain gradient sky/ground, or a flat decorative pattern. NEVER a detailed room, "
-    "NEVER furniture, NEVER a crowd or group of background figures, NEVER environmental "
-    "storytelling. If the scene involves technology (a screen, an AI, etc.), don't paint a "
-    "realistic desk-and-monitor scene — use a SURREAL SUBSTITUTION instead (e.g. a glow replacing "
-    "a face, a reflection made of light) posed against a flat plain background, the same way a "
-    "dove can replace a person's head in this style.\n\n"
+    "scene.\n\n"
+    "TWO earlier attempts were rejected by the user as 'far off' / 'masih jelek' — learn from both: "
+    "(1) a person at a desk in a detailed dark room with a doorway and background crowd — too busy, "
+    "too desaturated, reads as a movie still; (2) a meditating figure with glowing neon-blue chat-"
+    "bubble icons branching from its head on a flat red background — the flat background was right, "
+    "but the glowing UI/app icons made it read as a tech-blog infographic or wellness-app ad, not a "
+    "painting.\n\n"
+    "The symbol must ALWAYS be a TANGIBLE, PAINTABLE thing — a real animal, body part, object, "
+    "fabric, or natural element rendered with visible oil-paint brushwork — NEVER a glowing digital "
+    "icon, UI glyph, app symbol, notification bubble, or neon line-art element. If the scene "
+    "involves technology, represent it through a tangible surreal substitution (e.g. a face "
+    "replaced by a smooth blank mirror, a hand made of shattered glass) — a painted OBJECT, never a "
+    "rendered ICON — posed against a flat plain background.\n\n"
+    "MOOD: uncanny and quietly disturbing — the viewer should feel a little unsettled, like they've "
+    "glimpsed an uncomfortable truth about themselves. Never cute, whimsical, cozy, or like a "
+    "wellness/self-care ad.\n\n"
+    "BACKGROUND RULE: the background must be FLAT and SIMPLE — one solid color, a plain gradient "
+    "sky/ground, or a flat decorative pattern. NEVER a detailed room, NEVER furniture, NEVER a "
+    "crowd of background figures, NEVER environmental storytelling.\n\n"
     "COLOR: bold, saturated, classical-poster color blocking (2-4 vivid dominant colors) with "
-    "clean, dramatic but CLEAR lighting — not murky, muted, or desaturated 'cinematic' tones.\n\n"
+    "clean, dramatic but CLEAR lighting and visible brush texture — not murky, muted, or "
+    "desaturated 'cinematic' tones, and not flat clean vector/digital graphics either.\n\n"
     "The image should express the psychological idea through ONE powerful visual metaphor a viewer "
     "reads instantly, not a literal narrative scene.\n\n"
     "COMPOSITION: The image fills the full 1280x720 frame edge-to-edge. Keep the main subject "
