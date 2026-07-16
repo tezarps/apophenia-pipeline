@@ -4,55 +4,49 @@
       "name": "Maya",
       "icon": "🔮",
       "role": "Picks the next archetype",
-      "status": "done",
-      "detail": "Topic #12: The Emotionally Numb Achiever",
-      "updated_at": "2026-07-11T14:45:50.863878",
-      "payload": {
-        "id": 12,
-        "category": "emotional-numbness",
-        "topic": "The Emotionally Numb Achiever",
-        "angle": "Why Success Never Quite Reaches the Part of You That's Tired"
-      }
+      "status": "idle",
+      "detail": "",
+      "updated_at": "2026-07-16T01:56:08.093840"
     },
     "scribe": {
       "name": "Jordan",
       "icon": "📜",
       "role": "Writes the 5-babak script",
-      "status": "done",
-      "detail": "1,979 words (cached in Supabase)",
-      "updated_at": "2026-07-11T14:45:58.305038"
+      "status": "idle",
+      "detail": "",
+      "updated_at": "2026-07-16T01:56:08.093845"
     },
     "voice": {
       "name": "Aria",
       "icon": "🎙️",
       "role": "Narrates the essay",
-      "status": "done",
-      "detail": "Audio ready: 12.mp3",
-      "updated_at": "2026-07-11T14:46:45.629761"
+      "status": "idle",
+      "detail": "",
+      "updated_at": "2026-07-16T01:56:08.093849"
     },
     "architect": {
       "name": "Theo",
       "icon": "🏛️",
       "role": "Assembles the final video",
-      "status": "done",
-      "detail": "Video ready: 181MB (0 reflective beat(s))",
-      "updated_at": "2026-07-11T15:37:26.724312"
+      "status": "idle",
+      "detail": "",
+      "updated_at": "2026-07-16T01:56:08.093851"
     },
     "herald": {
       "name": "Priya",
       "icon": "📯",
       "role": "Crafts title, metadata & thumbnails",
-      "status": "done",
-      "detail": "Why Success Never Reaches the Part of You That’s Tired – Car",
-      "updated_at": "2026-07-11T15:37:44.945614"
+      "status": "idle",
+      "detail": "",
+      "updated_at": "2026-07-16T01:56:08.093853"
     },
     "messenger": {
       "name": "Kai",
       "icon": "⚡",
       "role": "Uploads to YouTube",
-      "status": "done",
-      "detail": "youtube.com/watch?v=3SNMsO_Nx5c",
-      "updated_at": "2026-07-11T15:39:26.962297"
+      "status": "idle",
+      "detail": "",
+      "updated_at": "2026-07-16T01:56:08.093856"
     }
   },
   "runs": [
@@ -248,5 +242,10 @@
       "error": "{'statusCode': 404, 'error': Bucket not found, 'message': Bucket not found}"
     }
   ],
-  "current_run": null
+  "current_run": {
+    "topic_id": 13,
+    "topic": "Why your chatbot feels safer than the people who love you — video title: \"When You Trust an App More Than Your Own Friends, This Is Why\"",
+    "started_at": "2026-07-16T01:56:08.093834",
+    "status": "running"
+  }
 }
