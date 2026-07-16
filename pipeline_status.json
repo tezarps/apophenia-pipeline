@@ -18,9 +18,9 @@
       "name": "Jordan",
       "icon": "📜",
       "role": "Writes the 5-babak script",
-      "status": "idle",
-      "detail": "",
-      "updated_at": "2026-07-16T01:56:08.093845"
+      "status": "running",
+      "detail": "Drafting with Haiku...",
+      "updated_at": "2026-07-16T01:56:12.258003"
     },
     "voice": {
       "name": "Aria",
