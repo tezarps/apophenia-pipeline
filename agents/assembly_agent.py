@@ -28,6 +28,13 @@ ASSETS_DIR = Path(__file__).parent.parent / "assets"
 MUSIC_DIR = ASSETS_DIR / "music"
 FONTS_DIR = ASSETS_DIR / "fonts"
 
+# Centered audio waveform overlay, requested 2026-07-15 — see create_video's
+# final ffmpeg pass. mode=cline draws a symmetric centered line (the classic
+# "audio visualizer" look); colorkey strips showwaves' black background so
+# only the wave itself shows over the hero image, not a solid box.
+WAVEFORM_SIZE = "900x160"
+WAVEFORM_COLOR = "white"
+
 # Thumbnails are NOT handled here — see agents/thumbnail_agent.py for the
 # Kee-style character+hook-text composition. This module is the video
 # assembly mechanics: Ken Burns slideshow, audio mix, reflective black-screen
@@ -324,7 +331,9 @@ def create_video(audio_path, category, topic_id, topic_slug=None, blackscreen_sp
 
     total_duration = duration + OUTRO_TAIL_SEC
     music_path = _get_music(topic_id)
-    pre_subtitle_path = out_path if not subtitles_path else out_path.parent / f"{topic_id}_nosubs.mp4"
+    # Always a temp path now — the waveform-overlay pass below runs on every
+    # video regardless of subtitles_path, so this is never the final output.
+    pre_subtitle_path = out_path.parent / f"{topic_id}_pre.mp4"
 
     if music_path:
         # Duck the music bed lower during reflective blackscreen beats (already
@@ -381,21 +390,36 @@ def create_video(audio_path, category, topic_id, topic_slug=None, blackscreen_sp
     if result.returncode != 0:
         raise RuntimeError(f"FFmpeg error: {result.stderr[-600:]}")
 
+    print(f"    Adding centered audio waveform" + (" + burning captions..." if subtitles_path else "..."))
+    # showwaves paints the waveform on a black background; colorkey makes
+    # that black transparent so only the wave line itself shows over the
+    # video, centered — requested 2026-07-15. Driven by [0:a], the SAME
+    # final mixed narration+music track already muxed into pre_subtitle_path
+    # above, so the wave reflects what's actually playing. Captions (if any)
+    # are burned in the same pass to avoid a second full re-encode.
+    filter_chain = (
+        f"[0:a]showwaves=s={WAVEFORM_SIZE}:mode=cline:colors={WAVEFORM_COLOR}:scale=lin,"
+        f"colorkey=0x000000:0.3:0.2,format=yuva420p[wave];"
+        f"[0:v][wave]overlay=(W-w)/2:(H-h)/2[vout]"
+    )
+    final_map = "[vout]"
     if subtitles_path:
-        print(f"    Burning captions...")
         ass_escaped = str(subtitles_path).replace("\\", "/").replace(":", "\\:")
         fonts_escaped = str(FONTS_DIR).replace("\\", "/").replace(":", "\\:")
-        cmd_sub = [
-            FFMPEG_BIN, "-y", "-i", str(pre_subtitle_path),
-            "-vf", f"subtitles={ass_escaped}:fontsdir={fonts_escaped}",
-            "-c:a", "copy",
-            "-c:v", "libx264", "-preset", "fast", "-pix_fmt", "yuv420p",
-            str(out_path),
-        ]
-        result_sub = subprocess.run(cmd_sub, capture_output=True, text=True)
-        if result_sub.returncode != 0:
-            raise RuntimeError(f"Caption burn-in failed: {result_sub.stderr[-600:]}")
-        pre_subtitle_path.unlink(missing_ok=True)
+        filter_chain += f";[vout]subtitles={ass_escaped}:fontsdir={fonts_escaped}[vsub]"
+        final_map = "[vsub]"
+    cmd_final = [
+        FFMPEG_BIN, "-y", "-i", str(pre_subtitle_path),
+        "-filter_complex", filter_chain,
+        "-map", final_map, "-map", "0:a",
+        "-c:v", "libx264", "-preset", "fast", "-pix_fmt", "yuv420p",
+        "-c:a", "copy",
+        str(out_path),
+    ]
+    result_final = subprocess.run(cmd_final, capture_output=True, text=True)
+    if result_final.returncode != 0:
+        raise RuntimeError(f"Waveform/caption finalize failed: {result_final.stderr[-600:]}")
+    pre_subtitle_path.unlink(missing_ok=True)
 
     concat_file.unlink(missing_ok=True)
     shutil.rmtree(clips_dir)
