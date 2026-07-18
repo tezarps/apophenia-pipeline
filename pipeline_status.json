@@ -59,6 +59,16 @@
     {
       "id": 13,
       "topic": "Why your chatbot feels safer than the people who love you — video title: \"When You Trust an App More Than Your Own Friends, This Is Why\"",
+      "status": "failed",
+      "video_id": "",
+      "started_at": "2026-07-19T02:06:10.647615",
+      "finished_at": "2026-07-19T02:24:02.148715",
+      "duration_min": 17,
+      "error": "('invalid_grant: Token has been expired or revoked.', {'error': 'invalid_grant', 'error_description': 'Token has been expired or revoked.'})"
+    },
+    {
+      "id": 13,
+      "topic": "Why your chatbot feels safer than the people who love you — video title: \"When You Trust an App More Than Your Own Friends, This Is Why\"",
       "status": "awaiting_images",
       "video_id": "",
       "started_at": "2026-07-18T01:49:48.871036",
@@ -278,10 +288,5 @@
       "error": "{'statusCode': 404, 'error': Bucket not found, 'message': Bucket not found}"
     }
   ],
-  "current_run": {
-    "topic_id": 13,
-    "topic": "Why your chatbot feels safer than the people who love you — video title: \"When You Trust an App More Than Your Own Friends, This Is Why\"",
-    "started_at": "2026-07-19T02:06:10.649130",
-    "status": "running"
-  }
+  "current_run": null
 }
