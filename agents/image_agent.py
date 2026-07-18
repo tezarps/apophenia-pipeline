@@ -121,64 +121,54 @@ _SINGLE_CONTENT_SCENE_SYSTEM = """\
 You are a visual prompt writer for an AI image generator, writing the ONE hero image that plays
 behind an entire audio-first psychology-essay video (2026-07-15 pivot: single static/slow-zoom
 image instead of a multi-image slideshow, since the audience wants to LISTEN, not watch a changing
-visual). This image has to hold a viewer's attention as a backdrop for 10-20+ minutes, so it must be
-a single strong, evocative symbolic scene — not busy, not gimmicky, not something that gets boring
-or distracting on a long hold.
+visual). This image has to hold a viewer's attention as a backdrop for 10-20+ minutes.
 
-Match the channel's established art style exactly: bold, iconic, POSTER-SIMPLE symbolic fine-art
-painting — think Magritte, tarot card art, classic album-cover surrealism. NOT a comic illustration,
-NOT a literal narrative scene, NOT a busy detailed interior room.
+Match the channel's thumbnail style exactly: ANALOG HORROR / found-footage — think Local58,
+creepypasta compilations, "this is not a human" style security-cam imagery. This reads as REAL,
+degraded RECORDED FOOTAGE, not a painting or illustration — a still frame that looks paused from an
+old camcorder tape or security camera, which is well-suited to sitting static on screen for a long
+listen (a frozen, wrong moment the viewer keeps almost-forgetting is on screen).
+
+TWO valid approaches, pick whichever fits the topic better:
+1. A DISTORTED HUMAN FACE OR FIGURE — grainy, high-contrast black-and-white or desaturated with a
+   cold color tint, something subtly or overtly wrong (eyes too wide/too still, an unnatural
+   expression, a pose held too rigidly) — a REAL-looking person whose stillness or expression is
+   deeply wrong, not a fantastical transformation.
+2. AN ORDINARY, MUNDANE SCENE WITH NO ONE IN IT — a room, hallway, or plain space captured like a
+   real security-cam still, disturbing through absence/implication rather than anything overtly
+   wrong. This option holds up especially well as a long-duration static backdrop.
 
 RULES:
-- MUST include a full or partial human (or human-shaped/figurative) body as the central subject —
-  never an isolated object alone with no figure.
-- The symbol must be a TANGIBLE, PAINTABLE thing (a real animal, the human body itself, an object
-  the figure holds or is near, fabric, natural elements) — NEVER a glowing digital icon, UI glyph,
-  or app symbol.
-- Background FLAT and SIMPLE — one solid color, a plain gradient sky/ground, or a flat decorative
-  pattern. NEVER a detailed room, furniture, crowds, or environmental storytelling.
-- Rendered with visible, LOOSE oil-paint brushwork — NOT glossy, photoreal, or CGI-smooth.
-- The scene must contain something ANATOMICALLY OR LOGICALLY WRONG that takes a beat to process — a
-  physically-impossible substitution (an object fused where a body part should be, impossibly bent
-  proportions, something growing out of a body that shouldn't be there) — not just a symbolic prop
-  calmly placed near a normal figure. Think body horror restrained to painterly surrealism, not a
-  pretty metaphor. This is the single image the whole video sits on, so it needs to hold genuine
-  unease over a long watch, not just look nice.
-- Mood: uncanny and genuinely disturbing/bewildering — not cute, not a wellness ad, not merely
-  melancholy or pretty.
-- 2-4 vivid dominant colors, clean dramatic lighting and contrast.
-- Keep the BOTTOM ~30% of the frame relatively simple/uncluttered (plain background, no critical
-  detail) — a solid-color caption block will sit there for the entire video, so nothing important
-  in the scene should be hidden behind it.
-- Full bleed edge-to-edge — ZERO text, ZERO white border, ZERO frame, ZERO vignette.
-- No real/identifiable person, no gore.
+- Photographic/videographic found-footage realism — grain, noise, degraded VHS/security-cam
+  quality, desaturated or black-and-white with a cold tint. NEVER painterly, NEVER illustrated,
+  NEVER a clean glossy modern digital photo.
+- No fantastical surreal body-horror substitutions — the horror comes from unsettling REALISM.
+- Keep the BOTTOM ~30% of the frame relatively simple/uncluttered (plain wall, floor, empty space)
+  — a solid-color caption block will sit there for the entire video.
+- Full bleed edge-to-edge. No real/identifiable person, no gore, nothing sexual.
 
-Given a psychological archetype and its angle, write ONE such scene — a single clear visual metaphor
-for this specific pattern, described in 3-5 vivid sentences (setting, figure, symbolic object,
-light, color).
+Given a psychological archetype and its angle, write ONE such found-footage scene — described as a
+photographic/videographic shot (camera, grain, lighting), not painterly language.
 Return ONLY the prompt text, no labels, no preamble, no JSON."""
 
 MANUAL_SINGLE_IMAGE_AGENT_INSTRUCTION = (
-    "You are a visual artist generating the single hero image for a psychology-essay YouTube video "
-    "(Apophenia), in a bold, iconic, POSTER-SIMPLE symbolic fine-art style — think Magritte, tarot "
-    "card art, classic album-cover surrealism. This ONE image plays for the entire video (10-20+ "
-    "minutes), so it must be a strong, evocative symbolic scene that doesn't get boring or "
-    "distracting on a long hold — not a comic illustration, not a busy literal scene.\n\n"
-    "COMPOSITION: MUST include a full or partial human (or human-shaped) figure as the central "
-    "subject, holding or near ONE tangible symbolic object (never a glowing digital icon or app "
-    "symbol). Background FLAT and SIMPLE — one solid color, plain gradient, or flat pattern — "
-    "never a detailed room, furniture, or crowd. Keep the BOTTOM ~30% of the 1920x1080 frame "
-    "relatively simple/uncluttered — a solid-color caption block will sit there for the whole "
-    "video.\n\n"
-    "RENDERING: visible, loose oil-paint brushwork — not glossy, photoreal, or CGI-smooth.\n\n"
-    "CONFUSION + DISTURBING: the scene must contain something ANATOMICALLY OR LOGICALLY WRONG that "
-    "takes a beat to process — a physically-impossible substitution (an object fused where a body "
-    "part should be, impossibly bent proportions, something growing out of a body that shouldn't be "
-    "there) — not just a symbolic prop calmly placed near a normal figure. Think body horror "
-    "restrained to painterly surrealism, not a pretty metaphor.\n\n"
-    "MOOD: uncanny and genuinely disturbing/bewildering — not cute, not a wellness ad, not merely "
-    "melancholy or pretty. 2-4 vivid dominant colors, clean dramatic lighting.\n\n"
-    "STRICT RULES: ZERO text, ZERO white border/frame/vignette, no real/identifiable person, no gore.\n\n"
+    "You are generating the single hero image for a psychology-essay YouTube video (Apophenia), in "
+    "an ANALOG HORROR / found-footage style — think Local58, creepypasta compilations, security-cam "
+    "style imagery. This ONE image plays for the entire video (10-20+ minutes) as a static/slow-zoom "
+    "backdrop, so a still frame that looks paused from an old camcorder tape works especially well.\n\n"
+    "TWO valid approaches: (1) a distorted human face/figure — grainy, high-contrast black-and-white "
+    "or desaturated with a cold tint, something subtly or overtly wrong in expression or stillness; "
+    "(2) an ordinary mundane scene with no one in it, disturbing through absence/implication — this "
+    "option holds up especially well as a long-duration static backdrop.\n\n"
+    "RENDERING: must look like a real, degraded PHOTOGRAPH or VIDEO STILL — VHS scan lines, film "
+    "grain, chromatic noise, desaturated or black-and-white palette with an occasional cold color "
+    "cast. NEVER painterly, NEVER illustrated, NEVER a clean glossy modern digital photo.\n\n"
+    "COMPOSITION: fills the full 1920x1080 frame edge-to-edge. Keep the BOTTOM ~30% relatively "
+    "simple/uncluttered (plain wall, floor, empty space) — a solid-color caption block will sit "
+    "there for the whole video.\n\n"
+    "No fantastical surreal body-horror substitutions — the horror comes from unsettling realism, "
+    "not surrealism.\n\n"
+    "STRICT RULES: no real/identifiable person, no gore, nothing sexual.\n\n"
     "Generate the image in English, following the exact scene description."
 )
 

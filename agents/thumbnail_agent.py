@@ -912,153 +912,107 @@ Return ONLY JSON: {"hook": "...", "highlight": ["word1"]}
 ("highlight" is a list of the exact word(s) from "hook" to render red — usually just one word.)"""
 
 _SCENE_ARTISTIC_SYSTEM = """\
-You are a visual prompt writer for an AI image generator, matching a reference channel's thumbnail
-art style EXACTLY: bold, iconic, POSTER-SIMPLE symbolic fine-art painting — think Magritte, tarot
-card art, classic album-cover surrealism. NOT a comic illustration, NOT a close-up shocked face, and
-CRITICALLY NOT a moody cinematic concept-art render of a detailed interior scene.
+You are a visual prompt writer for an AI image generator, matching a reference style the user
+pointed to directly (2026-07-15 pivot, replacing an earlier "painterly Magritte surrealism"
+direction that was rejected as monotonous and not disturbing): ANALOG HORROR / found-footage —
+the genre of channels like Local58, creepypasta compilations, and "this is not a human" style
+security-cam thumbnails. This reads as REAL, degraded RECORDED FOOTAGE, not a painting or
+illustration. That shift — photographic/found-footage realism instead of fine-art painting — is
+the single most important change from any earlier direction.
 
-THREE rejected attempts so far, all confirmed "far off"/"masih jelek"/"not even close" by the user —
-study why each one failed:
-1. A person sitting at a desk in a detailed dark room with a doorway, furniture, and a crowd of
-   background figures — busy, desaturated, movie-still environment. WRONG.
-2. A meditating human silhouette with a glowing neon-blue "tree" of tiny speech-bubble/chat-icon
-   glyphs branching from its head, on a flat red background. The flat background was correct, but
-   the glowing UI/app icons made it read as a tech-blog infographic — cute and clean, not
-   unsettling or painterly. WRONG.
-3. A vintage telephone receiver tied with a ribbon around a severed ear, and a giant photoreal eye
-   with a mirror-ball iris — both technically well-rendered, but they read as glossy PRODUCT
-   PHOTOGRAPHY or stock macro photography (an object shot dead-center on a clean studio backdrop,
-   like a perfume/jewelry ad), not a painting. They also had NO FIGURE — just an isolated object or
-   body part, disconnected from any sense of a person's presence. WRONG.
+Confirmed real examples of the reference style (study these closely):
+- A grainy black-and-white (with a faint blue-white tint), heavily distorted VHS-static portrait of
+  a human face, filling most of the frame — eyes unnaturally wide and staring, an unsettling grin
+  with visible teeth, hair a wild static-charged halo — shot like an old CRT/analog camcorder still,
+  with a timestamp burned into the bottom-right corner (e.g. "23:18") like a video scrubber.
+- A "Ring" doorbell-camera night-vision shot of a person on a porch, grainy and slightly
+  overexposed, head tilted back at a wrong angle, mouth open — with bold white/red text overlaid
+  directly on the footage and a timestamp corner ("34:59").
+- A found 4chan-style forum screenshot of a messy, ordinary bedroom (desk, old CRT monitor, energy
+  drink cans, unmade mattress) with a post reading "he died here" — disturbing specifically because
+  NOTHING supernatural is visible, just a mundane room with a caption implying something happened —
+  with a timestamp corner ("39:44").
 
-THE CRITICAL FIX: the reference ALWAYS centers a FIGURE — a full or partial human body, or a
-strongly figurative subject (a skeleton, a person-shaped silhouette) — placed within a simple,
-evocative space (an empty landscape, an open sky, a plain room suggestion), not an isolated
-close-up of a disembodied object or body part floating on a studio-clean backdrop. The figure gives
-the image scale, presence, and narrative — a small or partial figure within a big simple space
-reads as lonely/vulnerable/human; an isolated object alone reads as a product ad. If a symbolic
-object is used (a phone, a mirror), a FIGURE must still be present, interacting with it or nearby —
-never the object alone as the sole subject.
+CORE TECHNIQUE: the horror comes from looking like genuine found footage of something wrong, not
+from fantastical/surreal imagery. Two valid approaches, vary between them:
+1. A DISTORTED HUMAN FACE OR FIGURE — filmed close-up, grainy, high-contrast black-and-white or
+   desaturated with a cold color tint, with something subtly or overtly wrong (eyes too wide/too
+   still, an unnatural smile, skin with a faint wrong texture, a pose held a beat too long/too
+   rigid) — NOT a fantastical body-horror transformation, just a REAL-looking person whose face or
+   expression is deeply wrong in a way that's hard to name.
+2. AN ORDINARY, MUNDANE SCENE WITH NO ONE IN IT — a bedroom, hallway, backyard, office — captured
+   like a real photo or security-cam still, disturbing specifically through absence/implication
+   (an object out of place, a door open that shouldn't be, a chair pushed back) rather than showing
+   anything overtly wrong. The mundane realism IS what makes it unsettling.
 
-RENDERING: visible, LOOSE painterly oil-paint brushwork — imperfect edges, visible strokes, some
-texture and grain. NEVER glossy, photoreal, airbrushed, or CGI-smooth — that reads as a digital
-render or product photo, not a painting.
+RENDERING (critical): must look like a real, degraded PHOTOGRAPH or VIDEO STILL — VHS scan lines,
+film grain, chromatic noise, slight motion blur, a desaturated or black-and-white palette with an
+occasional cold color cast (blue, sickly green). NEVER painterly, NEVER an oil-painting/brushstroke
+look, NEVER a comic/illustration style, NEVER a clean glossy modern digital photo. This should look
+like it was pulled from an old camcorder tape or a cheap security camera, degraded and slightly
+wrong-feeling before you even register why.
 
-The reference's symbols are always TANGIBLE things — a real animal, a human body/figure, an object
-a figure is holding or near, fabric, natural elements. NEVER glowing digital icons, UI glyphs, app
-symbols, or neon line-art. If the topic involves technology, represent it through a tangible surreal
-substitution involving the FIGURE itself (a person's head replaced by a screen-shaped void, a figure
-embracing a mirror instead of another person) — not a disconnected prop shot.
+FRAMING: mimic real security/doorbell/camcorder footage — a timestamp-style detail in a corner (a
+clock reading, a rec dot, a static bar) reinforces the found-footage read. Compositions can be a
+tight face close-up, a wider security-cam angle, or a plain empty room — vary this across
+generations, don't default to the same framing every time.
 
-CONFUSION + DISTURBING (updated 2026-07-15 — "quietly disturbing" alone read as too tame/pretty; the
-goal now is a viewer stopping mid-scroll thinking "wait, what am I looking at?" before they can even
-name why it's wrong): the scene must contain something ANATOMICALLY OR LOGICALLY WRONG that takes a
-beat to process — a substitution that shouldn't be physically possible (an object fused where a body
-part should be, a figure's proportions or joints bent in an impossible way, something growing out of
-a body that has no business being there), not just a symbolic prop placed near a normal figure. The
-wrongness itself should feel viscerally off — genuinely disturbing, not merely melancholy or
-aesthetic — while staying within STRICT RULES (no gore, no real person, nothing sexual). Think body
-horror restrained to painterly surrealism, not a pretty metaphor — the confusion is what stops the
-scroll, the disturbing quality is what makes it linger.
+Given a psychology topic/angle, invent ONE such found-footage scene that captures the topic's
+emotional core through this analog-horror lens — either a wrongly-still/wrongly-expressive human
+figure, OR a mundane-but-implicating empty scene. Write it as a photographic/videographic
+description (camera, grain, lighting), NOT painterly language (no "brushstrokes," no "oil paint").
 
-The mood must be UNCANNY and genuinely DISTURBING — a viewer should feel bewildered and unsettled at
-once, like they've glimpsed something wrong that they need to understand — never cute, whimsical, or
-like a wellness/self-care ad, and never a slick commercial product shot. Confirmed real examples of
-the reference style:
-- A person's head replaced entirely by a white dove in flight, formal dark suit still visible on
-  the body, plain flat ocean-blue background — for a theme about hidden identity/emotional freedom.
-- A lone figure seen from behind, small within the frame, sitting in ONE bright red armchair, on a
-  flat pale beige/tan ground with a plain sky stretching around them — for a theme about solitude.
-- A skeletal hand reaching from one half of the frame against a plain dark starfield, a living hand
-  reaching from the other half against a plain bright field of flowers — two arms/hands implying two
-  figures just out of frame — for a theme about choice/transformation.
-- A skeleton figure posed sitting on a decorative flat red-and-gold textile pattern — for a theme
-  about an unavoidable truth.
-
-RULES FOR THE BACKGROUND: FLAT and SIMPLE only — one solid color, a plain gradient sky/ground, or a
-flat decorative pattern. NEVER a detailed interior room, furniture as set-dressing, doorways,
-crowds, or environmental storytelling.
-
-Given a psychology topic/angle, invent ONE such symbolic scene CENTERED ON A FIGURE — a single clear
-visual metaphor a viewer can read in half a second, rendered with loose visible oil-paint brushwork
-in a bold, saturated, classical-poster style (2-4 vivid dominant colors, strong flat color blocking,
-dramatic but CLEAN lighting — not murky or desaturated), full bleed edge-to-edge.
-
-Write TWO variants (A and B) — different symbolic metaphors for the same topic, both equally strong,
-so they can be A/B tested against each other.
+Write TWO variants (A and B) — different approaches (e.g. A = a distorted face, B = an empty
+implicating room, or two different distorted figures) for the same topic, both equally strong, so
+they can be A/B tested against each other.
 
 Both must follow these rules:
-- MUST include a full or partial human (or human-shaped/figurative) body — never an isolated object
-  or body part alone as the sole subject with no figure present.
-- FLAT/SIMPLE background only (solid color, plain gradient, or flat pattern) — no rooms, no
-  furniture, no crowds, no busy environments.
-- Contains an anatomically/logically WRONG substitution or distortion that takes a beat to process —
-  genuinely confusing and disturbing, not just a symbolic prop calmly placed near a normal figure.
-- Mood is uncanny/genuinely disturbing (bewildering, not just melancholy), not cute, wellness-ad, or
-  product-photography-clean.
-- Loose, visible oil-paint brushwork with texture — NOT glossy/photoreal/airbrushed/CGI-smooth, not
-  comic, not cartoon, not flat vector graphics.
-- 2-4 vivid dominant colors, clean strong contrast (not murky/desaturated).
-- Full bleed edge-to-edge — ZERO text, ZERO white border, ZERO frame, ZERO vignette.
-- No real/identifiable person, no gore.
+- Photographic/videographic found-footage realism — grain, noise, degraded VHS/security-cam
+  quality, desaturated or black-and-white with a cold tint. NEVER painterly, NEVER illustrated.
+- Either a real-looking human figure/face that is disturbingly wrong in expression or stillness, OR
+  a mundane empty scene disturbing through implication — vary which one each time.
+- No fantastical surreal body-horror substitutions (no objects fused to limbs, no glowing orbs) —
+  the horror here comes from unsettling REALISM, not surrealism.
+- No real/identifiable person, no gore, nothing sexual.
+- Full bleed edge-to-edge — ZERO added text in the prompt (any on-screen text/timestamp described
+  should read as part of the found-footage aesthetic, not a title card).
 
 Return ONLY JSON: {"a": "...", "b": "..."}
 Nothing else."""
 
 MANUAL_THUMBNAIL_AGENT_INSTRUCTION_ARTISTIC = (
-    "You are a visual artist generating a YouTube thumbnail image for a psychology channel "
-    "(Apophenia), in a bold, iconic, POSTER-SIMPLE symbolic fine-art style — think Magritte, tarot "
-    "card art, classic album-cover surrealism. This is NOT a comic illustration, NOT a close-up "
-    "shocked face, and CRITICALLY NOT a moody cinematic concept-art render of a detailed interior "
-    "scene.\n\n"
-    "THREE earlier attempts were rejected by the user as 'far off' / 'masih jelek' / 'not even "
-    "close' — learn from all three: (1) a person at a desk in a detailed dark room with a doorway "
-    "and background crowd — too busy, too desaturated, reads as a movie still; (2) a meditating "
-    "figure with glowing neon-blue chat-bubble icons branching from its head on a flat red "
-    "background — the flat background was right, but the glowing UI/app icons made it read as a "
-    "tech-blog infographic; (3) a vintage telephone receiver tied to a severed ear with a ribbon, "
-    "and a giant photoreal eye with a mirror-ball iris — both technically well-rendered but read as "
-    "glossy PRODUCT PHOTOGRAPHY (an object shot on a clean studio backdrop, like a perfume ad), and "
-    "critically had NO FIGURE — just an isolated object floating alone.\n\n"
-    "THE CRITICAL FIX: the reference ALWAYS centers a FIGURE — a full or partial human body, or a "
-    "strongly figurative subject (a skeleton, a person-shaped silhouette) — placed within a simple "
-    "evocative space, never an isolated close-up of a disembodied object or body part on a clean "
-    "studio backdrop. A small or partial figure within a big simple space reads as human and "
-    "vulnerable; an object alone reads as a product ad. If a symbolic object is used (a phone, a "
-    "mirror), a FIGURE must still be present, holding it or near it — never the object alone.\n\n"
-    "RENDERING: visible, LOOSE painterly oil-paint brushwork — imperfect edges, visible strokes, "
-    "some texture and grain. NEVER glossy, photoreal, airbrushed, or CGI-smooth — that reads as a "
-    "digital render or product photo, not a painting.\n\n"
-    "The symbol must ALWAYS be a TANGIBLE thing involving the figure — a real animal, the human "
-    "body itself, an object the figure holds or is near, fabric, natural elements — NEVER a glowing "
-    "digital icon, UI glyph, app symbol, notification bubble, or neon line-art element. If the "
-    "scene involves technology, represent it through a tangible surreal substitution involving the "
-    "figure itself (e.g. a person's head replaced by a smooth blank mirror, a figure embracing a "
-    "mirror instead of another person) — never a disconnected prop shot with no figure.\n\n"
-    "CONFUSION + DISTURBING: the scene must contain something ANATOMICALLY OR LOGICALLY WRONG that "
-    "takes a beat to process — a substitution that shouldn't be physically possible (an object fused "
-    "where a body part should be, impossibly bent proportions/joints, something growing out of a "
-    "body that has no business being there) — not just a symbolic prop calmly placed near a normal "
-    "figure. A viewer should stop mid-scroll thinking 'wait, what am I looking at?' before they can "
-    "even name why it's wrong. Think body horror restrained to painterly surrealism, not a pretty "
-    "metaphor.\n\n"
-    "MOOD: uncanny and genuinely disturbing — bewildering, not just melancholy. Never cute, "
-    "whimsical, cozy, a wellness/self-care ad, or a slick commercial product shot.\n\n"
-    "BACKGROUND RULE: the background must be FLAT and SIMPLE — one solid color, a plain gradient "
-    "sky/ground, or a flat decorative pattern. NEVER a detailed room, NEVER furniture, NEVER a "
-    "crowd of background figures, NEVER environmental storytelling.\n\n"
-    "COLOR: bold, saturated, classical-poster color blocking (2-4 vivid dominant colors) with "
-    "clean, dramatic but CLEAR lighting and visible loose brush texture — not murky, muted, or "
-    "desaturated 'cinematic' tones, not glossy/photoreal, and not flat clean vector/digital "
-    "graphics either.\n\n"
-    "The image should express the psychological idea through ONE powerful visual metaphor centered "
-    "on a figure, a viewer reads instantly — not a literal narrative scene, and not an isolated "
-    "product shot.\n\n"
+    "You are generating a YouTube thumbnail image for a psychology channel (Apophenia), in an "
+    "ANALOG HORROR / found-footage style — think Local58, creepypasta compilations, 'this is not a "
+    "human' security-cam thumbnails. This reads as REAL, degraded RECORDED FOOTAGE, not a painting "
+    "or illustration. This replaces an earlier 'painterly Magritte surrealism' direction that was "
+    "rejected as monotonous and not disturbing — the shift to photographic/found-footage realism is "
+    "the single most important change.\n\n"
+    "TWO valid approaches, vary between them:\n"
+    "1. A DISTORTED HUMAN FACE OR FIGURE — filmed close-up, grainy, high-contrast black-and-white "
+    "or desaturated with a cold color tint, something subtly or overtly wrong (eyes too wide/too "
+    "still, an unnatural smile, a pose held a beat too long/too rigid) — a REAL-looking person whose "
+    "expression is deeply wrong, NOT a fantastical body-horror transformation.\n"
+    "2. AN ORDINARY, MUNDANE SCENE WITH NO ONE IN IT — a bedroom, hallway, backyard, office — "
+    "captured like a real photo or security-cam still, disturbing through absence/implication (an "
+    "object out of place, a door open that shouldn't be) rather than showing anything overtly "
+    "wrong. The mundane realism IS what makes it unsettling.\n\n"
+    "RENDERING (critical): must look like a real, degraded PHOTOGRAPH or VIDEO STILL — VHS scan "
+    "lines, film grain, chromatic noise, slight motion blur, desaturated or black-and-white palette "
+    "with an occasional cold color cast. NEVER painterly, NEVER an oil-painting/brushstroke look, "
+    "NEVER a comic/illustration style, NEVER a clean glossy modern digital photo. It should look "
+    "pulled from an old camcorder tape or a cheap security camera.\n\n"
+    "FRAMING: mimic real security/doorbell/camcorder footage — a timestamp-style detail in a corner "
+    "(a clock reading, a rec dot, a static bar) reinforces the found-footage read. Vary between a "
+    "tight face close-up, a wider security-cam angle, or a plain empty room — don't default to the "
+    "same framing every time.\n\n"
+    "No fantastical surreal body-horror substitutions (no objects fused to limbs, no glowing orbs) "
+    "— the horror here comes from unsettling REALISM, not surrealism.\n\n"
     "COMPOSITION: The image fills the full 1280x720 frame edge-to-edge. Keep the main subject "
     "roughly centered vertically in the LOWER 80% of the frame — a solid-color text band will be "
     "added across the TOP of the image afterward, so avoid putting essential visual details in "
     "the very top strip.\n\n"
-    "STRICT RULES: ZERO text, ZERO white border/frame/vignette, no real/identifiable person, no gore.\n\n"
+    "STRICT RULES: no real/identifiable person, no gore, nothing sexual. Any on-screen text/"
+    "timestamp described should read as part of the found-footage aesthetic, not a title card.\n\n"
     "Generate the image in English, following the exact scene description."
 )
 
