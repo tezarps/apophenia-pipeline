@@ -950,10 +950,21 @@ symbols, or neon line-art. If the topic involves technology, represent it throug
 substitution involving the FIGURE itself (a person's head replaced by a screen-shaped void, a figure
 embracing a mirror instead of another person) — not a disconnected prop shot.
 
-The mood must be UNCANNY and QUIETLY DISTURBING — a viewer should feel a little unsettled, like
-they've glimpsed an uncomfortable truth about themselves — never cute, whimsical, or like a
-wellness/self-care ad, and never a slick commercial product shot. Confirmed real examples of the
-reference style:
+CONFUSION + DISTURBING (updated 2026-07-15 — "quietly disturbing" alone read as too tame/pretty; the
+goal now is a viewer stopping mid-scroll thinking "wait, what am I looking at?" before they can even
+name why it's wrong): the scene must contain something ANATOMICALLY OR LOGICALLY WRONG that takes a
+beat to process — a substitution that shouldn't be physically possible (an object fused where a body
+part should be, a figure's proportions or joints bent in an impossible way, something growing out of
+a body that has no business being there), not just a symbolic prop placed near a normal figure. The
+wrongness itself should feel viscerally off — genuinely disturbing, not merely melancholy or
+aesthetic — while staying within STRICT RULES (no gore, no real person, nothing sexual). Think body
+horror restrained to painterly surrealism, not a pretty metaphor — the confusion is what stops the
+scroll, the disturbing quality is what makes it linger.
+
+The mood must be UNCANNY and genuinely DISTURBING — a viewer should feel bewildered and unsettled at
+once, like they've glimpsed something wrong that they need to understand — never cute, whimsical, or
+like a wellness/self-care ad, and never a slick commercial product shot. Confirmed real examples of
+the reference style:
 - A person's head replaced entirely by a white dove in flight, formal dark suit still visible on
   the body, plain flat ocean-blue background — for a theme about hidden identity/emotional freedom.
 - A lone figure seen from behind, small within the frame, sitting in ONE bright red armchair, on a
@@ -981,7 +992,10 @@ Both must follow these rules:
   or body part alone as the sole subject with no figure present.
 - FLAT/SIMPLE background only (solid color, plain gradient, or flat pattern) — no rooms, no
   furniture, no crowds, no busy environments.
-- Mood is uncanny/quietly disturbing, not cute, wellness-ad, or product-photography-clean.
+- Contains an anatomically/logically WRONG substitution or distortion that takes a beat to process —
+  genuinely confusing and disturbing, not just a symbolic prop calmly placed near a normal figure.
+- Mood is uncanny/genuinely disturbing (bewildering, not just melancholy), not cute, wellness-ad, or
+  product-photography-clean.
 - Loose, visible oil-paint brushwork with texture — NOT glossy/photoreal/airbrushed/CGI-smooth, not
   comic, not cartoon, not flat vector graphics.
 - 2-4 vivid dominant colors, clean strong contrast (not murky/desaturated).
@@ -1021,9 +1035,15 @@ MANUAL_THUMBNAIL_AGENT_INSTRUCTION_ARTISTIC = (
     "scene involves technology, represent it through a tangible surreal substitution involving the "
     "figure itself (e.g. a person's head replaced by a smooth blank mirror, a figure embracing a "
     "mirror instead of another person) — never a disconnected prop shot with no figure.\n\n"
-    "MOOD: uncanny and quietly disturbing — the viewer should feel a little unsettled, like they've "
-    "glimpsed an uncomfortable truth about themselves. Never cute, whimsical, cozy, a wellness/"
-    "self-care ad, or a slick commercial product shot.\n\n"
+    "CONFUSION + DISTURBING: the scene must contain something ANATOMICALLY OR LOGICALLY WRONG that "
+    "takes a beat to process — a substitution that shouldn't be physically possible (an object fused "
+    "where a body part should be, impossibly bent proportions/joints, something growing out of a "
+    "body that has no business being there) — not just a symbolic prop calmly placed near a normal "
+    "figure. A viewer should stop mid-scroll thinking 'wait, what am I looking at?' before they can "
+    "even name why it's wrong. Think body horror restrained to painterly surrealism, not a pretty "
+    "metaphor.\n\n"
+    "MOOD: uncanny and genuinely disturbing — bewildering, not just melancholy. Never cute, "
+    "whimsical, cozy, a wellness/self-care ad, or a slick commercial product shot.\n\n"
     "BACKGROUND RULE: the background must be FLAT and SIMPLE — one solid color, a plain gradient "
     "sky/ground, or a flat decorative pattern. NEVER a detailed room, NEVER furniture, NEVER a "
     "crowd of background figures, NEVER environmental storytelling.\n\n"

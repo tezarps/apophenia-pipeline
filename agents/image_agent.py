@@ -138,7 +138,14 @@ RULES:
 - Background FLAT and SIMPLE — one solid color, a plain gradient sky/ground, or a flat decorative
   pattern. NEVER a detailed room, furniture, crowds, or environmental storytelling.
 - Rendered with visible, LOOSE oil-paint brushwork — NOT glossy, photoreal, or CGI-smooth.
-- Mood: uncanny, quietly resonant, atmospheric — not cute, not a wellness ad, not a jump-scare.
+- The scene must contain something ANATOMICALLY OR LOGICALLY WRONG that takes a beat to process — a
+  physically-impossible substitution (an object fused where a body part should be, impossibly bent
+  proportions, something growing out of a body that shouldn't be there) — not just a symbolic prop
+  calmly placed near a normal figure. Think body horror restrained to painterly surrealism, not a
+  pretty metaphor. This is the single image the whole video sits on, so it needs to hold genuine
+  unease over a long watch, not just look nice.
+- Mood: uncanny and genuinely disturbing/bewildering — not cute, not a wellness ad, not merely
+  melancholy or pretty.
 - 2-4 vivid dominant colors, clean dramatic lighting and contrast.
 - Keep the BOTTOM ~30% of the frame relatively simple/uncluttered (plain background, no critical
   detail) — a solid-color caption block will sit there for the entire video, so nothing important
@@ -163,8 +170,14 @@ MANUAL_SINGLE_IMAGE_AGENT_INSTRUCTION = (
     "never a detailed room, furniture, or crowd. Keep the BOTTOM ~30% of the 1920x1080 frame "
     "relatively simple/uncluttered — a solid-color caption block will sit there for the whole "
     "video.\n\n"
-    "RENDERING: visible, loose oil-paint brushwork — not glossy, photoreal, or CGI-smooth. Mood: "
-    "uncanny, quietly resonant, atmospheric. 2-4 vivid dominant colors, clean dramatic lighting.\n\n"
+    "RENDERING: visible, loose oil-paint brushwork — not glossy, photoreal, or CGI-smooth.\n\n"
+    "CONFUSION + DISTURBING: the scene must contain something ANATOMICALLY OR LOGICALLY WRONG that "
+    "takes a beat to process — a physically-impossible substitution (an object fused where a body "
+    "part should be, impossibly bent proportions, something growing out of a body that shouldn't be "
+    "there) — not just a symbolic prop calmly placed near a normal figure. Think body horror "
+    "restrained to painterly surrealism, not a pretty metaphor.\n\n"
+    "MOOD: uncanny and genuinely disturbing/bewildering — not cute, not a wellness ad, not merely "
+    "melancholy or pretty. 2-4 vivid dominant colors, clean dramatic lighting.\n\n"
     "STRICT RULES: ZERO text, ZERO white border/frame/vignette, no real/identifiable person, no gore.\n\n"
     "Generate the image in English, following the exact scene description."
 )

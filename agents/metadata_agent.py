@@ -39,21 +39,30 @@ Duration: ~{duration_min} minutes
 
 SEO RULES — follow strictly:
 
-TITLE rules (updated 2026-07-13 — dropped the philosopher-attribution formula: it read as a fake
-quote falsely attributed to a real historical figure, not just a stylistic flourish; removed rather
-than softened):
+TITLE rules (updated 2026-07-15 — switched to curiosity-gap formulas after the "How to"/"When You"
+formulas underperformed; philosopher-attribution formula stays dropped, see 2026-07-13 note above):
 - 60-100 characters
-- Use ONE of these two proven Psyphoria title formulas:
-    B) "How to [specific action] [meaningful result]"
+- Use ONE of these four curiosity-driving title formulas:
+    D) "Here's Why You [specific behavior]"
+       e.g. "Here's Why You Can't Stop Checking Your Phone at 2am"
+       e.g. "Here's Why You Trust Strangers More Than Your Own Friends"
+    E) "I [Did/Do This Specific Thing] — Here's What Happened" (first-person, confessional framing;
+       the "I" is a relatable narrator voice for the archetype, NOT a real named person)
+       e.g. "I Talked to AI Instead of My Friends for a Month — Here's What Happened"
+       e.g. "I Said Yes to Everything for a Week — This Is What It Cost Me"
+    F) "This Is Why [specific outcome/feeling]"
+       e.g. "This Is Why You Feel Alone in a Room Full of People"
+       e.g. "This Is Why Rest Feels Like Danger to You"
+    B) "How to [specific action] [meaningful result]" (kept as a fallback formula, use less often
+       than D/E/F)
        e.g. "How to Stop Performing Confidence and Actually Feel It"
-       e.g. "How to Trick Your Brain Into Enjoying Hard Things"
-    C) "When You [action], [positive result]"
-       e.g. "When You Stop Apologizing, Everything Changes"
-       e.g. "When You Stop Caring So Much, Everything Falls Into Place"
+- The goal is a genuine curiosity gap — a viewer should feel "wait, why? I need to know" — not just
+  a description of the topic. Pull the specific, sharp, recognizable behavioral detail from the
+  angle field so it feels like the video is about THEM specifically.
 - NEVER attribute any part of the title to a real person's name (no philosopher, thinker, or public
   figure name-drop, "– [Name]" suffix, or implied quote) — the archetype and angle must carry the
   title on their own
-- TITLE_A and TITLE_B must use DIFFERENT formulas (one uses B, the other uses C)
+- TITLE_A and TITLE_B must use DIFFERENT formulas (pick two different letters from D/E/F/B)
 - Sharp, personal, specific — pull from the angle field's most recognizable behavioral detail
 - NO "The Psychology of" prefix (retired) — NO ALL CAPS — NO emojis — NO real person's name in the
   topic itself — NO false/misleading claims
