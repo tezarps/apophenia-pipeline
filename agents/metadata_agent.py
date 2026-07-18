@@ -59,6 +59,20 @@ formulas underperformed; philosopher-attribution formula stays dropped, see 2026
 - The goal is a genuine curiosity gap — a viewer should feel "wait, why? I need to know" — not just
   a description of the topic. Pull the specific, sharp, recognizable behavioral detail from the
   angle field so it feels like the video is about THEM specifically.
+- SHARPEN CURIOSITY THROUGH SPECIFICITY, NEVER THROUGH VAGUENESS (updated 2026-07-15 — the curiosity
+  gap must never come at the cost of clarity; a viewer reading the title should instantly know WHAT
+  pattern/context the video is about, even while wanting to click to learn WHY). Concrete, specific
+  detail does both jobs at once — it's what makes a title feel like "this is literally me" (clarity)
+  while being the exact thing that makes someone need to click (curiosity):
+  - GOOD (specific AND clear): "Here's Why You Trust Strangers More Than Your Own Friends" — the
+    reader knows exactly what behavior this is about, and wants to know why.
+  - BAD (vague, curiosity without clarity — DO NOT DO THIS): "Here's Why You're Like This", "This Is
+    Why You Feel Weird", "I Did This And It Changed Everything" — these could be about anything and
+    read as clickbait with no substance.
+  - Where possible, anchor the title with a concrete detail from the angle: a specific
+    scenario/moment (e.g. "at 2am", "in a room full of people"), a specific behavior (e.g. "check
+    your phone instead of talking to them"), or a specific feeling tied to a specific trigger — not
+    a generic placeholder like "this" or "like this."
 - NEVER attribute any part of the title to a real person's name (no philosopher, thinker, or public
   figure name-drop, "– [Name]" suffix, or implied quote) — the archetype and angle must carry the
   title on their own
