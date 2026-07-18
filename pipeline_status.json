@@ -50,9 +50,9 @@
       "name": "Kai",
       "icon": "⚡",
       "role": "Uploads to YouTube",
-      "status": "running",
-      "detail": "Uploading...",
-      "updated_at": "2026-07-19T02:23:54.245036"
+      "status": "error",
+      "detail": "('invalid_grant: Token has been expired or revoked.', {'error': 'invalid_grant', 'error_description': 'Token has been ex",
+      "updated_at": "2026-07-19T02:23:58.669228"
     }
   },
   "runs": [
