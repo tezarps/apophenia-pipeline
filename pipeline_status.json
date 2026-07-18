@@ -4,9 +4,15 @@
       "name": "Maya",
       "icon": "🔮",
       "role": "Picks the next archetype",
-      "status": "idle",
-      "detail": "",
-      "updated_at": "2026-07-18T01:49:48.871333"
+      "status": "done",
+      "detail": "Topic #13: The Person Who Talks to AI More Than Their Friends",
+      "updated_at": "2026-07-18T01:49:51.163659",
+      "payload": {
+        "id": 13,
+        "category": "ai-emotional-dependency",
+        "topic": "The Person Who Talks to AI More Than Their Friends",
+        "angle": "Why your chatbot feels safer than the people who love you — video title: \"When You Trust an App More Than Your Own Friends, This Is Why\""
+      }
     },
     "scribe": {
       "name": "Jordan",
