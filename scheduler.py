@@ -254,7 +254,26 @@ def run(audio_only=False):
         agent_start("herald", "Writing SEO title & description...")
         sb.run_update_agent(sb_run_id, "herald")
         duration_min = int(duration_sec / 60)
+
+        # If a title was already hand-picked and saved (chat workflow: user
+        # reviews title options, tells us which to use) it has a title_a but
+        # an empty description/tags — a placeholder record, not a full
+        # generation. Keep that exact title but still generate a real
+        # description/tags/timestamps normally, then reapply the chosen
+        # title on top so the manual pick actually survives to upload.
+        locked_title = None
+        try:
+            existing = sb.get_metadata(topic_id)
+            if existing and existing.get("title_a") and not existing.get("description"):
+                locked_title = (existing["title_a"], existing.get("title_b") or existing["title_a"])
+                print(f"    Using previously chosen title: {locked_title[0]}")
+        except Exception:
+            pass
+
         metadata = generate_metadata(topic, script, duration_min=duration_min)
+        if locked_title:
+            metadata["title_a"], metadata["title_b"] = locked_title
+            metadata["title"] = locked_title[0]
         meta_path = OUTPUT_DIR / "metadata" / f"{topic_id}.json"
         meta_path.parent.mkdir(exist_ok=True)
         import json as _json
