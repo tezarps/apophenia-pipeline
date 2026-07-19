@@ -59,6 +59,16 @@
     {
       "id": 13,
       "topic": "Why your chatbot feels safer than the people who love you — video title: \"When You Trust an App More Than Your Own Friends, This Is Why\"",
+      "status": "awaiting_images",
+      "video_id": "",
+      "started_at": "2026-07-19T01:59:34.153324",
+      "finished_at": "2026-07-19T02:00:09.076537",
+      "duration_min": 0,
+      "error": "No manually-generated images yet for ai-emotional-dependency/the_person_who_talks_to_ai_more_than_their_friends — waiting for them to be uploaded to Supabase Storage."
+    },
+    {
+      "id": 13,
+      "topic": "Why your chatbot feels safer than the people who love you — video title: \"When You Trust an App More Than Your Own Friends, This Is Why\"",
       "status": "failed",
       "video_id": "",
       "started_at": "2026-07-19T02:06:10.647615",
@@ -288,10 +298,5 @@
       "error": "{'statusCode': 404, 'error': Bucket not found, 'message': Bucket not found}"
     }
   ],
-  "current_run": {
-    "topic_id": 13,
-    "topic": "Why your chatbot feels safer than the people who love you — video title: \"When You Trust an App More Than Your Own Friends, This Is Why\"",
-    "started_at": "2026-07-19T01:59:34.153622",
-    "status": "running"
-  }
+  "current_run": null
 }
