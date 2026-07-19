@@ -4,55 +4,49 @@
       "name": "Maya",
       "icon": "🔮",
       "role": "Picks the next archetype",
-      "status": "done",
-      "detail": "Topic #13: The Person Who Talks to AI More Than Their Friends",
-      "updated_at": "2026-07-19T02:06:18.892583",
-      "payload": {
-        "id": 13,
-        "category": "ai-emotional-dependency",
-        "topic": "The Person Who Talks to AI More Than Their Friends",
-        "angle": "Why your chatbot feels safer than the people who love you — video title: \"When You Trust an App More Than Your Own Friends, This Is Why\""
-      }
+      "status": "idle",
+      "detail": "",
+      "updated_at": "2026-07-19T01:59:34.153628"
     },
     "scribe": {
       "name": "Jordan",
       "icon": "📜",
       "role": "Writes the 5-babak script",
-      "status": "done",
-      "detail": "2,065 words (cached in Supabase)",
-      "updated_at": "2026-07-19T02:06:30.251243"
+      "status": "idle",
+      "detail": "",
+      "updated_at": "2026-07-19T01:59:34.153633"
     },
     "voice": {
       "name": "Aria",
       "icon": "🎙️",
       "role": "Narrates the essay",
-      "status": "done",
-      "detail": "Audio ready: 13.mp3",
-      "updated_at": "2026-07-19T02:08:03.196411"
+      "status": "idle",
+      "detail": "",
+      "updated_at": "2026-07-19T01:59:34.153636"
     },
     "architect": {
       "name": "Theo",
       "icon": "🏛️",
       "role": "Assembles the final video",
-      "status": "done",
-      "detail": "Video ready: 94MB (0 reflective beat(s))",
-      "updated_at": "2026-07-19T02:23:30.643770"
+      "status": "idle",
+      "detail": "",
+      "updated_at": "2026-07-19T01:59:34.153639"
     },
     "herald": {
       "name": "Priya",
       "icon": "📯",
       "role": "Crafts title, metadata & thumbnails",
-      "status": "done",
-      "detail": "Here's Why You Trust an AI Chatbot More Than Your Real Frien",
-      "updated_at": "2026-07-19T02:23:51.147323"
+      "status": "idle",
+      "detail": "",
+      "updated_at": "2026-07-19T01:59:34.153641"
     },
     "messenger": {
       "name": "Kai",
       "icon": "⚡",
       "role": "Uploads to YouTube",
-      "status": "error",
-      "detail": "('invalid_grant: Token has been expired or revoked.', {'error': 'invalid_grant', 'error_description': 'Token has been ex",
-      "updated_at": "2026-07-19T02:23:58.669228"
+      "status": "idle",
+      "detail": "",
+      "updated_at": "2026-07-19T01:59:34.153643"
     }
   },
   "runs": [
@@ -288,5 +282,10 @@
       "error": "{'statusCode': 404, 'error': Bucket not found, 'message': Bucket not found}"
     }
   ],
-  "current_run": null
+  "current_run": {
+    "topic_id": 13,
+    "topic": "Why your chatbot feels safer than the people who love you — video title: \"When You Trust an App More Than Your Own Friends, This Is Why\"",
+    "started_at": "2026-07-19T01:59:34.153622",
+    "status": "running"
+  }
 }
