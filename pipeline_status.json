@@ -4,39 +4,33 @@
       "name": "Maya",
       "icon": "🔮",
       "role": "Picks the next archetype",
-      "status": "done",
-      "detail": "Topic #13: The Person Who Talks to AI More Than Their Friends",
-      "updated_at": "2026-07-19T01:59:36.705401",
-      "payload": {
-        "id": 13,
-        "category": "ai-emotional-dependency",
-        "topic": "The Person Who Talks to AI More Than Their Friends",
-        "angle": "Why your chatbot feels safer than the people who love you — video title: \"When You Trust an App More Than Your Own Friends, This Is Why\""
-      }
+      "status": "idle",
+      "detail": "",
+      "updated_at": "2026-07-20T02:15:02.537489"
     },
     "scribe": {
       "name": "Jordan",
       "icon": "📜",
       "role": "Writes the 5-babak script",
-      "status": "done",
-      "detail": "2,065 words (cached in Supabase)",
-      "updated_at": "2026-07-19T01:59:39.104799"
+      "status": "idle",
+      "detail": "",
+      "updated_at": "2026-07-20T02:15:02.537494"
     },
     "voice": {
       "name": "Aria",
       "icon": "🎙️",
       "role": "Narrates the essay",
-      "status": "done",
-      "detail": "Audio ready: 13.mp3",
-      "updated_at": "2026-07-19T02:00:05.180071"
+      "status": "idle",
+      "detail": "",
+      "updated_at": "2026-07-20T02:15:02.537497"
     },
     "architect": {
       "name": "Theo",
       "icon": "🏛️",
       "role": "Assembles the final video",
-      "status": "running",
-      "detail": "Running FFmpeg...",
-      "updated_at": "2026-07-19T02:00:06.519041"
+      "status": "idle",
+      "detail": "",
+      "updated_at": "2026-07-20T02:15:02.537500"
     },
     "herald": {
       "name": "Priya",
@@ -44,7 +38,7 @@
       "role": "Crafts title, metadata & thumbnails",
       "status": "idle",
       "detail": "",
-      "updated_at": "2026-07-19T01:59:34.153641"
+      "updated_at": "2026-07-20T02:15:02.537502"
     },
     "messenger": {
       "name": "Kai",
@@ -52,7 +46,7 @@
       "role": "Uploads to YouTube",
       "status": "idle",
       "detail": "",
-      "updated_at": "2026-07-19T01:59:34.153643"
+      "updated_at": "2026-07-20T02:15:02.537505"
     }
   },
   "runs": [
@@ -298,5 +292,10 @@
       "error": "{'statusCode': 404, 'error': Bucket not found, 'message': Bucket not found}"
     }
   ],
-  "current_run": null
+  "current_run": {
+    "topic_id": 14,
+    "topic": "Quiet burnout — looking fine while running on nothing — video title: \"How to Tell You're Quietly Burnt Out Before It Wrecks Everything\"",
+    "started_at": "2026-07-20T02:15:02.537482",
+    "status": "running"
+  }
 }
