@@ -4,9 +4,15 @@
       "name": "Maya",
       "icon": "🔮",
       "role": "Picks the next archetype",
-      "status": "idle",
-      "detail": "",
-      "updated_at": "2026-07-20T02:15:02.537489"
+      "status": "done",
+      "detail": "Topic #14: The High-Achiever Who's Secretly Empty",
+      "updated_at": "2026-07-20T02:15:05.409005",
+      "payload": {
+        "id": 14,
+        "category": "quiet-burnout",
+        "topic": "The High-Achiever Who's Secretly Empty",
+        "angle": "Quiet burnout — looking fine while running on nothing — video title: \"How to Tell You're Quietly Burnt Out Before It Wrecks Everything\""
+      }
     },
     "scribe": {
       "name": "Jordan",
