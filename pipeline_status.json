@@ -61,6 +61,16 @@
       "topic": "Quiet burnout — looking fine while running on nothing — video title: \"How to Tell You're Quietly Burnt Out Before It Wrecks Everything\"",
       "status": "failed",
       "video_id": "",
+      "started_at": "2026-07-26T02:04:01.655074",
+      "finished_at": "2026-07-26T02:04:10.414917",
+      "duration_min": 0,
+      "error": "HTTP Error 400: Bad Request"
+    },
+    {
+      "id": 14,
+      "topic": "Quiet burnout — looking fine while running on nothing — video title: \"How to Tell You're Quietly Burnt Out Before It Wrecks Everything\"",
+      "status": "failed",
+      "video_id": "",
       "started_at": "2026-07-25T01:59:43.444100",
       "finished_at": "2026-07-25T01:59:53.792242",
       "duration_min": 0,
@@ -358,10 +368,5 @@
       "error": "{'statusCode': 404, 'error': Bucket not found, 'message': Bucket not found}"
     }
   ],
-  "current_run": {
-    "topic_id": 14,
-    "topic": "Quiet burnout — looking fine while running on nothing — video title: \"How to Tell You're Quietly Burnt Out Before It Wrecks Everything\"",
-    "started_at": "2026-07-26T02:04:01.655413",
-    "status": "running"
-  }
+  "current_run": null
 }
