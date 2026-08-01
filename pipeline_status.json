@@ -34,9 +34,9 @@
       "name": "Theo",
       "icon": "🏛️",
       "role": "Assembles the final video",
-      "status": "idle",
-      "detail": "",
-      "updated_at": "2026-08-01T02:06:24.571919"
+      "status": "running",
+      "detail": "Running FFmpeg...",
+      "updated_at": "2026-08-01T02:07:02.018567"
     },
     "herald": {
       "name": "Priya",
