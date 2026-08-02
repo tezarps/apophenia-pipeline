@@ -26,9 +26,9 @@
       "name": "Aria",
       "icon": "🎙️",
       "role": "Narrates the essay",
-      "status": "running",
-      "detail": "Converting to audio...",
-      "updated_at": "2026-08-02T02:03:22.291787"
+      "status": "done",
+      "detail": "Audio ready: 14.mp3",
+      "updated_at": "2026-08-02T02:03:46.485770"
     },
     "architect": {
       "name": "Theo",
