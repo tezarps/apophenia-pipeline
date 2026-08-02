@@ -61,6 +61,16 @@
       "topic": "Quiet burnout — looking fine while running on nothing — video title: \"How to Tell You're Quietly Burnt Out Before It Wrecks Everything\"",
       "status": "awaiting_images",
       "video_id": "",
+      "started_at": "2026-08-02T02:03:16.549735",
+      "finished_at": "2026-08-02T02:03:49.792783",
+      "duration_min": 0,
+      "error": "No manually-generated images yet for quiet-burnout/the_high-achiever_who's_secretly_empty — waiting for them to be uploaded to Supabase Storage."
+    },
+    {
+      "id": 14,
+      "topic": "Quiet burnout — looking fine while running on nothing — video title: \"How to Tell You're Quietly Burnt Out Before It Wrecks Everything\"",
+      "status": "awaiting_images",
+      "video_id": "",
       "started_at": "2026-08-01T02:06:24.571566",
       "finished_at": "2026-08-01T02:07:03.845153",
       "duration_min": 0,
@@ -428,10 +438,5 @@
       "error": "{'statusCode': 404, 'error': Bucket not found, 'message': Bucket not found}"
     }
   ],
-  "current_run": {
-    "topic_id": 14,
-    "topic": "Quiet burnout — looking fine while running on nothing — video title: \"How to Tell You're Quietly Burnt Out Before It Wrecks Everything\"",
-    "started_at": "2026-08-02T02:03:16.550117",
-    "status": "running"
-  }
+  "current_run": null
 }
