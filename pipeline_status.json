@@ -26,9 +26,9 @@
       "name": "Aria",
       "icon": "🎙️",
       "role": "Narrates the essay",
-      "status": "running",
-      "detail": "Converting to audio...",
-      "updated_at": "2026-08-11T01:08:28.446086"
+      "status": "error",
+      "detail": "HTTP Error 401: Unauthorized",
+      "updated_at": "2026-08-11T01:08:30.546308"
     },
     "architect": {
       "name": "Theo",
