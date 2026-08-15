@@ -61,6 +61,16 @@
       "topic": "Quiet burnout — looking fine while running on nothing — video title: \"How to Tell You're Quietly Burnt Out Before It Wrecks Everything\"",
       "status": "failed",
       "video_id": "",
+      "started_at": "2026-08-15T00:49:51.978987",
+      "finished_at": "2026-08-15T00:50:03.472747",
+      "duration_min": 0,
+      "error": "HTTP Error 401: Unauthorized"
+    },
+    {
+      "id": 14,
+      "topic": "Quiet burnout — looking fine while running on nothing — video title: \"How to Tell You're Quietly Burnt Out Before It Wrecks Everything\"",
+      "status": "failed",
+      "video_id": "",
       "started_at": "2026-08-14T01:17:37.351852",
       "finished_at": "2026-08-14T01:17:48.272773",
       "duration_min": 0,
@@ -536,22 +546,7 @@
       "finished_at": "2026-06-21T13:52:56.801499",
       "duration_min": 11,
       "error": "<HttpError 403 when requesting https://youtube.googleapis.com/upload/youtube/v3/thumbnails/set?videoId=_XZkvUwaI-I&alt=json&uploadType=media returned \"The authenticated user doesn't have permissions t"
-    },
-    {
-      "id": 1,
-      "topic": "Why You Disappear From People Who Get Too Close",
-      "status": "failed",
-      "video_id": "",
-      "started_at": "2026-06-21T13:28:16.917131",
-      "finished_at": "2026-06-21T13:35:04.916432",
-      "duration_min": 6,
-      "error": "Caption burn-in failed: Handler\n[AVFilterGraph @ 0x140611ee0] No option name near '/Users/admin/Documents/apophenia-pipeline/output/captions/1.ass:fontsdir=/Users/admin/Documents/apophenia-pipeline/as"
     }
   ],
-  "current_run": {
-    "topic_id": 14,
-    "topic": "Quiet burnout — looking fine while running on nothing — video title: \"How to Tell You're Quietly Burnt Out Before It Wrecks Everything\"",
-    "started_at": "2026-08-15T00:49:51.979396",
-    "status": "running"
-  }
+  "current_run": null
 }
