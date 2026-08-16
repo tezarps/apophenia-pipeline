@@ -61,6 +61,16 @@
       "topic": "Quiet burnout — looking fine while running on nothing — video title: \"How to Tell You're Quietly Burnt Out Before It Wrecks Everything\"",
       "status": "failed",
       "video_id": "",
+      "started_at": "2026-08-16T00:52:18.139489",
+      "finished_at": "2026-08-16T00:52:27.167075",
+      "duration_min": 0,
+      "error": "HTTP Error 401: Unauthorized"
+    },
+    {
+      "id": 14,
+      "topic": "Quiet burnout — looking fine while running on nothing — video title: \"How to Tell You're Quietly Burnt Out Before It Wrecks Everything\"",
+      "status": "failed",
+      "video_id": "",
       "started_at": "2026-08-15T00:49:51.978987",
       "finished_at": "2026-08-15T00:50:03.472747",
       "duration_min": 0,
@@ -536,22 +546,7 @@
       "finished_at": "2026-06-22T05:56:55.362176",
       "duration_min": 0,
       "error": "Error code: 401 - {'type': 'error', 'error': {'type': 'authentication_error', 'message': 'invalid x-api-key'}, 'request_id': 'req_011CcHENeMBTSF84QQseNAfF'}"
-    },
-    {
-      "id": 1,
-      "topic": "Why You Disappear From People Who Get Too Close",
-      "status": "failed",
-      "video_id": "",
-      "started_at": "2026-06-21T13:40:58.364973",
-      "finished_at": "2026-06-21T13:52:56.801499",
-      "duration_min": 11,
-      "error": "<HttpError 403 when requesting https://youtube.googleapis.com/upload/youtube/v3/thumbnails/set?videoId=_XZkvUwaI-I&alt=json&uploadType=media returned \"The authenticated user doesn't have permissions t"
     }
   ],
-  "current_run": {
-    "topic_id": 14,
-    "topic": "Quiet burnout — looking fine while running on nothing — video title: \"How to Tell You're Quietly Burnt Out Before It Wrecks Everything\"",
-    "started_at": "2026-08-16T00:52:18.139879",
-    "status": "running"
-  }
+  "current_run": null
 }
