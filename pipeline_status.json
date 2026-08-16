@@ -4,31 +4,25 @@
       "name": "Maya",
       "icon": "🔮",
       "role": "Picks the next archetype",
-      "status": "done",
-      "detail": "Topic #14: The High-Achiever Who's Secretly Empty",
-      "updated_at": "2026-08-15T00:49:54.443873",
-      "payload": {
-        "id": 14,
-        "category": "quiet-burnout",
-        "topic": "The High-Achiever Who's Secretly Empty",
-        "angle": "Quiet burnout — looking fine while running on nothing — video title: \"How to Tell You're Quietly Burnt Out Before It Wrecks Everything\""
-      }
+      "status": "idle",
+      "detail": "",
+      "updated_at": "2026-08-16T00:52:18.139887"
     },
     "scribe": {
       "name": "Jordan",
       "icon": "📜",
       "role": "Writes the 5-babak script",
-      "status": "done",
-      "detail": "2,137 words (cached in Supabase)",
-      "updated_at": "2026-08-15T00:49:57.929019"
+      "status": "idle",
+      "detail": "",
+      "updated_at": "2026-08-16T00:52:18.139891"
     },
     "voice": {
       "name": "Aria",
       "icon": "🎙️",
       "role": "Narrates the essay",
-      "status": "error",
-      "detail": "HTTP Error 401: Unauthorized",
-      "updated_at": "2026-08-15T00:50:01.574920"
+      "status": "idle",
+      "detail": "",
+      "updated_at": "2026-08-16T00:52:18.139895"
     },
     "architect": {
       "name": "Theo",
@@ -36,7 +30,7 @@
       "role": "Assembles the final video",
       "status": "idle",
       "detail": "",
-      "updated_at": "2026-08-15T00:49:51.979410"
+      "updated_at": "2026-08-16T00:52:18.139897"
     },
     "herald": {
       "name": "Priya",
@@ -44,7 +38,7 @@
       "role": "Crafts title, metadata & thumbnails",
       "status": "idle",
       "detail": "",
-      "updated_at": "2026-08-15T00:49:51.979412"
+      "updated_at": "2026-08-16T00:52:18.139900"
     },
     "messenger": {
       "name": "Kai",
@@ -52,7 +46,7 @@
       "role": "Uploads to YouTube",
       "status": "idle",
       "detail": "",
-      "updated_at": "2026-08-15T00:49:51.979414"
+      "updated_at": "2026-08-16T00:52:18.139902"
     }
   },
   "runs": [
@@ -548,5 +542,10 @@
       "error": "<HttpError 403 when requesting https://youtube.googleapis.com/upload/youtube/v3/thumbnails/set?videoId=_XZkvUwaI-I&alt=json&uploadType=media returned \"The authenticated user doesn't have permissions t"
     }
   ],
-  "current_run": null
+  "current_run": {
+    "topic_id": 14,
+    "topic": "Quiet burnout — looking fine while running on nothing — video title: \"How to Tell You're Quietly Burnt Out Before It Wrecks Everything\"",
+    "started_at": "2026-08-16T00:52:18.139879",
+    "status": "running"
+  }
 }
