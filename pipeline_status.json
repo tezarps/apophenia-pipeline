@@ -61,6 +61,16 @@
       "topic": "Quiet burnout — looking fine while running on nothing — video title: \"How to Tell You're Quietly Burnt Out Before It Wrecks Everything\"",
       "status": "failed",
       "video_id": "",
+      "started_at": "2026-08-17T00:49:23.921247",
+      "finished_at": "2026-08-17T00:49:33.699333",
+      "duration_min": 0,
+      "error": "HTTP Error 401: Unauthorized"
+    },
+    {
+      "id": 14,
+      "topic": "Quiet burnout — looking fine while running on nothing — video title: \"How to Tell You're Quietly Burnt Out Before It Wrecks Everything\"",
+      "status": "failed",
+      "video_id": "",
       "started_at": "2026-08-16T00:52:18.139489",
       "finished_at": "2026-08-16T00:52:27.167075",
       "duration_min": 0,
@@ -536,22 +546,7 @@
       "started_at": "2026-06-22T06:01:33.642993",
       "finished_at": "2026-06-22T06:33:50.380323",
       "duration_min": 32
-    },
-    {
-      "id": 2,
-      "topic": "Why You Say Sorry For Things That Aren't Your Fault",
-      "status": "failed",
-      "video_id": "",
-      "started_at": "2026-06-22T05:56:52.226710",
-      "finished_at": "2026-06-22T05:56:55.362176",
-      "duration_min": 0,
-      "error": "Error code: 401 - {'type': 'error', 'error': {'type': 'authentication_error', 'message': 'invalid x-api-key'}, 'request_id': 'req_011CcHENeMBTSF84QQseNAfF'}"
     }
   ],
-  "current_run": {
-    "topic_id": 14,
-    "topic": "Quiet burnout — looking fine while running on nothing — video title: \"How to Tell You're Quietly Burnt Out Before It Wrecks Everything\"",
-    "started_at": "2026-08-17T00:49:23.921634",
-    "status": "running"
-  }
+  "current_run": null
 }
