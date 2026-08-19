@@ -61,6 +61,16 @@
       "topic": "Quiet burnout — looking fine while running on nothing — video title: \"How to Tell You're Quietly Burnt Out Before It Wrecks Everything\"",
       "status": "failed",
       "video_id": "",
+      "started_at": "2026-08-19T00:49:08.722361",
+      "finished_at": "2026-08-19T00:49:18.847754",
+      "duration_min": 0,
+      "error": "HTTP Error 401: Unauthorized"
+    },
+    {
+      "id": 14,
+      "topic": "Quiet burnout — looking fine while running on nothing — video title: \"How to Tell You're Quietly Burnt Out Before It Wrecks Everything\"",
+      "status": "failed",
+      "video_id": "",
       "started_at": "2026-08-17T00:49:23.921247",
       "finished_at": "2026-08-17T00:49:33.699333",
       "duration_min": 0,
@@ -537,21 +547,7 @@
       "started_at": "2026-06-22T08:10:21.741044",
       "finished_at": "2026-06-22T08:19:31.397721",
       "duration_min": 9
-    },
-    {
-      "id": 3,
-      "topic": "Why Walking Away From Family Felt Like the Only Way to Breathe",
-      "status": "published",
-      "video_id": "O9Gd6emfyYA",
-      "started_at": "2026-06-22T06:01:33.642993",
-      "finished_at": "2026-06-22T06:33:50.380323",
-      "duration_min": 32
     }
   ],
-  "current_run": {
-    "topic_id": 14,
-    "topic": "Quiet burnout — looking fine while running on nothing — video title: \"How to Tell You're Quietly Burnt Out Before It Wrecks Everything\"",
-    "started_at": "2026-08-19T00:49:08.722817",
-    "status": "running"
-  }
+  "current_run": null
 }
