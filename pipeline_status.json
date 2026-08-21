@@ -61,6 +61,16 @@
       "topic": "Quiet burnout — looking fine while running on nothing — video title: \"How to Tell You're Quietly Burnt Out Before It Wrecks Everything\"",
       "status": "failed",
       "video_id": "",
+      "started_at": "2026-08-21T00:52:42.703410",
+      "finished_at": "2026-08-21T00:52:53.429548",
+      "duration_min": 0,
+      "error": "HTTP Error 401: Unauthorized"
+    },
+    {
+      "id": 14,
+      "topic": "Quiet burnout — looking fine while running on nothing — video title: \"How to Tell You're Quietly Burnt Out Before It Wrecks Everything\"",
+      "status": "failed",
+      "video_id": "",
       "started_at": "2026-08-20T00:48:49.312168",
       "finished_at": "2026-08-20T00:49:00.421738",
       "duration_min": 0,
@@ -538,22 +548,7 @@
       "started_at": "2026-06-22T08:57:47.016893",
       "finished_at": "2026-06-22T09:00:48.291170",
       "duration_min": 3
-    },
-    {
-      "id": 2,
-      "topic": "Why You Say Sorry For Things That Aren't Your Fault",
-      "status": "failed",
-      "video_id": "",
-      "started_at": "2026-06-22T08:37:18.324487",
-      "finished_at": "2026-06-22T08:40:32.560451",
-      "duration_min": 3,
-      "error": "Expecting value: line 1 column 1 (char 0)"
     }
   ],
-  "current_run": {
-    "topic_id": 14,
-    "topic": "Quiet burnout — looking fine while running on nothing — video title: \"How to Tell You're Quietly Burnt Out Before It Wrecks Everything\"",
-    "started_at": "2026-08-21T00:52:42.703815",
-    "status": "running"
-  }
+  "current_run": null
 }
